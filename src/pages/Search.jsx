@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import PropertyCard from '../components/PropertyCard';
-import { CITIES, DISTRICTS, ROOM_TYPES, AMENITY_MAP } from '../data/mockProperties';
+import { CITIES, DISTRICTS, WARDS, ROOM_TYPES, AMENITY_MAP } from '../data/mockProperties';
+import SearchableSelect from '../components/SearchableSelect';
 import {
   Funnel,
   X,
@@ -18,14 +19,16 @@ const PRICE_RANGES = [
 ];
 
 export default function Search() {
-  const { properties } = useApp();
+  const { properties, formatPrice } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [city, setCity] = useState(searchParams.get('city') || '');
   const [district, setDistrict] = useState(searchParams.get('district') || '');
-  const [priceRange, setPriceRange] = useState(0);
+  const [ward, setWard] = useState('');
+  const [maxPrice, setMaxPrice] = useState(15000000);
   const [roomType, setRoomType] = useState('');
   const [searchText, setSearchText] = useState('');
+  const [sortBy, setSortBy] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,37 +38,54 @@ export default function Search() {
       setIsLoading(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, [city, district, priceRange, roomType, searchText]);
+  }, [city, district, ward, maxPrice, roomType, searchText]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
       if (city && p.city !== city) return false;
       if (district && p.district !== district) return false;
+      if (ward && p.ward !== ward) return false;
       if (roomType && p.type !== roomType) return false;
 
-      const range = PRICE_RANGES[priceRange];
-      if (p.price < range.min || p.price > range.max) return false;
+      // Price range slider check
+      if (p.price > maxPrice) return false;
 
       if (searchText) {
         const text = searchText.toLowerCase();
-        const searchable = `${p.title} ${p.address} ${p.district} ${p.city}`.toLowerCase();
+        const searchable = `${p.title} ${p.address} ${p.district} ${p.city} ${p.ward || ''}`.toLowerCase();
         if (!searchable.includes(text)) return false;
       }
 
       return true;
     });
-  }, [properties, city, district, priceRange, roomType, searchText]);
+  }, [properties, city, district, ward, maxPrice, roomType, searchText]);
+
+  const sortedProperties = useMemo(() => {
+    const list = [...filteredProperties];
+    if (sortBy === 'az') {
+      list.sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+    } else if (sortBy === 'za') {
+      list.sort((a, b) => b.title.localeCompare(a.title, 'vi'));
+    } else if (sortBy === 'price-asc') {
+      list.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-desc') {
+      list.sort((a, b) => b.price - a.price);
+    }
+    return list;
+  }, [filteredProperties, sortBy]);
 
   const clearFilters = () => {
     setCity('');
     setDistrict('');
-    setPriceRange(0);
+    setWard('');
+    setMaxPrice(15000000);
     setRoomType('');
     setSearchText('');
+    setSortBy('');
     setSearchParams({});
   };
 
-  const hasActiveFilters = city || district || priceRange > 0 || roomType || searchText;
+  const hasActiveFilters = city || district || ward || maxPrice < 15000000 || roomType || searchText || sortBy;
 
   return (
     <div className="search-page" id="search-page">
@@ -96,58 +116,85 @@ export default function Search() {
 
           {showFilters && (
             <div className="filter-fields animate-fade-in">
-              <select
-                className="select"
-                value={city}
-                onChange={(e) => { setCity(e.target.value); setDistrict(''); }}
-                id="filter-city"
-              >
-                <option value="">Tất cả thành phố</option>
-                {CITIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              {/* Thành phố */}
+              <div style={{ flex: '1', minWidth: '150px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Thành phố</span>
+                <SearchableSelect
+                  placeholder="Tất cả thành phố"
+                  value={city}
+                  options={CITIES}
+                  onChange={(val) => { setCity(val); setDistrict(''); setWard(''); }}
+                  id="filter-city-select"
+                />
+              </div>
 
-              <select
-                className="select"
-                value={district}
-                onChange={(e) => setDistrict(e.target.value)}
-                id="filter-district"
-              >
-                <option value="">Tất cả quận</option>
-                {city && DISTRICTS[city]?.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
+              {/* Quận / Huyện */}
+              <div style={{ flex: '1', minWidth: '150px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Quận / Huyện</span>
+                <SearchableSelect
+                  placeholder="Tất cả quận"
+                  value={district}
+                  options={city ? DISTRICTS[city] : []}
+                  onChange={(val) => { setDistrict(val); setWard(''); }}
+                  id="filter-district-select"
+                />
+              </div>
 
-              <select
-                className="select"
-                value={priceRange}
-                onChange={(e) => setPriceRange(Number(e.target.value))}
-                id="filter-price"
-              >
-                {PRICE_RANGES.map((r, idx) => (
-                  <option key={idx} value={idx}>{r.label}</option>
-                ))}
-              </select>
+              {/* Phường / Xã */}
+              <div style={{ flex: '1', minWidth: '150px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Phường / Xã</span>
+                <SearchableSelect
+                  placeholder="Tất cả phường"
+                  value={ward}
+                  options={district ? WARDS[district] : []}
+                  onChange={(val) => setWard(val)}
+                  id="filter-ward-select"
+                />
+              </div>
 
-              <select
-                className="select"
-                value={roomType}
-                onChange={(e) => setRoomType(e.target.value)}
-                id="filter-type"
-              >
-                <option value="">Tất cả loại phòng</option>
-                {ROOM_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              {/* Loại phòng */}
+              <div style={{ flex: '1', minWidth: '150px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Loại phòng</span>
+                <SearchableSelect
+                  placeholder="Tất cả loại phòng"
+                  value={roomType}
+                  options={ROOM_TYPES}
+                  onChange={(val) => setRoomType(val)}
+                  id="filter-type-select"
+                />
+              </div>
+
+              {/* Lọc giá - Range Slider */}
+              <div className="price-slider-wrap">
+                <div className="price-slider-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span className="price-label" style={{ fontSize: '11px', color: 'var(--color-text-subtle)' }}>Giá tối đa:</span>
+                  <span className="price-value price" style={{ fontSize: 'var(--text-sm)' }}>
+                    {maxPrice === 15000000 ? 'Tất cả giá' : `${formatPrice(maxPrice)}/th`}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="15000000"
+                  step="500000"
+                  className="price-slider"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  id="filter-price-slider"
+                />
+                <div className="price-slider-bounds text-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--color-text-subtle)' }}>
+                  <span>0đ</span>
+                  <span>15trđ</span>
+                </div>
+              </div>
 
               {hasActiveFilters && (
-                <button className="btn btn-ghost" onClick={clearFilters} id="clear-filters-btn">
-                  <X size={16} />
-                  Xóa lọc
-                </button>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <button className="btn btn-ghost" onClick={clearFilters} id="clear-filters-btn" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                    <X size={16} />
+                    Xóa lọc
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -156,12 +203,30 @@ export default function Search() {
 
       {/* Results */}
       <div className="search-results container" id="search-results">
-        <div className="search-results-header">
-          <p className="text-caption">
-            Tìm thấy <strong>{filteredProperties.length}</strong> phòng trọ
+        <div className="search-results-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+          <p className="text-caption" style={{ margin: 0 }}>
+            Tìm thấy <strong>{sortedProperties.length}</strong> phòng trọ
             {city ? ` tại ${city}` : ''}
             {district ? `, ${district}` : ''}
+            {ward ? `, ${ward}` : ''}
           </p>
+
+          <div className="sort-by-wrap" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span className="text-caption" style={{ fontSize: 'var(--text-xs)', whiteSpace: 'nowrap' }}>Sắp xếp:</span>
+            <select
+              className="select"
+              style={{ width: '180px', padding: '6px 12px', paddingRight: 'var(--space-8)', borderRadius: 'var(--radius-subtle)', backgroundPosition: 'right 8px center', height: '36px' }}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              id="sort-by-select"
+            >
+              <option value="">Mặc định</option>
+              <option value="az">Tên A => Z</option>
+              <option value="za">Tên Z => A</option>
+              <option value="price-asc">Giá thấp => cao</option>
+              <option value="price-desc">Giá cao => thấp</option>
+            </select>
+          </div>
         </div>
 
         {isLoading ? (
@@ -178,9 +243,9 @@ export default function Search() {
               </div>
             ))}
           </div>
-        ) : filteredProperties.length > 0 ? (
+        ) : sortedProperties.length > 0 ? (
           <div className="search-grid">
-            {filteredProperties.map((prop, idx) => (
+            {sortedProperties.map((prop, idx) => (
               <PropertyCard key={prop.id} property={prop} index={idx} />
             ))}
           </div>
@@ -249,6 +314,49 @@ export default function Search() {
         .filter-fields .select {
           flex: 1;
           min-width: 150px;
+        }
+
+        .price-slider-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 220px;
+          flex: 1.5;
+        }
+
+        .price-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 6px;
+          background: var(--bg-tertiary);
+          border-radius: var(--radius-pill);
+          outline: none;
+          cursor: pointer;
+          transition: all var(--duration-fast);
+          margin: 6px 0;
+        }
+
+        .price-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--color-accent);
+          border: 2px solid #ffffff;
+          box-shadow: var(--shadow-sm);
+          transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast);
+        }
+
+        .price-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 0 0 4px var(--color-accent-subtle);
+        }
+
+        .price-slider::-webkit-slider-thumb:active {
+          transform: scale(1.1);
+          background: var(--color-accent-hover);
         }
 
         @media (max-width: 768px) {
