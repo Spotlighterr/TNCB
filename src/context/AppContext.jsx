@@ -43,11 +43,7 @@ export function AppProvider({ children }) {
 
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('TNCB_THEME');
-    if (saved) return saved;
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
+    return saved ? saved : 'light';
   });
 
   useEffect(() => {
