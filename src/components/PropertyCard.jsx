@@ -118,6 +118,14 @@ export default function PropertyCard({ property, index = 0 }) {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          transition: all var(--duration-spring) var(--ease-tactile);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .property-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+          border-color: var(--color-accent);
         }
 
         .property-card-image-wrap {
@@ -130,11 +138,11 @@ export default function PropertyCard({ property, index = 0 }) {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          transition: transform var(--duration-spring) var(--ease-tactile);
+          transition: transform var(--duration-slow) var(--ease-tactile);
         }
 
         .property-card:hover .property-card-image {
-          transform: scale(1.05);
+          transform: scale(1.06);
         }
 
         .property-card-badges {
@@ -151,12 +159,14 @@ export default function PropertyCard({ property, index = 0 }) {
         .post-type-badge {
           display: inline-flex;
           align-items: center;
-          padding: 3px 8px;
-          font-size: var(--text-xs);
+          padding: 4px 10px;
+          font-size: 11px;
           font-weight: var(--weight-bold);
-          border-radius: var(--radius-xs);
+          border-radius: var(--radius-subtle);
           line-height: 1;
           box-shadow: var(--shadow-xs);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
         }
 
         .post-type-badge.rent {
@@ -167,6 +177,27 @@ export default function PropertyCard({ property, index = 0 }) {
         .post-type-badge.roommate {
           background: #0284c7;
           color: #ffffff;
+        }
+
+        .verified-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          background: rgba(52, 211, 153, 0.18);
+          color: #059669;
+          font-size: 11px;
+          font-weight: var(--weight-bold);
+          border-radius: var(--radius-subtle);
+          border: 1px solid rgba(52, 211, 153, 0.3);
+          backdrop-filter: blur(4px);
+        }
+
+        /* Dark mode verified badge */
+        :root[data-theme="dark"] .verified-badge {
+          color: #34d399;
+          background: rgba(16, 185, 129, 0.15);
+          border-color: rgba(16, 185, 129, 0.25);
         }
 
         .property-card-save {
@@ -186,11 +217,13 @@ export default function PropertyCard({ property, index = 0 }) {
           border: none;
           cursor: pointer;
           z-index: 10;
+          box-shadow: var(--shadow-sm);
         }
 
         .property-card-save:hover {
           background: #ffffff;
           transform: scale(1.1);
+          color: var(--color-text-main);
         }
 
         .property-card-save.saved {
@@ -205,13 +238,16 @@ export default function PropertyCard({ property, index = 0 }) {
           position: absolute;
           bottom: var(--space-3);
           left: var(--space-3);
-          background: var(--color-surface);
-          padding: 4px 10px;
-          border-radius: var(--radius-xs);
+          background: #131927;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 6px 12px;
+          border-radius: var(--radius-subtle);
           font-size: var(--text-sm);
+          font-family: var(--font-mono);
           font-weight: var(--weight-bold);
-          color: var(--color-accent);
-          box-shadow: var(--shadow-sm);
+          color: #34d399;
+          box-shadow: 0 4px 12px rgba(11, 15, 25, 0.3);
+          z-index: 10;
         }
 
         .property-card-content {
@@ -224,7 +260,7 @@ export default function PropertyCard({ property, index = 0 }) {
 
         .property-card-title {
           font-size: var(--text-sm);
-          font-weight: var(--weight-semibold);
+          font-weight: var(--weight-bold);
           line-height: 1.4;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -263,7 +299,7 @@ export default function PropertyCard({ property, index = 0 }) {
         .property-card-meta {
           display: flex;
           align-items: center;
-          gap: var(--space-2);
+          gap: var(--space-3);
           margin-top: auto;
           padding-top: var(--space-2);
         }
@@ -283,6 +319,13 @@ export default function PropertyCard({ property, index = 0 }) {
           padding-top: var(--space-3);
           border-top: 1px solid var(--color-divider);
           margin-top: var(--space-2);
+        }
+
+        .property-card-footer .price {
+          font-size: var(--text-base);
+          font-family: var(--font-mono);
+          font-weight: var(--weight-bold);
+          color: var(--color-accent);
         }
       `}</style>
     </div>

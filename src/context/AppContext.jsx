@@ -41,6 +41,24 @@ export function AppProvider({ children }) {
     loadFromStorage('TNCB_CURRENT_USER', null)
   );
 
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('TNCB_THEME');
+    if (saved) return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('TNCB_THEME', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
   // Sync to localStorage
   useEffect(() => {
     localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(properties));
@@ -298,6 +316,8 @@ export function AppProvider({ children }) {
     userRole,
     users,
     currentUser,
+    theme,
+    toggleTheme,
     // Setters
     setUserRole,
     // Property actions

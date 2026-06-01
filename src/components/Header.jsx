@@ -16,6 +16,8 @@ import {
   Phone as PhoneIcon,
   EnvelopeSimple,
   CheckCircle,
+  Sun,
+  Moon,
 } from '@phosphor-icons/react';
 
 const NAV_LINKS = [
@@ -25,7 +27,7 @@ const NAV_LINKS = [
 ];
 
 export default function Header() {
-  const { currentUser, login, register, logout } = useApp();
+  const { currentUser, login, register, logout, theme, toggleTheme } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -121,6 +123,16 @@ export default function Header() {
 
         {/* Right Section */}
         <div className="header-actions">
+          {/* Theme Toggle Button */}
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            aria-label="Chuyển đổi giao diện"
+            title={theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
+            id="theme-toggle-btn"
+          >
+            {theme === 'light' ? <Moon size={18} weight="bold" /> : <Sun size={18} weight="bold" />}
+          </button>
           {currentUser ? (
             /* User Panel (Logged In) */
             <div className="user-profile-wrapper">
@@ -769,54 +781,29 @@ export default function Header() {
           font-weight: var(--weight-semibold);
         }
 
-        /* Quick login helper */
-        .quick-login-box {
-          margin-top: var(--space-6);
-          padding-top: var(--space-4);
-          border-top: 1px dashed var(--color-divider);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-2);
-        }
-
-        .quick-login-label {
-          font-size: var(--text-xs);
-          font-weight: var(--weight-semibold);
-          color: var(--color-text-subtle);
-        }
-
-        .quick-login-buttons {
-          display: flex;
-          gap: var(--space-2);
-        }
-
-        .quick-login-btn {
-          flex: 1;
+        /* Theme toggle button styling */
+        .theme-toggle-btn {
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          padding: 8px var(--space-2);
-          border-radius: var(--radius-subtle);
-          font-size: 11px;
-          font-weight: var(--weight-semibold);
-          border: 1px solid var(--color-border-strong);
+          border-radius: var(--radius-pill);
+          color: var(--color-text-muted);
+          border: 1px solid var(--color-border);
           background: var(--bg-secondary);
-          color: var(--color-text-main);
-          transition: all var(--duration-fast) var(--ease-smooth);
+          transition: all var(--duration-fast) var(--ease-tactile);
           cursor: pointer;
         }
 
-        .quick-login-btn.tenant-quick:hover {
+        .theme-toggle-btn:hover {
           background: var(--bg-tertiary);
-          border-color: var(--color-accent-muted);
-          color: var(--color-accent);
+          color: var(--color-text-main);
+          transform: rotate(15deg) scale(1.05);
         }
 
-        .quick-login-btn.landlord-quick:hover {
-          background: var(--bg-tertiary);
-          border-color: var(--color-accent-muted);
-          color: var(--color-accent);
+        .theme-toggle-btn:active {
+          transform: scale(0.95);
         }
 
         .mobile-menu-toggle {
