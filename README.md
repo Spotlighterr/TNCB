@@ -182,7 +182,7 @@ Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (44
 
 - **Email:** tncb.findx@gmail.com  
 - **Hotline:** 034 629 7668  
-- **Facebook:** [FindX - Tìm Nhà Cùng Bạn](https://facebook.com)
+- **Facebook:** [FindX - Tìm Nhà Cùng Bạn](https://www.facebook.com/timnhacungban.findx)
 
 ---
 

@@ -23,9 +23,13 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [value]);
 
-  const filteredOptions = options.filter(option =>
-    option.toLowerCase().includes(search.toLowerCase())
-  );
+  // Sort options alphabetically with Vietnamese locale support
+  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'accent' }));
+
+  const filteredOptions = sortedOptions.filter(option => {
+    if (!search || search === value) return true;
+    return option.toLowerCase().includes(search.toLowerCase());
+  });
 
   const handleSelect = (option) => {
     onChange(option);
@@ -68,7 +72,8 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
           onFocus={() => setIsOpen(true)}
           style={{
             width: '100%',
-            paddingRight: '40px'
+            paddingRight: '40px',
+            boxSizing: 'border-box'
           }}
         />
         <CaretDown 
@@ -79,20 +84,18 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
             position: 'absolute',
             right: '12px',
             cursor: 'pointer',
-            zIndex: 2,
-            transition: 'transform var(--duration-normal) var(--ease-spring)'
+            zIndex: 2
           }}
         />
       </div>
 
       {isOpen && (
         <ul 
-          className="searchable-select-dropdown glass-strong animate-scale-in"
+          className="searchable-select-dropdown glass-strong"
           style={{
             position: 'absolute',
             top: 'calc(100% + 4px)',
             left: 0,
-            right: 0,
             width: '100%',
             maxHeight: '200px',
             overflowY: 'auto',

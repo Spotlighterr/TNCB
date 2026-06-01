@@ -117,7 +117,7 @@ export default function Search() {
           {showFilters && (
             <div className="filter-fields animate-fade-in">
               {/* Thành phố */}
-              <div style={{ flex: '1', minWidth: '150px' }}>
+              <div style={{ flex: '1', minWidth: '150px', position: 'relative' }}>
                 <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Thành phố</span>
                 <SearchableSelect
                   placeholder="Tất cả thành phố"
@@ -129,7 +129,7 @@ export default function Search() {
               </div>
 
               {/* Quận / Huyện */}
-              <div style={{ flex: '1', minWidth: '150px' }}>
+              <div style={{ flex: '1', minWidth: '150px', position: 'relative' }}>
                 <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Quận / Huyện</span>
                 <SearchableSelect
                   placeholder="Tất cả quận"
@@ -141,7 +141,7 @@ export default function Search() {
               </div>
 
               {/* Phường / Xã */}
-              <div style={{ flex: '1', minWidth: '150px' }}>
+              <div style={{ flex: '1', minWidth: '150px', position: 'relative' }}>
                 <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Phường / Xã</span>
                 <SearchableSelect
                   placeholder="Tất cả phường"
@@ -153,7 +153,7 @@ export default function Search() {
               </div>
 
               {/* Loại phòng */}
-              <div style={{ flex: '1', minWidth: '150px' }}>
+              <div style={{ flex: '1', minWidth: '150px', position: 'relative' }}>
                 <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Loại phòng</span>
                 <SearchableSelect
                   placeholder="Tất cả loại phòng"

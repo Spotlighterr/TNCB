@@ -1279,7 +1279,7 @@ export default function Dashboard() {
                     <div className="saved-info">
                       <Link to={`/property/${prop.id}`} className="saved-title">{prop.title}</Link>
                       <p className="text-caption">{prop.district}, {prop.city}</p>
-                      <span className="price">{formatPriceShort(prop.price)}/th</span>
+                      <span className="price">{formatPrice(prop.price)}</span>
                     </div>
                   </div>
                 ))}
@@ -1604,7 +1604,7 @@ export default function Dashboard() {
                   <FacebookLogo size={20} color="#1877f2" />
                   <div>
                     <strong>Facebook Page</strong>
-                    <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-mono" style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontWeight: '500' }}>FindX - Tìm Nhà Cùng Bạn</a>
+                    <a href="https://www.facebook.com/timnhacungban.findx" target="_blank" rel="noreferrer" className="text-mono" style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontWeight: '500' }}>FindX - Tìm Nhà Cùng Bạn</a>
                   </div>
                 </div>
               </div>

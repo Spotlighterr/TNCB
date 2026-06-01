@@ -61,7 +61,7 @@ export default function Footer() {
               </li>
               <li className="footer-contact-item">
                 <FacebookLogo size={16} weight="regular" />
-                <a href="https://facebook.com" target="_blank" rel="noreferrer">FindX - Tìm Nhà Cùng Bạn</a>
+                <a href="https://www.facebook.com/timnhacungban.findx" target="_blank" rel="noreferrer">FindX - Tìm Nhà Cùng Bạn</a>
               </li>
             </ul>
           </div>

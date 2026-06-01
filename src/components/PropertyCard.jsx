@@ -8,7 +8,7 @@ import {
 } from '@phosphor-icons/react';
 
 export default function PropertyCard({ property, index = 0 }) {
-  const { toggleSaveProperty, isPropertySaved, formatPriceShort, calculatePropertyRating } = useApp();
+  const { toggleSaveProperty, isPropertySaved, formatPrice, calculatePropertyRating } = useApp();
   const saved = isPropertySaved(property.id);
 
   const rating = calculatePropertyRating(property);
@@ -85,7 +85,7 @@ export default function PropertyCard({ property, index = 0 }) {
         </div>
 
         <div className="property-card-footer">
-          <span className="price">{formatPriceShort(property.price)}/th</span>
+          <span className="price">{formatPrice(property.price)}</span>
           <div className="footer-badges-row" style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
             {property.verified && (
               <span className="verified-badge-inline" id={`verified-${property.id}`}>
@@ -159,21 +159,21 @@ export default function PropertyCard({ property, index = 0 }) {
           align-items: center;
           gap: 4px;
           padding: 3px 8px;
-          background: var(--color-accent-subtle);
-          color: var(--color-accent);
+          background: rgba(5, 150, 105, 0.08);
+          color: var(--color-success);
           font-size: 11px;
           font-weight: var(--weight-bold);
           border-radius: var(--radius-subtle);
-          border: 1px solid var(--color-accent-muted);
+          border: 1px solid rgba(5, 150, 105, 0.15);
           line-height: 1;
           transition: all var(--duration-fast) var(--ease-tactile);
         }
 
         /* Dark mode verified badge */
         :root[data-theme="dark"] .verified-badge-inline {
-          color: #38bdf8;
-          background: rgba(56, 189, 248, 0.15);
-          border-color: rgba(56, 189, 248, 0.25);
+          color: #34d399;
+          background: rgba(52, 211, 153, 0.15);
+          border-color: rgba(52, 211, 153, 0.25);
         }
 
         .property-card-save {
@@ -300,7 +300,7 @@ export default function PropertyCard({ property, index = 0 }) {
           font-size: var(--text-base);
           font-family: var(--font-mono);
           font-weight: var(--weight-bold);
-          color: var(--color-accent);
+          color: var(--color-text-main);
           transition: all var(--duration-fast) var(--ease-smooth);
         }
 
