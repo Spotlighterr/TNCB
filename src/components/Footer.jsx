@@ -26,7 +26,7 @@ export default function Footer() {
             <div className="footer-logo">
               <Buildings size={24} weight="duotone" color="var(--color-accent)" />
               <span className="footer-logo-text">
-                TNCB <span style={{ color: 'var(--color-accent)' }}>Rent</span>
+                Find<span style={{ color: 'var(--color-accent)' }}>X</span>
               </span>
             </div>
             <p className="footer-desc">
@@ -56,14 +56,15 @@ export default function Footer() {
               </li>
               <li className="footer-contact-item">
                 <EnvelopeSimple size={16} weight="regular" />
-                <span>support@tncbrent.vn</span>
+                <span>support@findx.vn</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="footer-bottom">
-          <p>&copy; 2025 TNCB Rent (FTU Housing Bank). All rights reserved.</p>
+        <div className="footer-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+          <p>&copy; 2026 FindX (FTU Housing Bank). All rights reserved.</p>
+          <p style={{ fontSize: '11px', color: 'var(--color-text-subtle)' }}>Development by Spotlighterr</p>
         </div>
       </div>
 

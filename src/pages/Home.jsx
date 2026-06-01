@@ -101,7 +101,7 @@ export default function Home() {
             <div>
               <h2 className="text-headline">Phòng trọ nổi bật</h2>
               <p className="text-caption" style={{ marginTop: 'var(--space-2)' }}>
-                Đã xác thực bởi đội ngũ TNCB Rent
+                Đã xác thực bởi đội ngũ FindX
               </p>
             </div>
             <button

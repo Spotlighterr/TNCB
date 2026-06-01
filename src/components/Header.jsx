@@ -102,7 +102,7 @@ export default function Header() {
         <Link to="/" className="header-logo" id="logo-link">
           <Buildings size={28} weight="duotone" color="var(--color-accent)" />
           <span className="header-logo-text">
-            TNCB <span className="header-logo-accent">Rent</span>
+            Find<span className="header-logo-accent">X</span>
           </span>
         </Link>
 

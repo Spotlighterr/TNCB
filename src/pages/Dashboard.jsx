@@ -1555,7 +1555,7 @@ export default function Dashboard() {
                   <EnvelopeSimple size={20} color="var(--color-info)" />
                   <div>
                     <strong>Email hỗ trợ</strong>
-                    <p className="text-mono">support@tncbrent.vn</p>
+                    <p className="text-mono">support@findx.vn</p>
                   </div>
                 </div>
               </div>
