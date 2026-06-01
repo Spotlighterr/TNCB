@@ -45,19 +45,6 @@ export default function PropertyCard({ property, index = 0 }) {
           />
         </Link>
 
-        {/* Badges */}
-        <div className="property-card-badges">
-          {property.verified && (
-            <span className="verified-badge" id={`verified-${property.id}`}>
-              <SealCheck size={12} weight="fill" />
-              Xác thực
-            </span>
-          )}
-          <span className={`post-type-badge ${property.postType === 'find_roommate' ? 'roommate' : 'rent'}`}>
-            {property.postType === 'find_roommate' ? 'Khách thuê' : 'Cho thuê'}
-          </span>
-        </div>
-
         {/* Save Button */}
         <button
           className={`property-card-save ${saved ? 'saved' : ''}`}
@@ -70,11 +57,6 @@ export default function PropertyCard({ property, index = 0 }) {
         >
           <Heart size={20} weight={saved ? 'fill' : 'regular'} />
         </button>
-
-        {/* Price Tag */}
-        <div className="property-card-price-tag">
-          <span className="text-mono">{formatPriceShort(property.price)}</span>
-        </div>
       </div>
 
       {/* Content */}
@@ -104,9 +86,17 @@ export default function PropertyCard({ property, index = 0 }) {
 
         <div className="property-card-footer">
           <span className="price">{formatPriceShort(property.price)}/th</span>
-          {property.isRented && (
-            <span className="badge badge-rented">Đã thuê</span>
-          )}
+          <div className="footer-badges-row" style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            {property.verified && (
+              <span className="verified-badge-inline" id={`verified-${property.id}`}>
+                <SealCheck size={12} weight="fill" />
+                Xác thực
+              </span>
+            )}
+            {property.isRented && (
+              <span className="badge badge-rented">Đã thuê</span>
+            )}
+          </div>
         </div>
       </Link>
 
@@ -145,56 +135,22 @@ export default function PropertyCard({ property, index = 0 }) {
           transform: scale(1.06);
         }
 
-        .property-card-badges {
-          position: absolute;
-          top: var(--space-3);
-          left: var(--space-3);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-2);
-          align-items: flex-start;
-          z-index: 10;
-        }
-
-        .post-type-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 4px 10px;
-          font-size: 11px;
-          font-weight: var(--weight-bold);
-          border-radius: var(--radius-subtle);
-          line-height: 1;
-          box-shadow: var(--shadow-xs);
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .post-type-badge.rent {
-          background: var(--color-accent);
-          color: #ffffff;
-        }
-
-        .post-type-badge.roommate {
-          background: #0284c7;
-          color: #ffffff;
-        }
-
-        .verified-badge {
+        .verified-badge-inline {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 4px 10px;
-          background: rgba(14, 165, 233, 0.18);
-          color: #0284c7;
+          padding: 3px 8px;
+          background: var(--color-accent-subtle);
+          color: var(--color-accent);
           font-size: 11px;
           font-weight: var(--weight-bold);
           border-radius: var(--radius-subtle);
-          border: 1px solid rgba(14, 165, 233, 0.3);
-          backdrop-filter: blur(4px);
+          border: 1px solid var(--color-accent-muted);
+          line-height: 1;
         }
 
         /* Dark mode verified badge */
-        :root[data-theme="dark"] .verified-badge {
+        :root[data-theme="dark"] .verified-badge-inline {
           color: #38bdf8;
           background: rgba(56, 189, 248, 0.15);
           border-color: rgba(56, 189, 248, 0.25);
@@ -234,21 +190,7 @@ export default function PropertyCard({ property, index = 0 }) {
           transform: scale(0.9);
         }
 
-        .property-card-price-tag {
-          position: absolute;
-          bottom: var(--space-3);
-          left: var(--space-3);
-          background: #131927;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 6px 12px;
-          border-radius: var(--radius-subtle);
-          font-size: var(--text-sm);
-          font-family: var(--font-mono);
-          font-weight: var(--weight-bold);
-          color: var(--color-accent);
-          box-shadow: 0 4px 12px rgba(11, 15, 25, 0.3);
-          z-index: 10;
-        }
+
 
         .property-card-content {
           padding: var(--space-4);
