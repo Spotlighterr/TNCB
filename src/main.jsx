@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import './styles/variables.css';
 import './styles/global.css';
+import './styles/mobile.css';
 import App from './App';
 
 createRoot(document.getElementById('root')).render(

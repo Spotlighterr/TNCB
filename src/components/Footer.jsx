@@ -112,8 +112,6 @@ export default function Footer() {
         @media (max-width: 768px) {
           .footer {
             margin-top: var(--space-12);
-            /* Add bottom padding so footer content isn't covered by bottom nav */
-            padding-bottom: 72px; 
           }
 
           .footer-grid {
@@ -189,7 +187,6 @@ export default function Footer() {
           bottom: 0;
           left: 0;
           right: 0;
-          height: 64px;
           display: flex;
           justify-content: space-around;
           align-items: center;
@@ -197,7 +194,12 @@ export default function Footer() {
           border-top: 1px solid var(--glass-border);
           border-radius: var(--radius-lg) var(--radius-lg) 0 0;
           box-shadow: 0 -4px 16px rgba(11, 15, 25, 0.05);
-          padding: 0 var(--space-4);
+          min-height: var(--mobile-bottom-nav-height);
+          padding-top: 6px;
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          box-sizing: border-box;
+          padding-left: max(var(--space-4), env(safe-area-inset-left, 0px));
+          padding-right: max(var(--space-4), env(safe-area-inset-right, 0px));
         }
 
         .mobile-nav-item {

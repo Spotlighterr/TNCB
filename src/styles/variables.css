@@ -97,6 +97,11 @@
   --sidebar-width: 260px;
   --content-padding: 24px;
 
+  /* iPhone 17 Pro Max reference viewport: 440 × 956 CSS px @3x */
+  --mobile-viewport-width: 440px;
+  --mobile-bottom-nav-bar: 56px;
+  --mobile-bottom-nav-height: calc(var(--mobile-bottom-nav-bar) + env(safe-area-inset-bottom, 0px));
+
   /* Transitions (Spring Physics) */
   --ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);

@@ -191,7 +191,7 @@ export default function Header() {
               id="login-trigger-btn"
             >
               <SignIn size={18} weight="bold" />
-              <span>Đăng nhập</span>
+              <span className="hide-mobile">Đăng nhập</span>
             </button>
           )}
 

@@ -493,7 +493,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ---- Responsive ---- */
+/* ---- Responsive (tablet & phone) ---- */
 @media (max-width: 768px) {
   :root {
     --content-padding: 16px;
@@ -523,9 +523,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-@media (max-width: 480px) {
+/* iPhone 17 Pro Max and similar phones (≤440px) */
+@media (max-width: 440px) {
   :root {
-    --content-padding: 12px;
+    --content-padding: 16px;
+    --header-height: 56px;
+    --mobile-bottom-nav-bar: 56px;
   }
 
   .text-display {

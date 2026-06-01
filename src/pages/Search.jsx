@@ -259,9 +259,13 @@ export default function Search() {
           }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 440px) {
           .search-grid {
             grid-template-columns: 1fr;
+          }
+
+          .filter-header {
+            flex-wrap: wrap;
           }
         }
 

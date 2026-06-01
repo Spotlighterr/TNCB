@@ -405,7 +405,7 @@ export default function PropertyDetail() {
           gap: var(--space-3);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 440px) {
           .cost-grid {
             grid-template-columns: 1fr;
           }
@@ -425,7 +425,7 @@ export default function PropertyDetail() {
           background: var(--color-accent-subtle);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 440px) {
           .cost-card.cost-main {
             grid-column: span 1;
           }
@@ -467,9 +467,13 @@ export default function PropertyDetail() {
         }
 
         @media (max-width: 768px) {
-          .detail-page {
-            /* Add padding to prevent bottom nav from overlapping footer on mobile */
-            padding-bottom: 72px;
+          .detail-quick-stats {
+            flex-wrap: wrap;
+            gap: var(--space-3);
+          }
+
+          .detail-title {
+            font-size: var(--text-xl);
           }
         }
 
