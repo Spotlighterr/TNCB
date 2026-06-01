@@ -25,7 +25,7 @@ export default function Search() {
   const [city, setCity] = useState(searchParams.get('city') || '');
   const [district, setDistrict] = useState(searchParams.get('district') || '');
   const [ward, setWard] = useState('');
-  const [maxPrice, setMaxPrice] = useState(15000000);
+  const [maxPrice, setMaxPrice] = useState('');
   const [roomType, setRoomType] = useState('');
   const [searchText, setSearchText] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -47,8 +47,8 @@ export default function Search() {
       if (ward && p.ward !== ward) return false;
       if (roomType && p.type !== roomType) return false;
 
-      // Price range slider check
-      if (p.price > maxPrice) return false;
+      // Price filter check
+      if (maxPrice && p.price > Number(maxPrice)) return false;
 
       if (searchText) {
         const text = searchText.toLowerCase();
@@ -78,14 +78,14 @@ export default function Search() {
     setCity('');
     setDistrict('');
     setWard('');
-    setMaxPrice(15000000);
+    setMaxPrice('');
     setRoomType('');
     setSearchText('');
     setSortBy('');
     setSearchParams({});
   };
 
-  const hasActiveFilters = city || district || ward || maxPrice < 15000000 || roomType || searchText || sortBy;
+  const hasActiveFilters = city || district || ward || maxPrice !== '' || roomType || searchText || sortBy;
 
   return (
     <div className="search-page" id="search-page">
@@ -164,28 +164,47 @@ export default function Search() {
                 />
               </div>
 
-              {/* Lọc giá - Range Slider */}
-              <div className="price-slider-wrap">
-                <div className="price-slider-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span className="price-label" style={{ fontSize: '11px', color: 'var(--color-text-subtle)' }}>Giá tối đa:</span>
-                  <span className="price-value price" style={{ fontSize: 'var(--text-sm)' }}>
-                    {maxPrice === 15000000 ? 'Tất cả giá' : `${formatPrice(maxPrice)}/th`}
+              {/* Lọc giá - Nhập khoảng giá */}
+              <div className="price-input-wrap" style={{ flex: '1.2', minWidth: '180px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Giá tối đa (VNĐ)</span>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Tất cả giá"
+                    value={maxPrice ? Number(maxPrice).toLocaleString('vi-VN') : ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, ''); // strip non-digits
+                      setMaxPrice(val ? Number(val) : '');
+                    }}
+                    id="filter-price-input"
+                    style={{ paddingRight: '36px' }}
+                  />
+                  {maxPrice && (
+                    <button
+                      onClick={() => setMaxPrice('')}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-text-subtle)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {maxPrice && (
+                  <span className="price-helper" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
+                    ≤ {formatPrice(Number(maxPrice))}
                   </span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="15000000"
-                  step="500000"
-                  className="price-slider"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  id="filter-price-slider"
-                />
-                <div className="price-slider-bounds text-mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--color-text-subtle)' }}>
-                  <span>0đ</span>
-                  <span>15trđ</span>
-                </div>
+                )}
               </div>
 
               {hasActiveFilters && (
@@ -314,49 +333,6 @@ export default function Search() {
         .filter-fields .select {
           flex: 1;
           min-width: 150px;
-        }
-
-        .price-slider-wrap {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          min-width: 220px;
-          flex: 1.5;
-        }
-
-        .price-slider {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 100%;
-          height: 6px;
-          background: var(--bg-tertiary);
-          border-radius: var(--radius-pill);
-          outline: none;
-          cursor: pointer;
-          transition: all var(--duration-fast);
-          margin: 6px 0;
-        }
-
-        .price-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: var(--color-accent);
-          border: 2px solid #ffffff;
-          box-shadow: var(--shadow-sm);
-          transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast);
-        }
-
-        .price-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 0 0 4px var(--color-accent-subtle);
-        }
-
-        .price-slider::-webkit-slider-thumb:active {
-          transform: scale(1.1);
-          background: var(--color-accent-hover);
         }
 
         @media (max-width: 768px) {
