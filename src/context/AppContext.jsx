@@ -32,6 +32,7 @@ export function AppProvider({ children }) {
   );
   const [users, setUsers] = useState(() =>
     loadFromStorage('TNCB_USERS', [
+      { id: 'user-admin', email: 'admin@tncb.vn', name: 'Quản Trị Viên TNCB', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-admin/100/100', phone: '0869333366', password: 'admin' },
       { id: 'user-tenant', email: 'tenant@tncb.vn', name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' },
       { id: 'user-landlord', email: 'landlord@tncb.vn', name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' }
     ])
@@ -71,6 +72,22 @@ export function AppProvider({ children }) {
       setUserRole(currentUser.role);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const hasAdmin = users.some((u) => u.email === 'admin@tncb.vn');
+    if (!hasAdmin) {
+      const adminUser = {
+        id: 'user-admin',
+        email: 'admin@tncb.vn',
+        name: 'Quản Trị Viên TNCB',
+        role: 'landlord',
+        avatar: 'https://picsum.photos/seed/owner-admin/100/100',
+        phone: '0869333366',
+        password: 'admin',
+      };
+      setUsers((prev) => [adminUser, ...prev]);
+    }
+  }, []);
 
   // --- Auth Actions ---
   const login = useCallback((email, password) => {

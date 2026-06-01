@@ -92,25 +92,6 @@ export default function Header() {
     }
   };
 
-  const handleQuickLogin = (roleType) => {
-    setEmail(roleType === 'tenant' ? 'tenant@tncb.vn' : 'landlord@tncb.vn');
-    setPassword('123');
-    const res = login(
-      roleType === 'tenant' ? 'tenant@tncb.vn' : 'landlord@tncb.vn',
-      '123'
-    );
-    if (res.success) {
-      setAuthSuccess('Đăng nhập nhanh thành công!');
-      setTimeout(() => {
-        setIsAuthOpen(false);
-        setAuthSuccess('');
-        setEmail('');
-        setPassword('');
-        navigate('/dashboard');
-      }, 800);
-    }
-  };
-
   return (
     <>
       <header className="header glass" id="main-header">
@@ -353,28 +334,6 @@ export default function Header() {
                   Xác nhận đăng nhập
                 </button>
 
-                {/* Quick login / Demo Accounts helper */}
-                <div className="quick-login-box">
-                  <span className="quick-login-label">Đăng nhập nhanh để test thử:</span>
-                  <div className="quick-login-buttons">
-                    <button
-                      type="button"
-                      className="quick-login-btn tenant-quick"
-                      onClick={() => handleQuickLogin('tenant')}
-                    >
-                      <UserCircle size={14} weight="fill" />
-                      Sinh viên (Khách thuê)
-                    </button>
-                    <button
-                      type="button"
-                      className="quick-login-btn landlord-quick"
-                      onClick={() => handleQuickLogin('landlord')}
-                    >
-                      <Buildings size={14} weight="fill" />
-                      Chủ nhà cho thuê
-                    </button>
-                  </div>
-                </div>
               </form>
             )}
 
