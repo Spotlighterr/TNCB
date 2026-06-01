@@ -804,7 +804,7 @@ a:focus-visible {
 }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE (tablet & phone)
    ============================================ */
 @media (max-width: 768px) {
   :root {
@@ -835,9 +835,12 @@ a:focus-visible {
   }
 }
 
-@media (max-width: 480px) {
+/* iPhone 17 Pro Max and similar phones (≤440px) */
+@media (max-width: 440px) {
   :root {
-    --content-padding: 12px;
+    --content-padding: 16px;
+    --header-height: 56px;
+    --mobile-bottom-nav-bar: 56px;
   }
 
   .text-display {

@@ -1,16 +1,193 @@
-# React + Vite
+# FindX — Tìm Nhà Cùng Bạn
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**FindX** (FTU Housing Bank) là nền tảng web giúp sinh viên tìm phòng trọ tại **Hà Nội** và **TP. Hồ Chí Minh**. Giao diện tối giản, tối ưu mobile, tập trung vào thông tin phòng thật — giá thật — vị trí thật.
 
-Currently, two official plugins are available:
+**Demo:** [https://findxtest.netlify.app/](https://findxtest.netlify.app/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Tính năng chính
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Khu vực | Mô tả |
+|--------|--------|
+| **Trang chủ** | Hero + tìm kiếm nhanh theo thành phố/quận, phòng nổi bật, thống kê dạng Bento |
+| **Tìm phòng** (`/search`) | Lưới phòng trọ, bộ lọc theo quận, giá, loại phòng và tiện ích |
+| **Chi tiết phòng** (`/property/:id`) | Carousel ảnh, bảng giá/chi phí, tiện ích, liên hệ chủ trọ, bản đồ (Leaflet) |
+| **Quản lý** (`/dashboard`) | Dashboard khách thuê & chủ trọ: lưu phòng, quản lý phòng, hợp đồng, hóa đơn (mock) |
+| **Đăng nhập / Đăng ký** | Phân quyền **Khách thuê** và **Chủ trọ** (dữ liệu lưu local, demo) |
+| **Giao diện** | Light/Dark mode, bottom navigation trên mobile, thiết kế responsive |
 
-## Expanding the ESLint configuration
+> **Lưu ý:** Phiên bản hiện tại dùng **dữ liệu mẫu (mock)** trong trình duyệt, chưa kết nối API backend thật.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Công nghệ
+
+- [React 19](https://react.dev/) + [Vite 8](https://vite.dev/)
+- [React Router](https://reactrouter.com/) — định tuyến SPA
+- [Phosphor Icons](https://phosphoricons.com/)
+- [Leaflet](https://leafletjs.com/) / react-leaflet — bản đồ OpenStreetMap
+- CSS thuần (design tokens, glassmorphism, mobile-first)
+
+---
+
+## Cấu trúc thư mục
+
+```
+TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
+│
+├── public/                        # Tài nguyên tĩnh — Vite copy nguyên vào dist/ khi build
+│   ├── _redirects                 # Rule SPA cho Netlify (/* → /index.html 200)
+│   └── icons.svg                  # Sprite / icon dùng chung
+│
+├── src/                           # Mã nguồn React
+│   ├── main.jsx                   # Entry: BrowserRouter, AppProvider, import CSS global
+│   ├── App.jsx                    # Layout chính + định tuyến (Routes)
+│   ├── App.css                    # Style legacy (template Vite, ít dùng)
+│   ├── index.css                  # Style bổ sung cấp app
+│   │
+│   ├── components/                # UI tái sử dụng
+│   │   ├── Header.jsx             # Navbar, đăng nhập/đăng ký, theme toggle, menu mobile
+│   │   ├── Footer.jsx             # Footer desktop + bottom nav mobile
+│   │   ├── PropertyCard.jsx       # Thẻ phòng trên lưới tìm kiếm / trang chủ
+│   │   ├── PropertyMap.jsx        # Bản đồ Leaflet (trang chi tiết phòng)
+│   │   └── ImageCarousel.jsx      # Carousel ảnh + lightbox
+│   │
+│   ├── pages/                     # Trang theo route
+│   │   ├── Home.jsx               # / — Hero, tìm kiếm, phòng nổi bật, Bento stats
+│   │   ├── Search.jsx             # /search — Lưới phòng + bộ lọc
+│   │   ├── PropertyDetail.jsx     # /property/:id — Chi tiết, giá, liên hệ, bản đồ
+│   │   └── Dashboard.jsx          # /dashboard — Panel khách thuê / chủ trọ
+│   │
+│   ├── context/
+│   │   └── AppContext.jsx         # State toàn cục: user, theme, saved, mock data helpers
+│   │
+│   ├── data/                      # Dữ liệu mẫu (chưa có API)
+│   │   ├── mockProperties.js      # Danh sách phòng, quận, tiện ích
+│   │   └── mockContracts.js       # Hợp đồng & hóa đơn mẫu
+│   │
+│   └── styles/                    # Design system CSS
+│       ├── variables.css          # Design tokens (màu, spacing, radius, theme dark/light)
+│       ├── global.css             # Reset, typography, buttons, cards, responsive base
+│       └── mobile.css             # Tinh chỉnh mobile (iPhone 17 Pro Max, safe area)
+│
+├── deploy/                        # Triển khai production (Docker)
+│   ├── Dockerfile                 # Multi-stage: build Vite → phục vụ bằng NGINX
+│   ├── docker-compose.yml         # Frontend + mock API + Redis + Cloudflare Tunnel
+│   ├── nginx.conf                 # NGINX: gzip, security headers, SPA try_files
+│   └── README_DEPLOY.md           # Hướng dẫn vận hành & Cloudflare Tunnel
+│
+├── index.html                     # HTML gốc, meta SEO, font, mount #root
+├── vite.config.js                 # Cấu hình Vite + plugin React
+├── eslint.config.js               # Quy tắc ESLint
+├── package.json                   # Dependencies & scripts npm
+│
+├── chucnang.md                    # Đặc tả chức năng nghiệp vụ
+├── thietke.md                     # Kế hoạch thiết kế UI/UX
+├── implementation_plan.md         # Kế hoạch triển khai kỹ thuật
+└── README.md                      # Tài liệu dự án (file này)
+```
+
+### Thư mục sinh ra khi build (không commit)
+
+| Thư mục / file | Mô tả |
+|----------------|--------|
+| `node_modules/` | Dependency npm (sau `npm install`) |
+| `dist/` | Bản build production (sau `npm run build`) — Netlify publish từ đây |
+
+---
+
+## Yêu cầu
+
+- **Node.js** 18+ (khuyến nghị 20 LTS)
+- **npm** 9+
+
+---
+
+## Chạy trên máy local
+
+```bash
+# Clone repository
+git clone https://github.com/Spotlighterr/TNCB.git
+cd TNCB
+
+# Cài dependency
+npm install
+
+# Chạy dev server (mặc định http://localhost:5173)
+npm run dev
+```
+
+### Các lệnh khác
+
+| Lệnh | Mô tả |
+|------|--------|
+| `npm run build` | Build production → thư mục `dist/` |
+| `npm run preview` | Xem bản build local |
+| `npm run lint` | Kiểm tra ESLint |
+
+---
+
+## Triển khai
+
+### Netlify (khuyến nghị cho frontend)
+
+1. Kết nối repo GitHub với [Netlify](https://www.netlify.com/).
+2. Cấu hình build:
+   - **Build command:** `npm run build`
+   - **Publish directory:** `dist`
+3. Deploy — file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
+
+### Docker + NGINX
+
+Dùng khi cần chạy stack đầy đủ (frontend + mock API + Redis + Cloudflare Tunnel). Xem hướng dẫn chi tiết trong [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md).
+
+```bash
+docker compose -f deploy/docker-compose.yml up --build -d
+```
+
+Truy cập: [http://localhost](http://localhost)
+
+---
+
+## Reload trang bị 404?
+
+Ứng dụng dùng **client-side routing** (`BrowserRouter`). Khi deploy tĩnh (Netlify, S3, …), server phải trả `index.html` cho mọi đường dẫn.
+
+- **Netlify:** đã có `public/_redirects` với rule `/* → /index.html` (HTTP 200).
+- **NGINX (Docker):** đã cấu hình `try_files` trong `deploy/nginx.conf`.
+
+Nếu vẫn gặp 404 sau khi sửa, hãy **build và deploy lại** trên Netlify.
+
+---
+
+## Mobile
+
+Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (440 × 956 CSS px), hỗ trợ **safe area** (Dynamic Island, home indicator). File stylesheet: `src/styles/mobile.css`.
+
+---
+
+## Tài liệu tham khảo
+
+| File | Nội dung |
+|------|----------|
+| [`chucnang.md`](chucnang.md) | Đặc tả chức năng & luồng người dùng |
+| [`thietke.md`](thietke.md) | Kế hoạch thiết kế giao diện |
+| [`implementation_plan.md`](implementation_plan.md) | Kế hoạch triển khai kỹ thuật |
+| [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md) | Triển khai Docker & Cloudflare Tunnel |
+
+---
+
+## Liên hệ
+
+- **Email:** tncb.findx@gmail.com  
+- **Hotline:** 034 629 7668  
+- **Facebook:** [FindX - Tìm Nhà Cùng Bạn](https://facebook.com)
+
+---
+
+## Bản quyền
+
+© 2026 **FindX** (FTU Housing Bank). All rights reserved.
+
+Development by **Spotlighterr**

@@ -1582,7 +1582,6 @@ export default function Dashboard() {
         @media (max-width: 768px) {
           .dashboard-page {
             grid-template-columns: 1fr;
-            padding-bottom: 72px; /* Prevent bottom nav overlay */
           }
         }
 
@@ -2028,7 +2027,7 @@ export default function Dashboard() {
           gap: var(--space-3);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 440px) {
           .hotline-grid {
             grid-template-columns: 1fr;
           }
@@ -2127,7 +2126,7 @@ export default function Dashboard() {
           }
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 440px) {
           .amenities-checklist {
             grid-template-columns: 1fr;
           }
