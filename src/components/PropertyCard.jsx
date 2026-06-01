@@ -245,7 +245,7 @@ export default function PropertyCard({ property, index = 0 }) {
           font-size: var(--text-sm);
           font-family: var(--font-mono);
           font-weight: var(--weight-bold);
-          color: #34d399;
+          color: var(--color-accent);
           box-shadow: 0 4px 12px rgba(11, 15, 25, 0.3);
           z-index: 10;
         }
