@@ -157,11 +157,14 @@ export default function Footer() {
         .footer-links a {
           font-size: var(--text-sm);
           color: var(--color-text-muted);
-          transition: color var(--duration-fast) var(--ease-smooth);
+          transition: color var(--duration-fast) var(--ease-smooth),
+                      transform var(--duration-fast) var(--ease-tactile);
+          display: inline-block;
         }
 
         .footer-links a:hover {
           color: var(--color-accent);
+          transform: translateX(3px);
         }
 
         .footer-contact-item {
@@ -170,6 +173,11 @@ export default function Footer() {
           gap: var(--space-2);
           font-size: var(--text-sm);
           color: var(--color-text-muted);
+          transition: color var(--duration-fast) var(--ease-smooth);
+        }
+
+        .footer-contact-item:hover {
+          color: var(--color-text-main);
         }
 
         .footer-bottom {
@@ -196,7 +204,7 @@ export default function Footer() {
           z-index: var(--z-fixed);
           border-top: 1px solid var(--glass-border);
           border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-          box-shadow: 0 -4px 16px rgba(11, 15, 25, 0.05);
+          box-shadow: 0 -4px 20px rgba(11, 15, 25, 0.06);
           padding: 0 var(--space-4);
         }
 
@@ -207,21 +215,44 @@ export default function Footer() {
           justify-content: center;
           gap: 4px;
           color: var(--color-text-muted);
-          transition: all var(--duration-fast) var(--ease-smooth);
+          transition: all var(--duration-normal) var(--ease-spring);
           flex: 1;
+          position: relative;
+          padding: var(--space-2) 0;
         }
 
         .mobile-nav-item span {
           font-size: 10px;
           font-weight: var(--weight-medium);
+          transition: all var(--duration-fast) var(--ease-smooth);
         }
 
         .mobile-nav-item.active {
           color: var(--color-accent);
         }
 
+        /* Active indicator dot */
+        .mobile-nav-item.active::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 4px;
+          height: 4px;
+          background: var(--color-accent);
+          border-radius: 50%;
+          animation: scaleInBounce var(--duration-spring) var(--ease-spring) both;
+        }
+
+        @keyframes scaleInBounce {
+          0% { opacity: 0; transform: translateX(-50%) scale(0); }
+          60% { transform: translateX(-50%) scale(1.3); }
+          100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+
         .mobile-nav-item:active {
-          transform: scale(0.92);
+          transform: scale(0.88);
         }
       `}</style>
     </footer>

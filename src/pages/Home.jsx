@@ -175,7 +175,9 @@ export default function Home() {
       </section>
 
       <style>{`
-        /* Hero */
+        /* ============================================
+           HERO SECTION — Cinematic Entry
+           ============================================ */
         .hero {
           min-height: calc(100dvh - var(--header-height));
           display: flex;
@@ -185,16 +187,43 @@ export default function Home() {
           overflow: hidden;
         }
 
+        /* Ambient gradient orb — top right */
         .hero::before {
           content: '';
           position: absolute;
-          top: -40%;
-          right: -20%;
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, var(--color-accent-subtle) 0%, transparent 70%);
+          top: -30%;
+          right: -15%;
+          width: 700px;
+          height: 700px;
+          background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
           border-radius: 50%;
           pointer-events: none;
+          animation: heroOrb1 8s var(--ease-in-out-sine) infinite;
+        }
+
+        /* Second orb — bottom left */
+        .hero::after {
+          content: '';
+          position: absolute;
+          bottom: -20%;
+          left: -10%;
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(14, 165, 233, 0.07) 0%, transparent 70%);
+          border-radius: 50%;
+          pointer-events: none;
+          animation: heroOrb2 10s var(--ease-in-out-sine) infinite 2s;
+        }
+
+        @keyframes heroOrb1 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+          33% { transform: translate(-30px, 20px) scale(1.05); opacity: 1; }
+          66% { transform: translate(20px, -15px) scale(0.95); opacity: 0.8; }
+        }
+
+        @keyframes heroOrb2 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+          50% { transform: translate(25px, -20px) scale(1.1); opacity: 0.8; }
         }
 
         .hero-inner {
@@ -207,28 +236,68 @@ export default function Home() {
           max-width: 640px;
         }
 
+        /* Eyebrow — slide in from left */
+        .hero-content .text-eyebrow {
+          animation: slideInRight var(--duration-reveal) var(--ease-out-expo) 0.1s both;
+        }
+
         .hero-title {
           font-size: clamp(2.5rem, 6vw, 4rem);
           font-weight: var(--weight-extrabold);
           letter-spacing: -0.03em;
           line-height: 1.08;
           margin: var(--space-4) 0 var(--space-5);
+          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.2s both;
         }
 
         .hero-title-accent {
           color: var(--color-accent);
+          position: relative;
+          background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light), var(--color-accent));
+          background-size: 200% auto;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: accentShimmer 4s var(--ease-smooth) infinite;
+        }
+
+        @keyframes accentShimmer {
+          0%, 100% { background-position: 0% center; }
+          50% { background-position: 100% center; }
+        }
+
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes revealUp {
+          from { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(4px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
         .hero-subtitle {
           font-size: var(--text-lg);
           color: var(--color-text-muted);
           margin-bottom: var(--space-8);
+          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.35s both;
         }
 
+        /* Search Bar — slide up with glow */
         .hero-search {
           padding: var(--space-2);
           border-radius: var(--radius-main);
           max-width: 560px;
+          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.5s both;
+          transition: box-shadow var(--duration-normal) var(--ease-smooth),
+                      border-color var(--duration-normal) var(--ease-smooth),
+                      transform var(--duration-normal) var(--ease-tactile);
+        }
+
+        .hero-search:focus-within {
+          box-shadow: var(--glass-shadow), var(--shadow-glow-accent);
+          border-color: var(--color-accent-muted);
+          transform: translateY(-2px);
         }
 
         .hero-search-fields {
@@ -244,6 +313,12 @@ export default function Home() {
           padding: var(--space-2) var(--space-3);
           flex: 1;
           min-width: 0;
+          transition: background var(--duration-fast) var(--ease-smooth);
+          border-radius: var(--radius-subtle);
+        }
+
+        .hero-search-field:focus-within {
+          background: var(--color-accent-subtle);
         }
 
         .hero-search-select {
@@ -266,6 +341,11 @@ export default function Home() {
           height: 28px;
           background: var(--color-border-strong);
           flex-shrink: 0;
+          transition: opacity var(--duration-fast) var(--ease-smooth);
+        }
+
+        .hero-search:focus-within .hero-search-divider {
+          opacity: 0.5;
         }
 
         .hero-search-btn {
@@ -288,7 +368,9 @@ export default function Home() {
           }
         }
 
-        /* Section Header */
+        /* ============================================
+           FEATURED SECTION
+           ============================================ */
         .section-header {
           display: flex;
           align-items: flex-end;
@@ -304,7 +386,6 @@ export default function Home() {
           }
         }
 
-        /* Featured Grid */
         .featured-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -323,7 +404,9 @@ export default function Home() {
           }
         }
 
-        /* Bento Stats Grid */
+        /* ============================================
+           BENTO STATS — Interactive cards
+           ============================================ */
         .bento-grid {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
@@ -350,6 +433,30 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           gap: var(--space-2);
+          transition: all var(--duration-spring) var(--ease-tactile);
+          cursor: default;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .bento-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 30% 30%, var(--color-accent-subtle), transparent 70%);
+          opacity: 0;
+          transition: opacity var(--duration-normal) var(--ease-smooth);
+          pointer-events: none;
+        }
+
+        .bento-card:hover {
+          transform: translateY(-6px) scale(1.02);
+          box-shadow: var(--shadow-lg);
+          border-color: var(--color-accent-muted);
+        }
+
+        .bento-card:hover::before {
+          opacity: 1;
         }
 
         .bento-card.bento-accent {
@@ -358,17 +465,35 @@ export default function Home() {
           color: #ffffff;
         }
 
+        .bento-card.bento-accent::before {
+          background: radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.15), transparent 70%);
+        }
+
+        .bento-card.bento-accent:hover {
+          box-shadow: 0 12px 40px rgba(14, 165, 233, 0.3);
+        }
+
         .bento-card.bento-accent .bento-label {
           color: rgba(255, 255, 255, 0.8);
         }
 
         .bento-icon-wrap {
           margin-bottom: var(--space-2);
+          transition: transform var(--duration-spring) var(--ease-bounce);
+        }
+
+        .bento-card:hover .bento-icon-wrap {
+          transform: scale(1.15) rotate(-5deg);
         }
 
         .bento-stat {
           font-size: var(--text-2xl);
           font-weight: var(--weight-bold);
+          transition: transform var(--duration-spring) var(--ease-bounce);
+        }
+
+        .bento-card:hover .bento-stat {
+          transform: scale(1.05);
         }
 
         .bento-label {

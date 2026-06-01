@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import ProfileModal from './ProfileModal';
 import {
   House,
   MagnifyingGlass,
@@ -18,6 +19,10 @@ import {
   CheckCircle,
   Sun,
   Moon,
+  ShieldCheck,
+  ArrowLeft,
+  PencilSimple,
+  Key,
 } from '@phosphor-icons/react';
 
 const NAV_LINKS = [
@@ -27,23 +32,53 @@ const NAV_LINKS = [
 ];
 
 export default function Header() {
-  const { currentUser, login, register, logout, theme, toggleTheme } = useApp();
+  const {
+    currentUser,
+    login,
+    registerStep1,
+    verifyRegistrationOTP,
+    resendOTP,
+    forgotPasswordStep1,
+    resetPassword,
+    logout,
+    theme,
+    toggleTheme,
+    currentOTP,
+  } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  // Auth modes: 'login' | 'register' | 'otp-verify' | 'forgot' | 'forgot-otp' | 'reset-password'
+  const [authMode, setAuthMode] = useState('login');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // Form states
+  // Login form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Register form states
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState('tenant');
+
+  // OTP states
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [demoOTP, setDemoOTP] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const otpInputRefs = useRef([]);
+
+  // Forgot password states
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotUserName, setForgotUserName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+  // Messages
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
 
@@ -52,6 +87,77 @@ export default function Header() {
     return location.pathname.startsWith(path);
   };
 
+  // --- OTP Countdown Timer ---
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCountdown]);
+
+  // --- OTP Input Handler ---
+  const handleOtpChange = useCallback((index, value) => {
+    if (!/^\d*$/.test(value)) return; // Only digits
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.slice(-1); // Only last char
+    setOtpDigits(newDigits);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  }, [otpDigits]);
+
+  const handleOtpKeyDown = useCallback((index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  }, [otpDigits]);
+
+  const handleOtpPaste = useCallback((e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData.length === 6) {
+      const newDigits = pastedData.split('');
+      setOtpDigits(newDigits);
+      otpInputRefs.current[5]?.focus();
+    }
+  }, []);
+
+  // --- Reset all form states ---
+  const resetAuthForms = () => {
+    setEmail('');
+    setPassword('');
+    setRegName('');
+    setRegEmail('');
+    setRegPhone('');
+    setRegPassword('');
+    setRegRole('tenant');
+    setOtpDigits(['', '', '', '', '', '']);
+    setDemoOTP('');
+    setOtpCountdown(0);
+    setForgotPhone('');
+    setForgotUserName('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setAuthError('');
+    setAuthSuccess('');
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthOpen(false);
+    resetAuthForms();
+    setAuthMode('login');
+  };
+
+  // --- Login Submit ---
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -59,10 +165,7 @@ export default function Header() {
     if (res.success) {
       setAuthSuccess('Đăng nhập thành công!');
       setTimeout(() => {
-        setIsAuthOpen(false);
-        setAuthSuccess('');
-        setEmail('');
-        setPassword('');
+        closeAuthModal();
         navigate('/dashboard');
       }, 1000);
     } else {
@@ -70,29 +173,157 @@ export default function Header() {
     }
   };
 
-  const handleRegisterSubmit = (e) => {
+  // --- Register Step 1: Send OTP ---
+  const handleRegisterStep1 = (e) => {
     e.preventDefault();
     setAuthError('');
+
     if (!regName || !regEmail || !regPhone || !regPassword) {
       setAuthError('Vui lòng điền đầy đủ các thông tin.');
       return;
     }
-    const res = register(regName, regEmail, regPhone, regPassword, regRole);
+
+    const res = registerStep1(regName, regEmail, regPhone, regPassword, regRole);
     if (res.success) {
-      setAuthSuccess('Đăng ký tài khoản thành công!');
-      setTimeout(() => {
-        setIsAuthOpen(false);
-        setAuthSuccess('');
-        setRegName('');
-        setRegEmail('');
-        setRegPhone('');
-        setRegPassword('');
-        navigate('/dashboard');
-      }, 1000);
+      setDemoOTP(res.otp);
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpCountdown(60);
+      setAuthMode('otp-verify');
+      setAuthError('');
+      // Auto-focus first OTP input after render
+      setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
     } else {
       setAuthError(res.message);
     }
   };
+
+  // --- Register Step 2: Verify OTP ---
+  const handleVerifyOTP = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const otpValue = otpDigits.join('');
+
+    if (otpValue.length !== 6) {
+      setAuthError('Vui lòng nhập đầy đủ 6 chữ số mã OTP.');
+      return;
+    }
+
+    const res = verifyRegistrationOTP(otpValue);
+    if (res.success) {
+      setAuthSuccess('Xác thực thành công! Tài khoản đã được tạo.');
+      setTimeout(() => {
+        closeAuthModal();
+        navigate('/dashboard');
+      }, 1500);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  // --- Resend OTP ---
+  const handleResendOTP = () => {
+    if (otpCountdown > 0) return;
+    setAuthError('');
+    const res = resendOTP();
+    if (res.success) {
+      setDemoOTP(res.otp);
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpCountdown(60);
+      setAuthSuccess('Đã gửi lại mã OTP mới.');
+      setTimeout(() => {
+        setAuthSuccess('');
+        otpInputRefs.current[0]?.focus();
+      }, 2000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  // --- Forgot Password Step 1: Enter phone ---
+  const handleForgotStep1 = (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (!forgotPhone) {
+      setAuthError('Vui lòng nhập số điện thoại đã đăng ký.');
+      return;
+    }
+
+    const res = forgotPasswordStep1(forgotPhone);
+    if (res.success) {
+      setDemoOTP(res.otp);
+      setForgotUserName(res.userName);
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpCountdown(60);
+      setAuthMode('forgot-otp');
+      setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  // --- Forgot Password Step 2: Verify OTP + Reset ---
+  const handleResetPassword = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const otpValue = otpDigits.join('');
+
+    if (otpValue.length !== 6) {
+      setAuthError('Vui lòng nhập đầy đủ 6 chữ số mã OTP.');
+      return;
+    }
+
+    if (!newPassword) {
+      setAuthError('Vui lòng nhập mật khẩu mới.');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setAuthError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    const res = resetPassword(otpValue, newPassword);
+    if (res.success) {
+      setAuthSuccess(res.message);
+      setTimeout(() => {
+        resetAuthForms();
+        setAuthMode('login');
+      }, 2000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  // --- OTP Input Component (reusable for both register and forgot flows) ---
+  const renderOTPInput = () => (
+    <div className="otp-input-container" id="otp-input-group">
+      {otpDigits.map((digit, index) => (
+        <input
+          key={index}
+          ref={(el) => (otpInputRefs.current[index] = el)}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          className={`otp-digit-input ${digit ? 'filled' : ''}`}
+          value={digit}
+          onChange={(e) => handleOtpChange(index, e.target.value)}
+          onKeyDown={(e) => handleOtpKeyDown(index, e)}
+          onPaste={index === 0 ? handleOtpPaste : undefined}
+          autoComplete="one-time-code"
+          id={`otp-digit-${index}`}
+        />
+      ))}
+    </div>
+  );
+
+  // --- Demo OTP Badge ---
+  const renderDemoOTPBadge = () => (
+    <div className="otp-demo-badge">
+      <ShieldCheck size={16} weight="fill" />
+      <span>Mã OTP mô phỏng: <strong>{demoOTP}</strong></span>
+    </div>
+  );
 
   return (
     <>
@@ -157,6 +388,17 @@ export default function Header() {
                       {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
                     </span>
                   </div>
+                  <button
+                    className="profile-dropdown-item"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setIsProfileModalOpen(true);
+                    }}
+                    id="edit-profile-btn"
+                  >
+                    <PencilSimple size={18} />
+                    Cập nhật hồ sơ
+                  </button>
                   <Link
                     to="/dashboard"
                     className="profile-dropdown-item"
@@ -267,40 +509,62 @@ export default function Header() {
       )}
     </header>
 
-    {/* Auth Modal Overlay */}
+    {/* =================== AUTH MODAL =================== */}
     {isAuthOpen && (
-        <div className="auth-overlay animate-fade-in" onClick={() => setIsAuthOpen(false)}>
+        <div className="auth-overlay animate-fade-in" onClick={closeAuthModal}>
           <div
             className="auth-modal glass-strong animate-scale-in"
             onClick={(e) => e.stopPropagation()}
             id="auth-modal"
           >
-            <button className="auth-close-btn" onClick={() => setIsAuthOpen(false)}>
+            <button className="auth-close-btn" onClick={closeAuthModal}>
               <X size={20} />
             </button>
 
-            {/* Modal Title Tabs */}
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthMode('login');
-                  setAuthError('');
-                }}
-              >
-                Đăng nhập
-              </button>
-              <button
-                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthMode('register');
-                  setAuthError('');
-                }}
-              >
-                Đăng ký
-              </button>
-            </div>
+            {/* ---- LOGIN / REGISTER Tabs (shown only for login & register modes) ---- */}
+            {(authMode === 'login' || authMode === 'register') && (
+              <div className="auth-tabs">
+                <button
+                  className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
+                  onClick={() => {
+                    setAuthMode('login');
+                    setAuthError('');
+                    setAuthSuccess('');
+                  }}
+                >
+                  Đăng nhập
+                </button>
+                <button
+                  className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
+                  onClick={() => {
+                    setAuthMode('register');
+                    setAuthError('');
+                    setAuthSuccess('');
+                  }}
+                >
+                  Đăng ký
+                </button>
+              </div>
+            )}
 
+            {/* ---- Back button for OTP / Forgot flows ---- */}
+            {(authMode === 'otp-verify' || authMode === 'forgot' || authMode === 'forgot-otp' || authMode === 'reset-password') && (
+              <button
+                className="auth-back-btn"
+                onClick={() => {
+                  setAuthError('');
+                  setAuthSuccess('');
+                  if (authMode === 'otp-verify') setAuthMode('register');
+                  else if (authMode === 'forgot') setAuthMode('login');
+                  else if (authMode === 'forgot-otp' || authMode === 'reset-password') setAuthMode('forgot');
+                }}
+              >
+                <ArrowLeft size={18} />
+                <span>Quay lại</span>
+              </button>
+            )}
+
+            {/* Error / Success banners */}
             {authError && <div className="auth-error-banner">{authError}</div>}
             {authSuccess && (
               <div className="auth-success-banner">
@@ -309,7 +573,7 @@ export default function Header() {
               </div>
             )}
 
-            {/* Login Form */}
+            {/* ===================== LOGIN FORM ===================== */}
             {authMode === 'login' && (
               <form onSubmit={handleLoginSubmit} className="auth-form" id="login-form">
                 <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
@@ -327,7 +591,7 @@ export default function Header() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Mật khẩu</label>
                   <div className="auth-input-wrap">
                     <Lock size={18} />
@@ -342,16 +606,31 @@ export default function Header() {
                   </div>
                 </div>
 
+                {/* Forgot Password Link */}
+                <div style={{ textAlign: 'right', marginBottom: 'var(--space-4)' }}>
+                  <button
+                    type="button"
+                    className="auth-forgot-link"
+                    onClick={() => {
+                      setAuthMode('forgot');
+                      setAuthError('');
+                      setAuthSuccess('');
+                    }}
+                  >
+                    <Key size={14} />
+                    Quên mật khẩu?
+                  </button>
+                </div>
+
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                   Xác nhận đăng nhập
                 </button>
-
               </form>
             )}
 
-            {/* Register Form */}
+            {/* ===================== REGISTER FORM (Step 1) ===================== */}
             {authMode === 'register' && (
-              <form onSubmit={handleRegisterSubmit} className="auth-form" id="register-form">
+              <form onSubmit={handleRegisterStep1} className="auth-form" id="register-form">
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Họ và tên</label>
                   <div className="auth-input-wrap">
@@ -382,7 +661,9 @@ export default function Header() {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
-                  <label className="form-label">Số điện thoại liên hệ</label>
+                  <label className="form-label">
+                    Số điện thoại <span className="required-badge">Bắt buộc</span>
+                  </label>
                   <div className="auth-input-wrap">
                     <PhoneIcon size={18} />
                     <input
@@ -393,6 +674,7 @@ export default function Header() {
                       onChange={(e) => setRegPhone(e.target.value)}
                     />
                   </div>
+                  <span className="form-hint">Mã OTP xác thực sẽ được gửi đến số này qua Zalo</span>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
@@ -433,13 +715,176 @@ export default function Header() {
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-                  Đăng ký tài khoản
+                  <ShieldCheck size={18} weight="bold" />
+                  Gửi mã OTP xác thực
+                </button>
+              </form>
+            )}
+
+            {/* ===================== OTP VERIFY (Step 2 of Register) ===================== */}
+            {authMode === 'otp-verify' && (
+              <form onSubmit={handleVerifyOTP} className="auth-form otp-verify-form" id="otp-verify-form">
+                <div className="otp-header">
+                  <div className="otp-icon-wrapper">
+                    <ShieldCheck size={40} weight="duotone" />
+                  </div>
+                  <h3 className="otp-title">Xác thực số điện thoại</h3>
+                  <p className="otp-subtitle">
+                    Nhập mã OTP 6 chữ số đã được gửi đến số <strong>{regPhone}</strong> qua Zalo
+                  </p>
+                </div>
+
+                {/* Demo OTP badge */}
+                {renderDemoOTPBadge()}
+
+                {/* OTP Input */}
+                {renderOTPInput()}
+
+                {/* Countdown + Resend */}
+                <div className="otp-resend-row">
+                  {otpCountdown > 0 ? (
+                    <span className="otp-countdown">
+                      Gửi lại mã sau <strong>{otpCountdown}s</strong>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="otp-resend-btn"
+                      onClick={handleResendOTP}
+                    >
+                      Gửi lại mã OTP
+                    </button>
+                  )}
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  Xác nhận đăng ký
+                </button>
+              </form>
+            )}
+
+            {/* ===================== FORGOT PASSWORD (Step 1: Enter Phone) ===================== */}
+            {authMode === 'forgot' && (
+              <form onSubmit={handleForgotStep1} className="auth-form" id="forgot-form">
+                <div className="otp-header">
+                  <div className="otp-icon-wrapper forgot-icon">
+                    <Key size={40} weight="duotone" />
+                  </div>
+                  <h3 className="otp-title">Quên mật khẩu</h3>
+                  <p className="otp-subtitle">
+                    Nhập số điện thoại đã đăng ký để nhận mã OTP đặt lại mật khẩu
+                  </p>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <label className="form-label">Số điện thoại đăng ký</label>
+                  <div className="auth-input-wrap">
+                    <PhoneIcon size={18} />
+                    <input
+                      className="auth-input"
+                      required
+                      placeholder="09XXXXXXXX"
+                      value={forgotPhone}
+                      onChange={(e) => setForgotPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  <ShieldCheck size={18} weight="bold" />
+                  Gửi mã OTP
+                </button>
+              </form>
+            )}
+
+            {/* ===================== FORGOT PASSWORD (Step 2: OTP + New Password) ===================== */}
+            {authMode === 'forgot-otp' && (
+              <form onSubmit={handleResetPassword} className="auth-form otp-verify-form" id="forgot-otp-form">
+                <div className="otp-header">
+                  <div className="otp-icon-wrapper forgot-icon">
+                    <Key size={40} weight="duotone" />
+                  </div>
+                  <h3 className="otp-title">Đặt lại mật khẩu</h3>
+                  <p className="otp-subtitle">
+                    Xin chào <strong>{forgotUserName}</strong>, nhập mã OTP và mật khẩu mới
+                  </p>
+                </div>
+
+                {/* Demo OTP badge */}
+                {renderDemoOTPBadge()}
+
+                {/* OTP Input */}
+                {renderOTPInput()}
+
+                {/* Countdown + Resend */}
+                <div className="otp-resend-row">
+                  {otpCountdown > 0 ? (
+                    <span className="otp-countdown">
+                      Gửi lại mã sau <strong>{otpCountdown}s</strong>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="otp-resend-btn"
+                      onClick={() => {
+                        const res = forgotPasswordStep1(forgotPhone);
+                        if (res.success) {
+                          setDemoOTP(res.otp);
+                          setOtpDigits(['', '', '', '', '', '']);
+                          setOtpCountdown(60);
+                        }
+                      }}
+                    >
+                      Gửi lại mã OTP
+                    </button>
+                  )}
+                </div>
+
+                {/* New Password Fields */}
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="form-label">Mật khẩu mới</label>
+                  <div className="auth-input-wrap">
+                    <Lock size={18} />
+                    <input
+                      type="password"
+                      className="auth-input"
+                      required
+                      placeholder="Tối thiểu 6 ký tự"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <label className="form-label">Xác nhận mật khẩu mới</label>
+                  <div className="auth-input-wrap">
+                    <Lock size={18} />
+                    <input
+                      type="password"
+                      className="auth-input"
+                      required
+                      placeholder="Nhập lại mật khẩu mới"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  Đặt lại mật khẩu
                 </button>
               </form>
             )}
           </div>
         </div>
       )}
+
+      {/* =================== PROFILE MODAL =================== */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       <style>{`
         .header {
@@ -630,6 +1075,8 @@ export default function Header() {
         .auth-modal {
           width: 100%;
           max-width: 440px;
+          max-height: 92vh;
+          overflow-y: auto;
           border-radius: var(--radius-lg);
           padding: var(--space-8) var(--space-6) var(--space-6);
           position: relative;
@@ -689,6 +1136,26 @@ export default function Header() {
           border-radius: var(--radius-pill);
         }
 
+        /* Back Button */
+        .auth-back-btn {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          font-size: var(--text-sm);
+          font-weight: var(--weight-medium);
+          color: var(--color-text-muted);
+          margin-bottom: var(--space-5);
+          padding: var(--space-1) 0;
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: color var(--duration-fast) var(--ease-smooth);
+        }
+
+        .auth-back-btn:hover {
+          color: var(--color-accent);
+        }
+
         .auth-input-wrap {
           display: flex;
           align-items: center;
@@ -720,6 +1187,47 @@ export default function Header() {
 
         .auth-input::placeholder {
           color: var(--color-text-subtle);
+        }
+
+        /* Forgot Password Link */
+        .auth-forgot-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: var(--text-xs);
+          color: var(--color-accent);
+          font-weight: var(--weight-medium);
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: all var(--duration-fast) var(--ease-smooth);
+          padding: 2px 0;
+        }
+
+        .auth-forgot-link:hover {
+          opacity: 0.8;
+          text-decoration: underline;
+        }
+
+        /* Required Badge */
+        .required-badge {
+          display: inline-block;
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          color: var(--color-accent);
+          background: var(--color-accent-subtle);
+          padding: 1px 6px;
+          border-radius: var(--radius-pill);
+          margin-left: var(--space-2);
+          letter-spacing: 0.02em;
+        }
+
+        /* Form Hint */
+        .form-hint {
+          font-size: 11px;
+          color: var(--color-text-subtle);
+          margin-top: 4px;
+          padding-left: 2px;
         }
 
         /* Error/Success Banners */
@@ -779,6 +1287,143 @@ export default function Header() {
           border-color: var(--color-accent);
           color: var(--color-accent);
           font-weight: var(--weight-semibold);
+        }
+
+        /* ============================
+           OTP Verification Styles
+           ============================ */
+        .otp-header {
+          text-align: center;
+          margin-bottom: var(--space-5);
+        }
+
+        .otp-icon-wrapper {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: var(--color-accent-subtle);
+          color: var(--color-accent);
+          margin-bottom: var(--space-4);
+          animation: otpIconPulse 2s ease-in-out infinite;
+        }
+
+        .otp-icon-wrapper.forgot-icon {
+          background: rgba(251, 146, 60, 0.12);
+          color: #f97316;
+        }
+
+        @keyframes otpIconPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+
+        .otp-title {
+          font-size: var(--text-lg);
+          font-weight: var(--weight-bold);
+          color: var(--color-text-main);
+          margin-bottom: var(--space-2);
+        }
+
+        .otp-subtitle {
+          font-size: var(--text-sm);
+          color: var(--color-text-muted);
+          line-height: 1.5;
+        }
+
+        /* OTP Input Group */
+        .otp-input-container {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: var(--space-5);
+        }
+
+        .otp-digit-input {
+          width: 48px;
+          height: 56px;
+          text-align: center;
+          font-size: var(--text-xl);
+          font-weight: var(--weight-bold);
+          color: var(--color-text-main);
+          background: var(--color-surface);
+          border: 2px solid var(--color-border-strong);
+          border-radius: var(--radius-main);
+          outline: none;
+          transition: all var(--duration-fast) var(--ease-tactile);
+          font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .otp-digit-input:focus {
+          border-color: var(--color-accent);
+          box-shadow: 0 0 0 3px var(--color-accent-subtle);
+          transform: scale(1.05);
+        }
+
+        .otp-digit-input.filled {
+          border-color: var(--color-accent);
+          background: var(--color-accent-subtle);
+        }
+
+        /* Demo OTP Badge */
+        .otp-demo-badge {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: var(--space-2);
+          padding: var(--space-2) var(--space-4);
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.08));
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          border-radius: var(--radius-pill);
+          font-size: var(--text-xs);
+          font-weight: var(--weight-medium);
+          color: #b45309;
+          margin-bottom: var(--space-4);
+        }
+
+        [data-theme="dark"] .otp-demo-badge {
+          color: #fbbf24;
+        }
+
+        .otp-demo-badge strong {
+          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          font-size: var(--text-sm);
+          letter-spacing: 3px;
+        }
+
+        /* Resend Row */
+        .otp-resend-row {
+          text-align: center;
+          margin-bottom: var(--space-5);
+        }
+
+        .otp-countdown {
+          font-size: var(--text-xs);
+          color: var(--color-text-subtle);
+        }
+
+        .otp-countdown strong {
+          color: var(--color-accent);
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .otp-resend-btn {
+          font-size: var(--text-xs);
+          font-weight: var(--weight-semibold);
+          color: var(--color-accent);
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: var(--space-1) var(--space-2);
+          border-radius: var(--radius-subtle);
+          transition: all var(--duration-fast) var(--ease-smooth);
+        }
+
+        .otp-resend-btn:hover {
+          background: var(--color-accent-subtle);
+          text-decoration: underline;
         }
 
         /* Theme toggle button styling */

@@ -108,14 +108,17 @@ export default function PropertyCard({ property, index = 0 }) {
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          transition: all var(--duration-spring) var(--ease-tactile);
+          transition: transform var(--duration-spring) var(--ease-tactile),
+                      box-shadow var(--duration-spring) var(--ease-tactile),
+                      border-color var(--duration-normal) var(--ease-smooth);
           box-shadow: var(--shadow-sm);
+          position: relative;
         }
 
         .property-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
-          border-color: var(--color-accent);
+          transform: translateY(-8px) scale(1.01);
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+          border-color: var(--color-accent-muted);
         }
 
         .property-card-image-wrap {
@@ -124,15 +127,31 @@ export default function PropertyCard({ property, index = 0 }) {
           overflow: hidden;
         }
 
+        /* Gradient overlay on hover */
+        .property-card-image-wrap::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(0, 0, 0, 0.15), transparent 40%);
+          opacity: 0;
+          transition: opacity var(--duration-normal) var(--ease-smooth);
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .property-card:hover .property-card-image-wrap::after {
+          opacity: 1;
+        }
+
         .property-card-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          transition: transform var(--duration-slow) var(--ease-tactile);
+          transition: transform var(--duration-slow) var(--ease-out-expo);
         }
 
         .property-card:hover .property-card-image {
-          transform: scale(1.06);
+          transform: scale(1.08);
         }
 
         .verified-badge-inline {
@@ -147,6 +166,7 @@ export default function PropertyCard({ property, index = 0 }) {
           border-radius: var(--radius-subtle);
           border: 1px solid var(--color-accent-muted);
           line-height: 1;
+          transition: all var(--duration-fast) var(--ease-tactile);
         }
 
         /* Dark mode verified badge */
@@ -178,19 +198,27 @@ export default function PropertyCard({ property, index = 0 }) {
 
         .property-card-save:hover {
           background: #ffffff;
-          transform: scale(1.1);
+          transform: scale(1.15);
           color: var(--color-text-main);
+          box-shadow: var(--shadow-md);
         }
 
         .property-card-save.saved {
           color: #ef4444;
+          background: rgba(255, 255, 255, 0.95);
+          animation: heartPop var(--duration-spring) var(--ease-spring);
         }
 
         .property-card-save:active {
-          transform: scale(0.9);
+          transform: scale(0.85);
         }
 
-
+        @keyframes heartPop {
+          0% { transform: scale(1); }
+          30% { transform: scale(1.3); }
+          60% { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
 
         .property-card-content {
           padding: var(--space-4);
@@ -210,6 +238,11 @@ export default function PropertyCard({ property, index = 0 }) {
           overflow: hidden;
           color: var(--color-text-main);
           min-height: 40px;
+          transition: color var(--duration-fast) var(--ease-smooth);
+        }
+
+        .property-card:hover .property-card-title {
+          color: var(--color-accent);
         }
 
         .property-card-location {
@@ -268,6 +301,11 @@ export default function PropertyCard({ property, index = 0 }) {
           font-family: var(--font-mono);
           font-weight: var(--weight-bold);
           color: var(--color-accent);
+          transition: all var(--duration-fast) var(--ease-smooth);
+        }
+
+        .property-card:hover .property-card-footer .price {
+          transform: scale(1.05);
         }
       `}</style>
     </div>

@@ -68,6 +68,7 @@
   --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.10);
   --shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.12);
   --shadow-card-hover: 0 12px 40px rgba(15, 23, 42, 0.08);
+  --shadow-glow-accent: 0 0 30px rgba(14, 165, 233, 0.15), 0 0 60px rgba(14, 165, 233, 0.05);
 
   /* Shape Lock: Consistent Radius */
   --radius-xs: 4px;
@@ -97,14 +98,24 @@
   --sidebar-width: 260px;
   --content-padding: 24px;
 
-  /* Transitions (Spring Physics) */
+  /* ========================================
+     Motion System — Spring Physics Curves
+     ======================================== */
   --ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.22, 1.15, 0.36, 1);
+  --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-in-out-sine: cubic-bezier(0.37, 0, 0.63, 1);
+
+  --duration-instant: 80ms;
   --duration-fast: 150ms;
   --duration-normal: 300ms;
   --duration-slow: 500ms;
   --duration-spring: 400ms;
+  --duration-reveal: 700ms;
+  --duration-hero: 1000ms;
 
   /* Z-Index Scale */
   --z-base: 0;
@@ -148,5 +159,5 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
   --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.3);
+  --shadow-glow-accent: 0 0 30px rgba(56, 189, 248, 0.2), 0 0 60px rgba(56, 189, 248, 0.08);
 }
-
