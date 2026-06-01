@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import PropertyCard from '../components/PropertyCard';
@@ -18,6 +18,15 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchCity, setSearchCity] = useState('');
   const [searchDistrict, setSearchDistrict] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const featuredProperties = properties
     .filter((p) => p.verified && !p.isRented)
@@ -115,9 +124,23 @@ export default function Home() {
           </div>
 
           <div className="featured-grid">
-            {featuredProperties.map((prop, idx) => (
-              <PropertyCard key={prop.id} property={prop} index={idx} />
-            ))}
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton-card card animate-fade-in" style={{ minHeight: '340px' }}>
+                  <div className="skeleton-image skeleton" style={{ height: '180px' }} />
+                  <div className="skeleton-content">
+                    <div className="skeleton-line skeleton-title skeleton" style={{ width: '80%' }} />
+                    <div className="skeleton-line skeleton-text-short skeleton" style={{ width: '40%' }} />
+                    <div className="skeleton-line skeleton-text-medium skeleton" style={{ width: '60%', margin: '8px 0' }} />
+                    <div className="skeleton-footer skeleton" style={{ height: '36px', marginTop: 'auto' }} />
+                  </div>
+                </div>
+              ))
+            ) : (
+              featuredProperties.map((prop, idx) => (
+                <PropertyCard key={prop.id} property={prop} index={idx} />
+              ))
+            )}
           </div>
         </div>
       </section>

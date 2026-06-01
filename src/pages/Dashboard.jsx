@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { CITIES, DISTRICTS, AMENITY_MAP } from '../data/mockProperties';
@@ -87,6 +87,15 @@ export default function Dashboard() {
 
   const tabs = userRole === 'landlord' ? LANDLORD_TABS : TENANT_TABS;
   const [activeTab, setActiveTab] = useState(tabs[0].id);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [activeTab, userRole]);
 
   // --- Dynamic UI State ---
   const [isAddingRoom, setIsAddingRoom] = useState(false);
@@ -491,8 +500,40 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="dashboard-main" id="dashboard-main">
-        {/* ===================== SHARED POSTING FORM VIEW ===================== */}
-        {(isAddingRoom || editingRoomId) && (
+        {isLoading ? (
+          <div className="animate-fade-in" style={{ padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="skeleton" style={{ width: '220px', height: '36px' }} />
+              <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: 'var(--radius-subtle)' }} />
+            </div>
+            
+            <div className="overview-cards">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton-card card" style={{ padding: '20px', height: '110px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="skeleton" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
+                  <div className="skeleton" style={{ width: '80px', height: '10px' }} />
+                  <div className="skeleton" style={{ width: '110px', height: '18px' }} />
+                </div>
+              ))}
+            </div>
+
+            <div className="skeleton" style={{ width: '160px', height: '20px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="skeleton-card card animate-pulse" style={{ padding: '16px', height: '70px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
+                  <div className="skeleton" style={{ width: '80px', height: '24px', borderRadius: '4px' }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div className="skeleton" style={{ width: '180px', height: '14px' }} />
+                    <div className="skeleton" style={{ width: '320px', height: '10px' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ===================== SHARED POSTING FORM VIEW ===================== */}
+            {(isAddingRoom || editingRoomId) && (
           <div className="animate-fade-in">
             <div className="form-container">
               <div className="form-header">
@@ -1569,6 +1610,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </main>
 

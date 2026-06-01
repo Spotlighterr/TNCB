@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import PropertyCard from '../components/PropertyCard';
@@ -27,6 +27,15 @@ export default function Search() {
   const [roomType, setRoomType] = useState('');
   const [searchText, setSearchText] = useState('');
   const [showFilters, setShowFilters] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [city, district, priceRange, roomType, searchText]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
@@ -155,7 +164,21 @@ export default function Search() {
           </p>
         </div>
 
-        {filteredProperties.length > 0 ? (
+        {isLoading ? (
+          <div className="search-grid">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton-card card" style={{ minHeight: '340px' }}>
+                <div className="skeleton-image skeleton" style={{ height: '180px' }} />
+                <div className="skeleton-content">
+                  <div className="skeleton-line skeleton-title skeleton" style={{ width: '80%' }} />
+                  <div className="skeleton-line skeleton-text-short skeleton" style={{ width: '40%' }} />
+                  <div className="skeleton-line skeleton-text-medium skeleton" style={{ width: '60%', margin: '8px 0' }} />
+                  <div className="skeleton-footer skeleton" style={{ height: '36px', marginTop: 'auto' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProperties.length > 0 ? (
           <div className="search-grid">
             {filteredProperties.map((prop, idx) => (
               <PropertyCard key={prop.id} property={prop} index={idx} />

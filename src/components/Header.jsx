@@ -50,6 +50,7 @@ export default function Header() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   // Auth modes: 'login' | 'register' | 'otp-verify' | 'forgot' | 'forgot-otp' | 'reset-password'
   const [authMode, setAuthMode] = useState('login');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -152,9 +153,13 @@ export default function Header() {
   };
 
   const closeAuthModal = () => {
-    setIsAuthOpen(false);
-    resetAuthForms();
-    setAuthMode('login');
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsAuthOpen(false);
+      setIsClosing(false);
+      resetAuthForms();
+      setAuthMode('login');
+    }, 300);
   };
 
   // --- Login Submit ---
@@ -511,9 +516,9 @@ export default function Header() {
 
     {/* =================== AUTH MODAL =================== */}
     {isAuthOpen && (
-        <div className="auth-overlay animate-fade-in" onClick={closeAuthModal}>
+        <div className={`auth-overlay animate-fade-in ${isClosing ? 'is-closing' : ''}`} onClick={closeAuthModal}>
           <div
-            className="auth-modal glass-strong animate-scale-in"
+            className={`auth-modal glass-strong animate-scale-in ${isClosing ? 'is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
             id="auth-modal"
           >
@@ -1070,6 +1075,11 @@ export default function Header() {
           align-items: center;
           justify-content: center;
           padding: var(--content-padding);
+          transition: all var(--duration-normal) var(--ease-tactile);
+        }
+
+        .auth-overlay.is-closing {
+          animation: fadeOut var(--duration-normal) var(--ease-tactile) both;
         }
 
         .auth-modal {
@@ -1081,7 +1091,11 @@ export default function Header() {
           padding: var(--space-8) var(--space-6) var(--space-6);
           position: relative;
           box-shadow: var(--shadow-xl);
-          animation: scaleIn var(--duration-spring) var(--ease-tactile) both;
+          animation: scaleIn var(--duration-spring) var(--ease-spring) both;
+        }
+
+        .auth-modal.is-closing {
+          animation: scaleOut var(--duration-normal) var(--ease-spring) both;
         }
 
         .auth-close-btn {

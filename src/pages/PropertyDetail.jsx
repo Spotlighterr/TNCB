@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import ImageCarousel from '../components/ImageCarousel';
@@ -33,8 +34,60 @@ const ICON_MAP = {
 export default function PropertyDetail() {
   const { id } = useParams();
   const { getPropertyById, toggleSaveProperty, isPropertySaved, formatPrice, calculatePropertyRating } = useApp();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [id]);
 
   const property = getPropertyById(id);
+
+  if (isLoading) {
+    return (
+      <div className="detail-page container" style={{ padding: 'var(--space-6) 0 var(--space-16)' }}>
+        <div className="skeleton" style={{ width: '80px', height: '36px', marginBottom: 'var(--space-4)' }} />
+        <div className="detail-layout animate-fade-in">
+          <div className="detail-main">
+            {/* Carousel Skeleton */}
+            <div className="skeleton" style={{ width: '100%', height: '380px', borderRadius: 'var(--radius-main)' }} />
+            
+            {/* Header Skeleton */}
+            <div className="detail-header" style={{ padding: 'var(--space-4) 0' }}>
+              <div className="skeleton" style={{ width: '120px', height: '24px', borderRadius: 'var(--radius-xs)' }} />
+              <div className="skeleton" style={{ width: '80%', height: '36px', margin: '12px 0 8px' }} />
+              <div className="skeleton" style={{ width: '40%', height: '20px' }} />
+              <div className="skeleton" style={{ width: '100%', height: '60px', marginTop: '16px', borderRadius: 'var(--radius-main)' }} />
+            </div>
+
+            {/* Description Skeleton */}
+            <div className="detail-section">
+              <div className="skeleton" style={{ width: '100px', height: '24px' }} />
+              <div className="skeleton" style={{ width: '100%', height: '80px' }} />
+            </div>
+          </div>
+
+          <div className="detail-sidebar">
+            <div className="contact-card card-elevated" style={{ padding: 'var(--space-6)' }}>
+              <div className="contact-owner" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                <div style={{ flex: 1 }}>
+                  <div className="skeleton" style={{ width: '120px', height: '18px', marginBottom: '8px' }} />
+                  <div className="skeleton" style={{ width: '60px', height: '12px' }} />
+                </div>
+              </div>
+              <div className="skeleton" style={{ width: '100%', height: '56px', margin: '20px 0 12px' }} />
+              <div className="skeleton" style={{ width: '100%', height: '44px', marginBottom: '8px' }} />
+              <div className="skeleton" style={{ width: '100%', height: '44px' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
