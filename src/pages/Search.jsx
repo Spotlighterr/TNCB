@@ -38,7 +38,7 @@ export default function Search() {
       setIsLoading(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, [city, district, ward, maxPrice, roomType, searchText]);
+  }, [city, district, ward, roomType, searchText]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {

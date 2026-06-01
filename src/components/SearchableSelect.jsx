@@ -109,10 +109,14 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
           max-height: 200px;
           overflow-y: auto;
           border-radius: var(--radius-subtle);
-          border: 1px solid var(--glass-border);
-          z-index: 10;
+          border: 1px solid var(--color-border-strong);
+          z-index: 999;
           box-shadow: var(--shadow-lg);
           padding: var(--space-1) 0;
+          margin: 0;
+          list-style: none;
+          background: var(--color-surface-raised) !important;
+          box-sizing: border-box;
         }
 
         .searchable-select-option {
@@ -121,6 +125,10 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
           color: var(--color-text-main);
           cursor: pointer;
           transition: all var(--duration-fast) var(--ease-smooth);
+          list-style: none;
+          margin: 0;
+          text-align: left;
+          box-sizing: border-box;
         }
 
         .searchable-select-option:hover {
@@ -139,6 +147,8 @@ export default function SearchableSelect({ value, onChange, options = [], placeh
           font-size: var(--text-xs);
           color: var(--color-text-muted);
           text-align: center;
+          list-style: none;
+          margin: 0;
         }
       `}</style>
     </div>
