@@ -32,7 +32,7 @@ const ICON_MAP = {
 
 export default function PropertyDetail() {
   const { id } = useParams();
-  const { getPropertyById, toggleSaveProperty, isPropertySaved, formatPrice } = useApp();
+  const { getPropertyById, toggleSaveProperty, isPropertySaved, formatPrice, calculatePropertyRating } = useApp();
 
   const property = getPropertyById(id);
 
@@ -48,6 +48,22 @@ export default function PropertyDetail() {
   }
 
   const saved = isPropertySaved(property.id);
+  const rating = calculatePropertyRating(property);
+
+  const renderStars = (score) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <span
+        key={i}
+        style={{
+          color: i < score ? '#eab308' : 'var(--color-text-subtle)',
+          fontSize: '18px',
+          marginRight: '2px',
+        }}
+      >
+        ★
+      </span>
+    ));
+  };
 
   return (
     <div className="detail-page" id="detail-page">
@@ -73,6 +89,9 @@ export default function PropertyDetail() {
                     Nhà thật, Giá thật, Vị trí thật
                   </span>
                 )}
+                <span className={`badge ${property.postType === 'find_roommate' ? 'badge-roommate' : 'badge-status'}`}>
+                  {property.postType === 'find_roommate' ? 'Tìm ở ghép' : 'Cho thuê'}
+                </span>
                 <span className="badge badge-status">{property.type}</span>
               </div>
 
@@ -81,6 +100,17 @@ export default function PropertyDetail() {
               <div className="detail-location">
                 <MapPin size={16} weight="fill" color="var(--color-accent)" />
                 <span>{property.address}</span>
+              </div>
+
+              {/* Completeness Rating score */}
+              <div className="detail-rating-box glass">
+                <div className="detail-rating-stars">{renderStars(rating)}</div>
+                <div className="detail-rating-info">
+                  <span className="detail-rating-score text-mono">{rating}/5 sao độ tin cậy</span>
+                  <p className="detail-rating-desc">
+                    Điểm số dựa trên mức độ hoàn thiện thông tin: có giá thuê rõ ràng, chi tiết tiền điện nước, hình ảnh thực tế sinh động, có nhiều tiện ích phong phú, và nhãn xác minh thực tế.
+                  </p>
+                </div>
               </div>
 
               <div className="detail-quick-stats">
@@ -171,7 +201,9 @@ export default function PropertyDetail() {
                 />
                 <div>
                   <h4 className="contact-name">{property.owner.name}</h4>
-                  <p className="text-caption">Chủ trọ</p>
+                  <p className="text-caption">
+                    {property.postType === 'find_roommate' ? 'Bạn đang ở ghép' : 'Chủ trọ'}
+                  </p>
                 </div>
               </div>
 
@@ -273,6 +305,12 @@ export default function PropertyDetail() {
           display: flex;
           gap: var(--space-2);
           flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .badge-roommate {
+          background: rgba(2, 132, 199, 0.12);
+          color: #0284c7;
         }
 
         .detail-title {
@@ -286,6 +324,47 @@ export default function PropertyDetail() {
           gap: var(--space-2);
           font-size: var(--text-sm);
           color: var(--color-text-muted);
+        }
+
+        /* Detail Rating Box */
+        .detail-rating-box {
+          display: flex;
+          align-items: flex-start;
+          gap: var(--space-4);
+          padding: var(--space-4);
+          border-radius: var(--radius-main);
+          background: var(--bg-secondary);
+        }
+
+        @media (max-width: 600px) {
+          .detail-rating-box {
+            flex-direction: column;
+            gap: var(--space-2);
+          }
+        }
+
+        .detail-rating-stars {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        .detail-rating-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .detail-rating-score {
+          font-size: var(--text-sm);
+          font-weight: var(--weight-bold);
+          color: var(--color-text-main);
+        }
+
+        .detail-rating-desc {
+          font-size: var(--text-xs);
+          color: var(--color-text-muted);
+          line-height: 1.6;
         }
 
         .detail-quick-stats {
@@ -385,6 +464,13 @@ export default function PropertyDetail() {
         .detail-sidebar {
           position: sticky;
           top: calc(var(--header-height) + var(--space-4));
+        }
+
+        @media (max-width: 768px) {
+          .detail-page {
+            /* Add padding to prevent bottom nav from overlapping footer on mobile */
+            padding-bottom: 72px;
+          }
         }
 
         .contact-card {

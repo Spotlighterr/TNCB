@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { CITIES, DISTRICTS, AMENITY_MAP } from '../data/mockProperties';
@@ -31,6 +31,7 @@ import {
   Car,
   CookingPot,
   ShieldCheck,
+  UserCircle,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -57,6 +58,7 @@ const LANDLORD_TABS = [
 const TENANT_TABS = [
   { id: 'saved', label: 'Phòng đã lưu', icon: Heart },
   { id: 'rental', label: 'Phòng đang thuê', icon: House },
+  { id: 'my-listings', label: 'Tin ở ghép của tôi', icon: FileText },
   { id: 'tickets', label: 'Yêu cầu hỗ trợ', icon: Wrench },
   { id: 'contacts', label: 'Liên hệ chủ trọ', icon: Phone },
 ];
@@ -68,13 +70,13 @@ export default function Dashboard() {
     tickets,
     savedProperties,
     userRole,
+    currentUser,
     togglePropertyStatus,
     formatPrice,
     formatPriceShort,
     getPropertyById,
     deleteProperty,
     markBillPaid,
-    updateTicketStatus,
     addProperty,
     updateProperty,
     createContract,
@@ -153,6 +155,33 @@ export default function Dashboard() {
     title: '',
     description: '',
   });
+
+  // Access guard: if user not logged in
+  if (!currentUser) {
+    return (
+      <div className="container" style={{ padding: 'var(--space-20) 0', textAlign: 'center' }}>
+        <div className="glass-strong" style={{ padding: 'var(--space-10) var(--space-6)', borderRadius: 'var(--radius-main)', maxWidth: '480px', margin: '0 auto', border: '1px solid var(--color-border)' }}>
+          <UserCircle size={64} weight="duotone" color="var(--color-accent)" style={{ marginBottom: 'var(--space-4)' }} />
+          <h3 style={{ marginBottom: 'var(--space-2)' }}>Yêu cầu đăng nhập</h3>
+          <p className="text-caption" style={{ marginBottom: 'var(--space-6)' }}>
+            Vui lòng đăng nhập tài khoản của bạn để truy cập trang điều hành hệ thống.
+          </p>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-subtle)', background: 'var(--bg-secondary)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)' }}>
+            Gợi ý: Bạn có thể nhấn nút <strong>"Đăng nhập"</strong> ở thanh menu phía trên và chọn tài khoản test nhanh để trải nghiệm ngay lập tức.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Filter listings by logged in user ---
+  // Landlords can manage all their mock properties (with user-landlord id or default mocks)
+  const landlordProperties = properties.filter(
+    (p) => p.postedBy === currentUser.id || p.postedBy === 'user-landlord'
+  );
+
+  // Tenants can manage properties they posted (postType is roommate)
+  const tenantProperties = properties.filter((p) => p.postedBy === currentUser.id);
 
   // --- Form Trigger Handlers ---
 
@@ -243,21 +272,15 @@ export default function Dashboard() {
       water: Number(roomForm.water),
       service: Number(roomForm.service),
       images: parsedImages,
-      owner: {
-        name: 'Nguyễn Văn Đạt',
-        phone: '0869333366',
-        avatar: 'https://picsum.photos/seed/owner-dat/100/100',
-        zalo: '0869333366',
-      },
     };
 
     if (editingRoomId) {
       updateProperty(editingRoomId, data);
-      showToast('Cập nhật thông tin phòng thành công!');
+      showToast('Cập nhật thông tin thành công!');
       setEditingRoomId(null);
     } else {
       addProperty(data);
-      showToast('Thêm phòng trọ mới thành công!');
+      showToast(currentUser.role === 'tenant' ? 'Đăng tin tìm ở ghép thành công!' : 'Thêm phòng trọ mới thành công!');
       setIsAddingRoom(false);
     }
   };
@@ -445,7 +468,7 @@ export default function Dashboard() {
         <div className="sidebar-header">
           <Buildings size={24} weight="duotone" color="var(--color-accent)" />
           <span className="sidebar-title">
-            {userRole === 'landlord' ? 'Chủ trọ' : 'Khách thuê'}
+            {userRole === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / ở ghép'}
           </span>
         </div>
 
@@ -467,12 +490,259 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="dashboard-main" id="dashboard-main">
-        {/* ===================== LANDLORD VIEWS ===================== */}
+        {/* ===================== SHARED POSTING FORM VIEW ===================== */}
+        {(isAddingRoom || editingRoomId) && (
+          <div className="animate-fade-in">
+            <div className="form-container">
+              <div className="form-header">
+                <h3 className="form-title">
+                  {editingRoomId
+                    ? 'Chỉnh sửa thông tin bài đăng'
+                    : currentUser.role === 'tenant'
+                    ? 'Đăng tin tìm bạn ở ghép mới'
+                    : 'Thêm phòng trọ mới cho thuê'}
+                </h3>
+                <button
+                  className="btn btn-ghost btn-icon"
+                  onClick={() => {
+                    setIsAddingRoom(false);
+                    setEditingRoomId(null);
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleRoomSubmit} id="room-form">
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label className="form-label">Tiêu đề bài đăng *</label>
+                    <input
+                      className="input"
+                      required
+                      placeholder={
+                        currentUser.role === 'tenant'
+                          ? 'Ví dụ: Tìm nam ở ghép gấp tại Studio Chùa Láng gần FTU'
+                          : 'Ví dụ: Căn hộ Studio Ban Công Kính Đầy Đủ Tiện Nghi Cầu Giấy'
+                      }
+                      value={roomForm.title}
+                      onChange={(e) => setRoomForm({ ...roomForm, title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Loại phòng</label>
+                    <select
+                      className="select"
+                      value={roomForm.type}
+                      onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value })}
+                    >
+                      <option value="Studio">Studio</option>
+                      <option value="Duplex">Duplex</option>
+                      <option value="Chung cư mini">Chung cư mini</option>
+                      <option value="Phòng trọ">Phòng trọ</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">
+                      {currentUser.role === 'tenant' ? 'Tiền phòng chia sẻ (VND/tháng) *' : 'Giá thuê phòng (VND/tháng) *'}
+                    </label>
+                    <input
+                      type="number"
+                      className="input text-mono"
+                      required
+                      placeholder="Nhập giá, VD: 4500000"
+                      value={roomForm.price}
+                      onChange={(e) => setRoomForm({ ...roomForm, price: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Diện tích phòng (m²) *</label>
+                    <input
+                      type="number"
+                      className="input text-mono"
+                      required
+                      placeholder="Nhập diện tích, VD: 25"
+                      value={roomForm.area}
+                      onChange={(e) => setRoomForm({ ...roomForm, area: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Thành phố</label>
+                    <select
+                      className="select"
+                      value={roomForm.city}
+                      onChange={(e) => handleRoomCityChange(e.target.value)}
+                    >
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Quận / Huyện</label>
+                    <select
+                      className="select"
+                      value={roomForm.district}
+                      onChange={(e) => setRoomForm({ ...roomForm, district: e.target.value })}
+                    >
+                      {DISTRICTS[roomForm.city]?.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Địa chỉ chính xác</label>
+                    <input
+                      className="input"
+                      placeholder="Ví dụ: 91 Chùa Láng, Láng Thượng"
+                      value={roomForm.address}
+                      onChange={(e) => setRoomForm({ ...roomForm, address: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Tọa độ GPS (Vĩ độ, Kinh độ)</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="number"
+                        step="0.000001"
+                        className="input text-mono"
+                        placeholder="Lat"
+                        value={roomForm.coords[0]}
+                        onChange={(e) =>
+                          setRoomForm({
+                            ...roomForm,
+                            coords: [Number(e.target.value), roomForm.coords[1]],
+                          })
+                        }
+                      />
+                      <input
+                        type="number"
+                        step="0.000001"
+                        className="input text-mono"
+                        placeholder="Lng"
+                        value={roomForm.coords[1]}
+                        onChange={(e) =>
+                          setRoomForm({
+                            ...roomForm,
+                            coords: [roomForm.coords[0], Number(e.target.value)],
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label className="form-label">Hình ảnh minh họa (Đường dẫn ảnh, ngăn cách bởi dấu phẩy)</label>
+                    <input
+                      className="input text-mono"
+                      placeholder="URL 1, URL 2..."
+                      value={roomForm.images}
+                      onChange={(e) => setRoomForm({ ...roomForm, images: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Đơn giá điện (VND/kWh)</label>
+                    <input
+                      type="number"
+                      className="input text-mono"
+                      value={roomForm.electricity}
+                      onChange={(e) => setRoomForm({ ...roomForm, electricity: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Đơn giá nước (VND/người)</label>
+                    <input
+                      type="number"
+                      className="input text-mono"
+                      value={roomForm.water}
+                      onChange={(e) => setRoomForm({ ...roomForm, water: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Phí dịch vụ cố định (VND/phòng)</label>
+                    <input
+                      type="number"
+                      className="input text-mono"
+                      value={roomForm.service}
+                      onChange={(e) => setRoomForm({ ...roomForm, service: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label className="form-label">Mô tả phòng / Yêu cầu ở ghép</label>
+                    <textarea
+                      className="input"
+                      rows={4}
+                      placeholder={
+                        currentUser.role === 'tenant'
+                          ? 'Mô tả chi tiết phòng trọ hiện tại của bạn và các tiêu chuẩn tìm bạn ở cùng (sạch sẽ, không hút thuốc, sinh viên trường Ngoại thương...)'
+                          : 'Nhập mô tả chi tiết phòng trọ phục vụ sinh viên tìm thuê...'
+                      }
+                      value={roomForm.description}
+                      onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
+                      style={{ resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label className="form-label" style={{ marginBottom: 'var(--space-1)' }}>
+                      Chọn Tiện Nghi Có Sẵn của Phòng
+                    </label>
+                    <div className="amenities-checklist">
+                      {Object.entries(AMENITY_MAP).map(([key, info]) => {
+                        const IconComponent = ICON_COMPONENTS[info.icon];
+                        const isActive = roomForm.amenities.includes(key);
+                        return (
+                          <div
+                            key={key}
+                            className={`amenity-checkbox-label ${isActive ? 'active' : ''}`}
+                            onClick={() => handleAmenityToggle(key)}
+                          >
+                            {IconComponent && <IconComponent size={16} />}
+                            <span>{info.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-actions-row">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setIsAddingRoom(false);
+                      setEditingRoomId(null);
+                    }}
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button type="submit" className="btn btn-primary" id="save-room-btn">
+                    {editingRoomId ? 'Lưu cập nhật' : currentUser.role === 'tenant' ? 'Đăng tin ở ghép' : 'Thêm phòng mới'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== LANDLORD ONLY VIEWS ===================== */}
 
         {/* 1. Overview */}
-        {userRole === 'landlord' && activeTab === 'overview' && (
+        {userRole === 'landlord' && activeTab === 'overview' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Tổng quan</h2>
+            <h2 className="dashboard-page-title">Tổng quan doanh thu</h2>
             <div className="overview-cards">
               <div className="overview-card">
                 <CurrencyDollar size={24} color="var(--color-accent)" />
@@ -508,7 +778,7 @@ export default function Dashboard() {
 
             {/* Recent Activity */}
             <div className="dashboard-section">
-              <h3 className="dashboard-section-title">Hoạt động gần đây</h3>
+              <h3 className="dashboard-section-title">Hoạt động hợp đồng gần đây</h3>
               <div className="activity-list">
                 {contracts
                   .filter((c) => c.status === 'active')
@@ -532,680 +802,437 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 2. Room Management */}
-        {userRole === 'landlord' && activeTab === 'rooms' && (
+        {/* 2. Room Management (Landlord view) */}
+        {userRole === 'landlord' && activeTab === 'rooms' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
-            {isAddingRoom || editingRoomId ? (
-              /* --- ADD / EDIT ROOM FORM --- */
-              <div className="form-container">
-                <div className="form-header">
-                  <h3 className="form-title">
-                    {editingRoomId ? 'Chỉnh sửa thông tin phòng' : 'Thêm phòng trọ mới'}
-                  </h3>
-                  <button
-                    className="btn btn-ghost btn-icon"
-                    onClick={() => {
-                      setIsAddingRoom(false);
-                      setEditingRoomId(null);
-                    }}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Quản lý phòng trọ của tôi</h2>
+              <button
+                className="btn btn-primary animate-scale-in"
+                onClick={handleAddRoomClick}
+                id="add-room-btn"
+              >
+                <Plus size={18} />
+                Thêm phòng
+              </button>
+            </div>
 
-                <form onSubmit={handleRoomSubmit} id="room-form">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label className="form-label">Tiêu đề phòng trọ *</label>
-                      <input
-                        className="input"
-                        required
-                        placeholder="Ví dụ: Studio Ban Công Kính Gần ĐH Ngoại Thương"
-                        value={roomForm.title}
-                        onChange={(e) => setRoomForm({ ...roomForm, title: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Loại phòng</label>
-                      <select
-                        className="select"
-                        value={roomForm.type}
-                        onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value })}
-                      >
-                        <option value="Studio">Studio</option>
-                        <option value="Duplex">Duplex</option>
-                        <option value="Chung cư mini">Chung cư mini</option>
-                        <option value="Phòng trọ">Phòng trọ</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Giá thuê (VND/tháng) *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        placeholder="Nhập giá, VD: 4500000"
-                        value={roomForm.price}
-                        onChange={(e) => setRoomForm({ ...roomForm, price: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Diện tích (m²) *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        placeholder="Nhập diện tích, VD: 25"
-                        value={roomForm.area}
-                        onChange={(e) => setRoomForm({ ...roomForm, area: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Thành phố</label>
-                      <select
-                        className="select"
-                        value={roomForm.city}
-                        onChange={(e) => handleRoomCityChange(e.target.value)}
-                      >
-                        {CITIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Quận / Huyện</label>
-                      <select
-                        className="select"
-                        value={roomForm.district}
-                        onChange={(e) => setRoomForm({ ...roomForm, district: e.target.value })}
-                      >
-                        {DISTRICTS[roomForm.city]?.map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Địa chỉ chính xác</label>
-                      <input
-                        className="input"
-                        placeholder="Ví dụ: 91 Chùa Láng, Láng Thượng"
-                        value={roomForm.address}
-                        onChange={(e) => setRoomForm({ ...roomForm, address: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Tọa độ GPS (Vĩ độ, Kinh độ)</label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <input
-                          type="number"
-                          step="0.000001"
-                          className="input text-mono"
-                          placeholder="Lat"
-                          value={roomForm.coords[0]}
-                          onChange={(e) =>
-                            setRoomForm({
-                              ...roomForm,
-                              coords: [Number(e.target.value), roomForm.coords[1]],
-                            })
-                          }
+            <div className="rooms-table-wrap">
+              <table className="rooms-table">
+                <thead>
+                  <tr>
+                    <th>Phòng</th>
+                    <th>Quận</th>
+                    <th>Giá</th>
+                    <th>Diện tích</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {landlordProperties.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <div className="room-cell">
+                          <img src={p.images[0]} alt="" className="room-cell-img" />
+                          <div>
+                            <div className="room-cell-title">{p.title}</div>
+                            <div className="text-caption">{p.city}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{p.district}</td>
+                      <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
+                      <td><span className="text-mono">{p.area} m&sup2;</span></td>
+                      <td>
+                        <div
+                          className={`switch ${p.isRented ? 'active' : ''}`}
+                          onClick={() => togglePropertyStatus(p.id)}
+                          title={p.isRented ? 'Đang thuê' : 'Trống'}
+                          id={`switch-${p.id}`}
                         />
-                        <input
-                          type="number"
-                          step="0.000001"
-                          className="input text-mono"
-                          placeholder="Lng"
-                          value={roomForm.coords[1]}
-                          onChange={(e) =>
-                            setRoomForm({
-                              ...roomForm,
-                              coords: [roomForm.coords[0], Number(e.target.value)],
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label">Hình ảnh phòng (Đường dẫn ngăn cách bởi dấu phẩy)</label>
-                      <input
-                        className="input text-mono"
-                        placeholder="URL 1, URL 2..."
-                        value={roomForm.images}
-                        onChange={(e) => setRoomForm({ ...roomForm, images: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Đơn giá điện (VND/kWh)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={roomForm.electricity}
-                        onChange={(e) => setRoomForm({ ...roomForm, electricity: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Đơn giá nước (VND/người)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={roomForm.water}
-                        onChange={(e) => setRoomForm({ ...roomForm, water: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Phí dịch vụ cố định (VND/phòng)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={roomForm.service}
-                        onChange={(e) => setRoomForm({ ...roomForm, service: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label">Mô tả phòng trọ</label>
-                      <textarea
-                        className="input"
-                        rows={4}
-                        placeholder="Nhập mô tả chi tiết về tiện ích, ưu thế, khoảng cách trường ĐH..."
-                        value={roomForm.description}
-                        onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
-                        style={{ resize: 'vertical' }}
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label" style={{ marginBottom: 'var(--space-1)' }}>
-                        Chọn Tiện Nghi Có Sẵn
-                      </label>
-                      <div className="amenities-checklist">
-                        {Object.entries(AMENITY_MAP).map(([key, info]) => {
-                          const IconComponent = ICON_COMPONENTS[info.icon];
-                          const isActive = roomForm.amenities.includes(key);
-                          return (
-                            <div
-                              key={key}
-                              className={`amenity-checkbox-label ${isActive ? 'active' : ''}`}
-                              onClick={() => handleAmenityToggle(key)}
-                            >
-                              {IconComponent && <IconComponent size={16} />}
-                              <span>{info.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-actions-row">
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => {
-                        setIsAddingRoom(false);
-                        setEditingRoomId(null);
-                      }}
-                    >
-                      Hủy bỏ
-                    </button>
-                    <button type="submit" className="btn btn-primary" id="save-room-btn">
-                      {editingRoomId ? 'Lưu cập nhật' : 'Thêm phòng mới'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              /* --- ROOMS TABLE LIST --- */
-              <>
-                <div className="dashboard-page-header">
-                  <h2 className="dashboard-page-title">Quản lý phòng trọ</h2>
-                  <button
-                    className="btn btn-primary animate-scale-in"
-                    onClick={handleAddRoomClick}
-                    id="add-room-btn"
-                  >
-                    <Plus size={18} />
-                    Thêm phòng
-                  </button>
-                </div>
-
-                <div className="rooms-table-wrap">
-                  <table className="rooms-table">
-                    <thead>
-                      <tr>
-                        <th>Phòng</th>
-                        <th>Quận</th>
-                        <th>Giá</th>
-                        <th>Diện tích</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {properties.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            <div className="room-cell">
-                              <img src={p.images[0]} alt="" className="room-cell-img" />
-                              <div>
-                                <div className="room-cell-title">{p.title}</div>
-                                <div className="text-caption">{p.city}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>{p.district}</td>
-                          <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
-                          <td><span className="text-mono">{p.area} m&sup2;</span></td>
-                          <td>
-                            <div
-                              className={`switch ${p.isRented ? 'active' : ''}`}
-                              onClick={() => togglePropertyStatus(p.id)}
-                              title={p.isRented ? 'Đang thuê' : 'Trống'}
-                              id={`switch-${p.id}`}
-                            />
-                          </td>
-                          <td>
-                            <div className="room-actions">
-                              <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => handleEditRoomClick(p)}
-                                title="Chỉnh sửa"
-                              >
-                                <PencilSimple size={16} />
-                              </button>
-                              <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => {
-                                  if (confirm('Bạn có chắc chắn muốn xóa phòng trọ này?')) {
-                                    deleteProperty(p.id);
-                                    showToast('Xóa phòng trọ thành công!');
-                                  }
-                                }}
-                                style={{ color: 'var(--color-error)' }}
-                                title="Xóa"
-                              >
-                                <Trash size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
+                      </td>
+                      <td>
+                        <div className="room-actions">
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => handleEditRoomClick(p)}
+                            title="Chỉnh sửa"
+                          >
+                            <PencilSimple size={16} />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              if (confirm('Bạn có chắc chắn muốn xóa phòng trọ này?')) {
+                                deleteProperty(p.id);
+                                showToast('Xóa phòng trọ thành công!');
+                              }
+                            }}
+                            style={{ color: 'var(--color-error)' }}
+                            title="Xóa"
+                          >
+                            <Trash size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {/* 3. Contracts */}
-        {userRole === 'landlord' && activeTab === 'contracts' && (
+        {userRole === 'landlord' && activeTab === 'contracts' && !isCreatingContract && (
           <div className="animate-fade-in">
-            {isCreatingContract ? (
-              /* --- CREATE CONTRACT FORM --- */
-              <div className="form-container">
-                <div className="form-header">
-                  <h3 className="form-title">Tạo hợp đồng thuê mới</h3>
-                  <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingContract(false)}>
-                    <X size={20} />
-                  </button>
-                </div>
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Hợp đồng thuê nhà</h2>
+              <button className="btn btn-primary" onClick={handleAddContractClick}>
+                <Plus size={18} />
+                Tạo hợp đồng
+              </button>
+            </div>
 
-                <form onSubmit={handleContractSubmit} id="contract-form">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label className="form-label">Chọn phòng trọ trống *</label>
-                      <select
-                        className="select"
-                        required
-                        value={contractForm.propertyId}
-                        onChange={(e) => handleContractRoomChange(e.target.value)}
-                      >
-                        <option value="">-- Chọn phòng trống --</option>
-                        {properties.filter((p) => !p.isRented || p.id === contractForm.propertyId).map((p) => (
-                          <option key={p.id} value={p.id}>
-                            [{p.type}] {p.title} ({p.district}) - {p.price.toLocaleString()}đ
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Họ và tên khách thuê *</label>
-                      <input
-                        className="input"
-                        required
-                        placeholder="Nguyễn Văn A"
-                        value={contractForm.tenantName}
-                        onChange={(e) => setContractForm({ ...contractForm, tenantName: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Số điện thoại khách thuê *</label>
-                      <input
-                        className="input text-mono"
-                        required
-                        placeholder="09XXXXXXXX"
-                        value={contractForm.tenantPhone}
-                        onChange={(e) => setContractForm({ ...contractForm, tenantPhone: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Ngày bắt đầu hợp đồng *</label>
-                      <input
-                        type="date"
-                        className="input text-mono"
-                        required
-                        value={contractForm.startDate}
-                        onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Ngày kết thúc hợp đồng *</label>
-                      <input
-                        type="date"
-                        className="input text-mono"
-                        required
-                        value={contractForm.endDate}
-                        onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Tiền thuê thỏa thuận (VND/tháng) *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        value={contractForm.monthlyRent}
-                        onChange={(e) => setContractForm({ ...contractForm, monthlyRent: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Tiền đặt cọc đặt trước (VND) *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        value={contractForm.deposit}
-                        onChange={(e) => setContractForm({ ...contractForm, deposit: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-actions-row">
-                    <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingContract(false)}>
-                      Hủy bỏ
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Tạo hợp đồng
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              /* --- CONTRACTS LIST --- */
-              <>
-                <div className="dashboard-page-header">
-                  <h2 className="dashboard-page-title">Hợp đồng thuê</h2>
-                  <button className="btn btn-primary" onClick={handleAddContractClick}>
-                    <Plus size={18} />
-                    Tạo hợp đồng
-                  </button>
-                </div>
-
-                <div className="contracts-list">
-                  {contracts.map((c) => {
-                    const prop = getPropertyById(c.propertyId);
-                    return (
-                      <div key={c.id} className="contract-card card-elevated">
-                        <div className="contract-header">
-                          <div>
-                            <h4>{prop?.title || 'Phòng trọ'}</h4>
-                            <p className="text-caption">Khách thuê: {c.tenantName} | SĐT: {c.tenantPhone}</p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span className={`badge ${c.status === 'active' ? 'badge-available' : 'badge-rented'}`}>
-                              {c.status === 'active' ? 'Đang hoạt động' : 'Hết hạn'}
-                            </span>
-                            {c.status === 'active' && (
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => handleAddBillClick(c.id)}
-                                title="Tạo hóa đơn tháng"
-                              >
-                                <Receipt size={14} />
-                                Tạo HĐơn
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="contract-details">
-                          <span>Ngày bắt đầu: <strong>{c.startDate}</strong></span>
-                          <span>Ngày kết thúc: <strong>{c.endDate}</strong></span>
-                          <span>Giá thuê: <strong className="price">{formatPrice(c.monthlyRent)}</strong></span>
-                          <span>Đặt cọc: <strong className="text-mono">{c.deposit.toLocaleString()} VND</strong></span>
-                        </div>
+            <div className="contracts-list">
+              {contracts.map((c) => {
+                const prop = getPropertyById(c.propertyId);
+                return (
+                  <div key={c.id} className="contract-card card-elevated">
+                    <div className="contract-header">
+                      <div>
+                        <h4>{prop?.title || 'Phòng trọ'}</h4>
+                        <p className="text-caption">Khách thuê: {c.tenantName} | SĐT: {c.tenantPhone}</p>
                       </div>
-                    );
-                  })}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span className={`badge ${c.status === 'active' ? 'badge-available' : 'badge-rented'}`}>
+                          {c.status === 'active' ? 'Đang hoạt động' : 'Hết hạn'}
+                        </span>
+                        {c.status === 'active' && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleAddBillClick(c.id)}
+                          >
+                            <Receipt size={14} />
+                            Tạo HĐơn
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="contract-details">
+                      <span>Ngày bắt đầu: <strong>{c.startDate}</strong></span>
+                      <span>Ngày kết thúc: <strong>{c.endDate}</strong></span>
+                      <span>Giá thuê: <strong className="price">{formatPrice(c.monthlyRent)}</strong></span>
+                      <span>Đặt cọc: <strong className="text-mono">{c.deposit.toLocaleString()} VND</strong></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {userRole === 'landlord' && activeTab === 'contracts' && isCreatingContract && (
+          <div className="form-container animate-fade-in">
+            <div className="form-header">
+              <h3 className="form-title">Tạo hợp đồng thuê mới</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingContract(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleContractSubmit} id="contract-form">
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label className="form-label">Chọn phòng trọ trống *</label>
+                  <select
+                    className="select"
+                    required
+                    value={contractForm.propertyId}
+                    onChange={(e) => handleContractRoomChange(e.target.value)}
+                  >
+                    <option value="">-- Chọn phòng trống --</option>
+                    {properties
+                      .filter((p) => !p.isRented || p.id === contractForm.propertyId)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          [{p.type}] {p.title} ({p.district}) - {p.price.toLocaleString()}đ
+                        </option>
+                      ))}
+                  </select>
                 </div>
-              </>
-            )}
+
+                <div className="form-group">
+                  <label className="form-label">Họ và tên khách thuê *</label>
+                  <input
+                    className="input"
+                    required
+                    placeholder="Nguyễn Văn A"
+                    value={contractForm.tenantName}
+                    onChange={(e) => setContractForm({ ...contractForm, tenantName: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Số điện thoại khách thuê *</label>
+                  <input
+                    className="input text-mono"
+                    required
+                    placeholder="09XXXXXXXX"
+                    value={contractForm.tenantPhone}
+                    onChange={(e) => setContractForm({ ...contractForm, tenantPhone: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Ngày bắt đầu hợp đồng *</label>
+                  <input
+                    type="date"
+                    className="input text-mono"
+                    required
+                    value={contractForm.startDate}
+                    onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Ngày kết thúc hợp đồng *</label>
+                  <input
+                    type="date"
+                    className="input text-mono"
+                    required
+                    value={contractForm.endDate}
+                    onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Tiền thuê thỏa thuận (VND/tháng) *</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    required
+                    value={contractForm.monthlyRent}
+                    onChange={(e) => setContractForm({ ...contractForm, monthlyRent: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Tiền đặt cọc đặt trước (VND) *</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    required
+                    value={contractForm.deposit}
+                    onChange={(e) => setContractForm({ ...contractForm, deposit: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions-row">
+                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingContract(false)}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Tạo hợp đồng
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
         {/* 4. Bills */}
-        {userRole === 'landlord' && activeTab === 'bills' && (
+        {userRole === 'landlord' && activeTab === 'bills' && !isCreatingBill && (
           <div className="animate-fade-in">
-            {isCreatingBill ? (
-              /* --- CREATE BILL FORM --- */
-              <div className="form-container">
-                <div className="form-header">
-                  <h3 className="form-title">Tạo hóa đơn tháng mới</h3>
-                  <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingBill(false)}>
-                    <X size={20} />
-                  </button>
-                </div>
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Hóa đơn điện nước hàng tháng</h2>
+              <button className="btn btn-primary" onClick={() => handleAddBillClick()}>
+                <Plus size={18} />
+                Tạo hóa đơn
+              </button>
+            </div>
 
-                <form onSubmit={handleBillSubmit} id="bill-form">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label className="form-label">Chọn Hợp đồng / Phòng thuê *</label>
-                      <select
-                        className="select"
-                        required
-                        value={billForm.contractId}
-                        onChange={(e) => handleBillContractChange(e.target.value)}
-                      >
-                        <option value="">-- Chọn hợp đồng --</option>
-                        {contracts.filter((c) => c.status === 'active').map((c) => {
-                          const prop = getPropertyById(c.propertyId);
-                          return (
-                            <option key={c.id} value={c.id}>
-                              [{c.tenantName}] - {prop?.title || 'Phòng'}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Hóa đơn cho tháng *</label>
-                      <input
-                        type="month"
-                        className="input text-mono"
-                        required
-                        value={billForm.month}
-                        onChange={(e) => setBillForm({ ...billForm, month: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Số điện tiêu thụ (kWh) *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        value={billForm.electricityUsage}
-                        onChange={(e) => setBillForm({ ...billForm, electricityUsage: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Đơn giá điện (VND/kWh)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={billForm.electricityRate}
-                        onChange={(e) => setBillForm({ ...billForm, electricityRate: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Số người dùng nước *</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        required
-                        value={billForm.waterUsage}
-                        onChange={(e) => setBillForm({ ...billForm, waterUsage: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Đơn giá nước (VND/người)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={billForm.waterRate}
-                        onChange={(e) => setBillForm({ ...billForm, waterRate: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Phí dịch vụ cố định (VND)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={billForm.serviceCharge}
-                        onChange={(e) => setBillForm({ ...billForm, serviceCharge: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Tiền phòng (VND)</label>
-                      <input
-                        type="number"
-                        className="input text-mono"
-                        value={billForm.rent}
-                        onChange={(e) => setBillForm({ ...billForm, rent: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Calculated Dynamic Total Box */}
-                  <div className="bill-total-box animate-scale-in">
-                    <span className="form-label" style={{ display: 'block', marginBottom: '4px' }}>Tổng số tiền dự kiến</span>
-                    <span className="bill-total-value">
-                      {calculatedBillTotal.toLocaleString('vi-VN')} VND
-                    </span>
-                  </div>
-
-                  <div className="form-actions-row">
-                    <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingBill(false)}>
-                      Hủy
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Tạo hóa đơn
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              /* --- BILLS LIST --- */
-              <>
-                <div className="dashboard-page-header">
-                  <h2 className="dashboard-page-title">Hóa đơn hàng tháng</h2>
-                  <button className="btn btn-primary" onClick={() => handleAddBillClick()}>
-                    <Plus size={18} />
-                    Tạo hóa đơn
-                  </button>
-                </div>
-
-                {contracts.map((c) => {
-                  const prop = getPropertyById(c.propertyId);
-                  return (
-                    <div key={c.id} className="dashboard-section" style={{ marginTop: '0', marginBottom: 'var(--space-6)' }}>
-                      <h3 className="dashboard-section-title" style={{ fontSize: 'var(--text-base)', borderLeft: '3px solid var(--color-accent)', paddingLeft: '8px' }}>
-                        {prop?.title || c.id} ({c.tenantName})
-                      </h3>
-                      <div className="bills-list">
-                        {c.bills.map((b) => (
-                          <div key={b.id} className="bill-card card">
-                            <div className="bill-header">
-                              <span className="text-mono" style={{ fontWeight: 600 }}>Tháng {b.month}</span>
-                              <span className={`badge ${b.paid ? 'badge-available' : 'badge-rented'}`}>
-                                {b.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                              </span>
-                            </div>
-                            <div className="bill-details">
-                              <span>Điện: {b.electricityUsage} kWh x {b.electricityRate.toLocaleString()} = <strong>{(b.electricityUsage * b.electricityRate).toLocaleString()}đ</strong></span>
-                              <span>Nước: {b.waterUsage} ng x {b.waterRate.toLocaleString()} = <strong>{(b.waterUsage * b.waterRate).toLocaleString()}đ</strong></span>
-                              <span>Dịch vụ: <strong>{b.serviceCharge.toLocaleString()}đ</strong></span>
-                              <span>Tiền phòng: <strong>{b.rent.toLocaleString()}đ</strong></span>
-                            </div>
-                            <div className="bill-footer">
-                              <span className="price text-mono" style={{ fontSize: 'var(--text-lg)' }}>
-                                Tổng: {b.total.toLocaleString()} VND
-                              </span>
-                              {!b.paid && (
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  onClick={() => {
-                                    markBillPaid(c.id, b.id);
-                                    showToast('Hóa đơn đã được cập nhật thành Đã thanh toán!');
-                                  }}
-                                >
-                                  Đánh dấu đã thu
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+            {contracts.map((c) => {
+              const prop = getPropertyById(c.propertyId);
+              return (
+                <div key={c.id} className="dashboard-section" style={{ marginTop: '0', marginBottom: 'var(--space-6)' }}>
+                  <h3 className="dashboard-section-title" style={{ fontSize: 'var(--text-base)', borderLeft: '3px solid var(--color-accent)', paddingLeft: '8px' }}>
+                    {prop?.title || c.id} ({c.tenantName})
+                  </h3>
+                  <div className="bills-list">
+                    {c.bills.map((b) => (
+                      <div key={b.id} className="bill-card card">
+                        <div className="bill-header">
+                          <span className="text-mono" style={{ fontWeight: 600 }}>Tháng {b.month}</span>
+                          <span className={`badge ${b.paid ? 'badge-available' : 'badge-rented'}`}>
+                            {b.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                          </span>
+                        </div>
+                        <div className="bill-details">
+                          <span>Điện: {b.electricityUsage} kWh x {b.electricityRate.toLocaleString()} = <strong>{(b.electricityUsage * b.electricityRate).toLocaleString()}đ</strong></span>
+                          <span>Nước: {b.waterUsage} ng x {b.waterRate.toLocaleString()} = <strong>{(b.waterUsage * b.waterRate).toLocaleString()}đ</strong></span>
+                          <span>Dịch vụ: <strong>{b.serviceCharge.toLocaleString()}đ</strong></span>
+                          <span>Tiền phòng: <strong>{b.rent.toLocaleString()}đ</strong></span>
+                        </div>
+                        <div className="bill-footer">
+                          <span className="price text-mono" style={{ fontSize: 'var(--text-lg)' }}>
+                            Tổng: {b.total.toLocaleString()} VND
+                          </span>
+                          {!b.paid && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => {
+                                markBillPaid(c.id, b.id);
+                                showToast('Hóa đơn đã đóng thành công!');
+                              }}
+                            >
+                              Đánh dấu đã thu
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* ===================== TENANT VIEWS ===================== */}
+        {userRole === 'landlord' && activeTab === 'bills' && isCreatingBill && (
+          <div className="form-container animate-fade-in">
+            <div className="form-header">
+              <h3 className="form-title">Tạo hóa đơn tháng mới</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingBill(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleBillSubmit} id="bill-form">
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label className="form-label">Chọn Hợp đồng / Phòng thuê *</label>
+                  <select
+                    className="select"
+                    required
+                    value={billForm.contractId}
+                    onChange={(e) => handleBillContractChange(e.target.value)}
+                  >
+                    <option value="">-- Chọn hợp đồng --</option>
+                    {contracts.filter((c) => c.status === 'active').map((c) => {
+                      const prop = getPropertyById(c.propertyId);
+                      return (
+                        <option key={c.id} value={c.id}>
+                          [{c.tenantName}] - {prop?.title || 'Phòng'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Hóa đơn cho tháng *</label>
+                  <input
+                    type="month"
+                    className="input text-mono"
+                    required
+                    value={billForm.month}
+                    onChange={(e) => setBillForm({ ...billForm, month: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Số điện tiêu thụ (kWh) *</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    required
+                    value={billForm.electricityUsage}
+                    onChange={(e) => setBillForm({ ...billForm, electricityUsage: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Đơn giá điện (VND/kWh)</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    value={billForm.electricityRate}
+                    onChange={(e) => setBillForm({ ...billForm, electricityRate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Số người dùng nước *</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    required
+                    value={billForm.waterUsage}
+                    onChange={(e) => setBillForm({ ...billForm, waterUsage: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Đơn giá nước (VND/người)</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    value={billForm.waterRate}
+                    onChange={(e) => setBillForm({ ...billForm, waterRate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Phí dịch vụ cố định (VND)</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    value={billForm.serviceCharge}
+                    onChange={(e) => setBillForm({ ...billForm, serviceCharge: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Tiền phòng (VND)</label>
+                  <input
+                    type="number"
+                    className="input text-mono"
+                    value={billForm.rent}
+                    onChange={(e) => setBillForm({ ...billForm, rent: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Calculated Dynamic Total Box */}
+              <div className="bill-total-box animate-scale-in">
+                <span className="form-label" style={{ display: 'block', marginBottom: '4px' }}>Tổng số tiền dự kiến</span>
+                <span className="bill-total-value">{calculatedBillTotal.toLocaleString('vi-VN')} VND</span>
+              </div>
+
+              <div className="form-actions-row">
+                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingBill(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Tạo hóa đơn
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ===================== TENANT ONLY VIEWS ===================== */}
 
         {/* 1. Saved Properties */}
         {userRole === 'tenant' && activeTab === 'saved' && (
           <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Phòng đã lưu ({savedProps.length})</h2>
+            <h2 className="dashboard-page-title">Phòng trọ đã lưu yêu thích ({savedProps.length})</h2>
             {savedProps.length > 0 ? (
               <div className="saved-grid">
                 {savedProps.map((prop) => (
-                  <div key={prop.id} className="saved-item card-elevated">
+                  <div key={prop.id} className="saved-item card-elevated animate-fade-in-up">
                     <img src={prop.images[0]} alt="" className="saved-img" />
                     <div className="saved-info">
                       <Link to={`/property/${prop.id}`} className="saved-title">{prop.title}</Link>
@@ -1218,8 +1245,8 @@ export default function Dashboard() {
             ) : (
               <div className="dashboard-empty">
                 <Heart size={48} color="var(--color-text-subtle)" />
-                <p>Chưa có phòng nào được lưu</p>
-                <Link to="/search" className="btn btn-primary">Tìm phòng ngay</Link>
+                <p>Chưa có phòng nào được lưu yêu thích</p>
+                <Link to="/search" className="btn btn-primary">Tìm phòng trọ ngay</Link>
               </div>
             )}
           </div>
@@ -1228,12 +1255,12 @@ export default function Dashboard() {
         {/* 2. My Rental */}
         {userRole === 'tenant' && activeTab === 'rental' && (
           <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Phòng đang thuê</h2>
+            <h2 className="dashboard-page-title">Thông tin phòng đang thuê</h2>
             {contracts.filter((c) => c.status === 'active').length > 0 ? (
               contracts.filter((c) => c.status === 'active').map((c) => {
                 const prop = getPropertyById(c.propertyId);
                 return (
-                  <div key={c.id} className="rental-card card-elevated">
+                  <div key={c.id} className="rental-card card-elevated animate-scale-in">
                     <div className="rental-header">
                       <img src={prop?.images[0]} alt="" className="rental-img" />
                       <div>
@@ -1264,133 +1291,214 @@ export default function Dashboard() {
             ) : (
               <div className="dashboard-empty">
                 <House size={48} color="var(--color-text-subtle)" />
-                <p>Chưa có thông tin phòng đang thuê</p>
+                <p>Chưa có thông tin phòng đang thuê hiện tại</p>
               </div>
             )}
           </div>
         )}
 
-        {/* 3. Support Tickets */}
-        {userRole === 'tenant' && activeTab === 'tickets' && (
+        {/* 3. Tenant's My Listings Tab */}
+        {userRole === 'tenant' && activeTab === 'my-listings' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
-            {isCreatingTicket ? (
-              /* --- CREATE SUPPORT TICKET FORM --- */
-              <div className="form-container">
-                <div className="form-header">
-                  <h3 className="form-title">Gửi yêu cầu hỗ trợ kỹ thuật</h3>
-                  <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingTicket(false)}>
-                    <X size={20} />
-                  </button>
-                </div>
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Tin tìm bạn ở ghép của tôi</h2>
+              <button className="btn btn-primary" onClick={handleAddRoomClick}>
+                <Plus size={18} />
+                Đăng tin ở ghép
+              </button>
+            </div>
 
-                <form onSubmit={handleTicketSubmit} id="ticket-form">
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label className="form-label">Chọn Hợp đồng / Phòng cần hỗ trợ *</label>
-                      <select
-                        className="select"
-                        required
-                        value={ticketForm.contractId}
-                        onChange={(e) => setTicketForm({ ...ticketForm, contractId: e.target.value })}
-                      >
-                        {contracts.filter((c) => c.status === 'active').map((c) => {
-                          const prop = getPropertyById(c.propertyId);
-                          return (
-                            <option key={c.id} value={c.id}>
-                              {prop?.title || 'Phòng thuê'}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label">Tiêu đề sự cố *</label>
-                      <input
-                        className="input"
-                        required
-                        placeholder="Ví dụ: Điều hòa không lạnh, Rò rỉ nước nhà tắm..."
-                        value={ticketForm.title}
-                        onChange={(e) => setTicketForm({ ...ticketForm, title: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="form-group full-width">
-                      <label className="form-label">Mô tả sự cố chi tiết *</label>
-                      <textarea
-                        className="input"
-                        required
-                        rows={4}
-                        placeholder="Vui lòng mô tả chi tiết sự cố kỹ thuật và thời gian mong muốn kỹ thuật sửa chữa qua kiểm tra..."
-                        value={ticketForm.description}
-                        onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
-                        style={{ resize: 'vertical' }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-actions-row">
-                    <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingTicket(false)}>
-                      Hủy bỏ
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      Gửi yêu cầu
-                    </button>
-                  </div>
-                </form>
+            {tenantProperties.length > 0 ? (
+              <div className="rooms-table-wrap animate-scale-in">
+                <table className="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>Tin đăng</th>
+                      <th>Quận</th>
+                      <th>Giá chia sẻ</th>
+                      <th>Diện tích</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tenantProperties.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="room-cell">
+                            <img src={p.images[0]} alt="" className="room-cell-img" />
+                            <div>
+                              <div className="room-cell-title">{p.title}</div>
+                              <div className="text-caption">{p.city}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{p.district}</td>
+                        <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
+                        <td><span className="text-mono">{p.area} m&sup2;</span></td>
+                        <td>
+                          <span className={`badge ${p.isRented ? 'badge-rented' : 'badge-available'}`}>
+                            {p.isRented ? 'Đã tìm được' : 'Đang tìm'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="room-actions">
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => handleEditRoomClick(p)}
+                              title="Chỉnh sửa"
+                            >
+                              <PencilSimple size={16} />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                if (confirm('Bạn có chắc chắn muốn xóa bài đăng ở ghép này?')) {
+                                  deleteProperty(p.id);
+                                  showToast('Xóa tin đăng thành công!');
+                                }
+                              }}
+                              style={{ color: 'var(--color-error)' }}
+                              title="Xóa"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              /* --- TICKETS LIST --- */
-              <>
-                <div className="dashboard-page-header">
-                  <h2 className="dashboard-page-title">Yêu cầu hỗ trợ</h2>
-                  <button className="btn btn-primary" onClick={handleAddTicketClick}>
-                    <Plus size={18} />
-                    Gửi yêu cầu mới
-                  </button>
-                </div>
-
-                <div className="tickets-list">
-                  {tickets.map((t) => {
-                    const prop = getPropertyById(t.propertyId);
-                    return (
-                      <div key={t.id} className="ticket-card card-elevated">
-                        <div className="ticket-header">
-                          <h4>{t.title}</h4>
-                          <span
-                            className={`badge ${
-                              t.status === 'resolved'
-                                ? 'badge-available'
-                                : t.status === 'processing'
-                                ? 'badge-rented'
-                                : 'badge-status'
-                            }`}
-                          >
-                            {t.status === 'resolved'
-                              ? 'Đã xử lý'
-                              : t.status === 'processing'
-                              ? 'Đang xử lý'
-                              : 'Chờ xử lý'}
-                          </span>
-                        </div>
-                        <p className="text-caption">{t.description}</p>
-                        <p className="text-caption" style={{ fontSize: '11px' }}>
-                          Phòng: {prop?.title} | Ngày tạo: {t.createdAt}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
+              <div className="dashboard-empty">
+                <FileText size={48} color="var(--color-text-subtle)" />
+                <p>Bạn chưa đăng bài tìm ở ghép nào hiện tại.</p>
+                <button className="btn btn-primary" onClick={handleAddRoomClick}>
+                  Đăng tin tìm ở ghép ngay
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        {/* 4. Landlord Contacts */}
+        {/* 4. Support Tickets (Tenant view) */}
+        {userRole === 'tenant' && activeTab === 'tickets' && !isCreatingTicket && (
+          <div className="animate-fade-in">
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Yêu cầu hỗ trợ kỹ thuật</h2>
+              <button className="btn btn-primary" onClick={handleAddTicketClick}>
+                <Plus size={18} />
+                Gửi yêu cầu mới
+              </button>
+            </div>
+
+            <div className="tickets-list">
+              {tickets.map((t) => {
+                const prop = getPropertyById(t.propertyId);
+                return (
+                  <div key={t.id} className="ticket-card card-elevated animate-fade-in-up">
+                    <div className="ticket-header">
+                      <h4>{t.title}</h4>
+                      <span
+                        className={`badge ${
+                          t.status === 'resolved'
+                            ? 'badge-available'
+                            : t.status === 'processing'
+                            ? 'badge-rented'
+                            : 'badge-status'
+                        }`}
+                      >
+                        {t.status === 'resolved'
+                          ? 'Đã xử lý'
+                          : t.status === 'processing'
+                          ? 'Đang xử lý'
+                          : 'Chờ xử lý'}
+                      </span>
+                    </div>
+                    <p className="text-caption">{t.description}</p>
+                    <p className="text-caption" style={{ fontSize: '11px' }}>
+                      Phòng: {prop?.title} | Ngày tạo: {t.createdAt}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {userRole === 'tenant' && activeTab === 'tickets' && isCreatingTicket && (
+          <div className="form-container animate-fade-in">
+            <div className="form-header">
+              <h3 className="form-title">Gửi yêu cầu hỗ trợ kỹ thuật</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingTicket(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleTicketSubmit} id="ticket-form">
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label className="form-label">Chọn Hợp đồng / Phòng cần hỗ trợ *</label>
+                  <select
+                    className="select"
+                    required
+                    value={ticketForm.contractId}
+                    onChange={(e) => setTicketForm({ ...ticketForm, contractId: e.target.value })}
+                  >
+                    {contracts.filter((c) => c.status === 'active').map((c) => {
+                      const prop = getPropertyById(c.propertyId);
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {prop?.title || 'Phòng thuê'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="form-group full-width">
+                  <label className="form-label">Tiêu đề sự cố *</label>
+                  <input
+                    className="input"
+                    required
+                    placeholder="Ví dụ: Điều hòa không lạnh, Rò rỉ nước nhà tắm..."
+                    value={ticketForm.title}
+                    onChange={(e) => setTicketForm({ ...ticketForm, title: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label className="form-label">Mô tả sự cố chi tiết *</label>
+                  <textarea
+                    className="input"
+                    required
+                    rows={4}
+                    placeholder="Vui lòng mô tả chi tiết sự cố kỹ thuật để chủ trọ nắm thông tin..."
+                    value={ticketForm.description}
+                    onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions-row">
+                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingTicket(false)}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Gửi yêu cầu
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 5. Landlord Contacts */}
         {userRole === 'tenant' && activeTab === 'contacts' && (
           <div className="animate-fade-in">
             <h2 className="dashboard-page-title">Danh bạ liên hệ chủ trọ</h2>
-            <div className="contacts-table-wrap">
+            <div className="contacts-table-wrap animate-scale-in">
               <table className="rooms-table">
                 <thead>
                   <tr>
@@ -1434,12 +1542,12 @@ export default function Dashboard() {
 
             {/* Emergency Hotline */}
             <div className="dashboard-section" style={{ marginTop: 'var(--space-8)' }}>
-              <h3 className="dashboard-section-title">Hotline khẩn cấp</h3>
+              <h3 className="dashboard-section-title">Hotline hỗ trợ kỹ thuật</h3>
               <div className="hotline-grid">
                 <div className="hotline-card">
                   <Phone size={20} color="var(--color-error)" />
                   <div>
-                    <strong>Sửa chữa kỹ thuật</strong>
+                    <strong>Sửa chữa kỹ thuật khẩn cấp</strong>
                     <p className="text-mono">0869 333 366</p>
                   </div>
                 </div>
@@ -1466,6 +1574,7 @@ export default function Dashboard() {
         @media (max-width: 768px) {
           .dashboard-page {
             grid-template-columns: 1fr;
+            padding-bottom: 72px; /* Prevent bottom nav overlay */
           }
         }
 

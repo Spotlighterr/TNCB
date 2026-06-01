@@ -8,8 +8,26 @@ import {
 } from '@phosphor-icons/react';
 
 export default function PropertyCard({ property, index = 0 }) {
-  const { toggleSaveProperty, isPropertySaved, formatPriceShort } = useApp();
+  const { toggleSaveProperty, isPropertySaved, formatPriceShort, calculatePropertyRating } = useApp();
   const saved = isPropertySaved(property.id);
+
+  const rating = calculatePropertyRating(property);
+
+  const renderStars = (score) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <span
+        key={i}
+        className="star-icon"
+        style={{
+          color: i < score ? '#eab308' : 'var(--color-text-subtle)',
+          fontSize: '13px',
+          marginRight: '1px',
+        }}
+      >
+        ★
+      </span>
+    ));
+  };
 
   return (
     <div
@@ -31,10 +49,13 @@ export default function PropertyCard({ property, index = 0 }) {
         <div className="property-card-badges">
           {property.verified && (
             <span className="verified-badge" id={`verified-${property.id}`}>
-              <SealCheck size={14} weight="fill" />
+              <SealCheck size={12} weight="fill" />
               Xác thực
             </span>
           )}
+          <span className={`post-type-badge ${property.postType === 'find_roommate' ? 'roommate' : 'rent'}`}>
+            {property.postType === 'find_roommate' ? 'Ở ghép' : 'Cho thuê'}
+          </span>
         </div>
 
         {/* Save Button */}
@@ -63,6 +84,12 @@ export default function PropertyCard({ property, index = 0 }) {
         <div className="property-card-location">
           <MapPin size={14} weight="fill" color="var(--color-accent)" />
           <span>{property.district}, {property.city}</span>
+        </div>
+
+        {/* Trust Rating Stars */}
+        <div className="property-card-rating">
+          <div className="stars-row">{renderStars(rating)}</div>
+          <span className="rating-label text-mono">{rating}/5 sao tin cậy</span>
         </div>
 
         <div className="property-card-meta">
@@ -115,7 +142,31 @@ export default function PropertyCard({ property, index = 0 }) {
           top: var(--space-3);
           left: var(--space-3);
           display: flex;
+          flex-direction: column;
           gap: var(--space-2);
+          align-items: flex-start;
+          z-index: 10;
+        }
+
+        .post-type-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 3px 8px;
+          font-size: var(--text-xs);
+          font-weight: var(--weight-bold);
+          border-radius: var(--radius-xs);
+          line-height: 1;
+          box-shadow: var(--shadow-xs);
+        }
+
+        .post-type-badge.rent {
+          background: var(--color-accent);
+          color: #ffffff;
+        }
+
+        .post-type-badge.roommate {
+          background: #0284c7;
+          color: #ffffff;
         }
 
         .property-card-save {
@@ -134,6 +185,7 @@ export default function PropertyCard({ property, index = 0 }) {
           transition: all var(--duration-fast) var(--ease-tactile);
           border: none;
           cursor: pointer;
+          z-index: 10;
         }
 
         .property-card-save:hover {
@@ -179,6 +231,7 @@ export default function PropertyCard({ property, index = 0 }) {
           -webkit-box-orient: vertical;
           overflow: hidden;
           color: var(--color-text-main);
+          min-height: 40px;
         }
 
         .property-card-location {
@@ -189,11 +242,30 @@ export default function PropertyCard({ property, index = 0 }) {
           color: var(--color-text-muted);
         }
 
+        .property-card-rating {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          margin-top: 2px;
+        }
+
+        .stars-row {
+          display: flex;
+          align-items: center;
+        }
+
+        .rating-label {
+          font-size: 10px;
+          color: var(--color-text-muted);
+          font-weight: var(--weight-medium);
+        }
+
         .property-card-meta {
           display: flex;
           align-items: center;
           gap: var(--space-2);
           margin-top: auto;
+          padding-top: var(--space-2);
         }
 
         .property-card-meta-item {

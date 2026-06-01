@@ -30,6 +30,15 @@ export function AppProvider({ children }) {
   const [userRole, setUserRole] = useState(() =>
     loadFromStorage('TNCB_ROLE', 'tenant')
   );
+  const [users, setUsers] = useState(() =>
+    loadFromStorage('TNCB_USERS', [
+      { id: 'user-tenant', email: 'tenant@tncb.vn', name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' },
+      { id: 'user-landlord', email: 'landlord@tncb.vn', name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' }
+    ])
+  );
+  const [currentUser, setCurrentUser] = useState(() =>
+    loadFromStorage('TNCB_CURRENT_USER', null)
+  );
 
   // Sync to localStorage
   useEffect(() => {
@@ -52,15 +61,82 @@ export function AppProvider({ children }) {
     localStorage.setItem('TNCB_ROLE', JSON.stringify(userRole));
   }, [userRole]);
 
+  useEffect(() => {
+    localStorage.setItem('TNCB_USERS', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(currentUser));
+    if (currentUser) {
+      setUserRole(currentUser.role);
+    }
+  }, [currentUser]);
+
+  // --- Auth Actions ---
+  const login = useCallback((email, password) => {
+    const user = users.find((u) => u.email === email && u.password === password);
+    if (user) {
+      setCurrentUser(user);
+      return { success: true, user };
+    }
+    return { success: false, message: 'Email hoặc mật khẩu không chính xác.' };
+  }, [users]);
+
+  const register = useCallback((name, email, phone, password, role) => {
+    if (users.some((u) => u.email === email)) {
+      return { success: false, message: 'Email này đã được sử dụng.' };
+    }
+    const newUser = {
+      id: `user-${Date.now()}`,
+      name,
+      email,
+      phone,
+      password,
+      role,
+      avatar: `https://picsum.photos/seed/user-${Date.now()}/100/100`,
+    };
+    setUsers((prev) => [...prev, newUser]);
+    setCurrentUser(newUser);
+    return { success: true, user: newUser };
+  }, [users]);
+
+  const logout = useCallback(() => {
+    setCurrentUser(null);
+    setUserRole('tenant');
+  }, []);
+
   // --- Property Actions ---
   const addProperty = useCallback((property) => {
     const newProp = {
       ...property,
       id: `prop-${Date.now()}`,
       verified: false,
+      postType: currentUser ? (currentUser.role === 'tenant' ? 'find_roommate' : 'find_tenant') : 'find_tenant',
+      postedBy: currentUser ? currentUser.id : 'user-landlord',
+      owner: currentUser ? {
+        name: currentUser.name,
+        phone: currentUser.phone,
+        avatar: currentUser.avatar,
+        zalo: currentUser.phone,
+      } : {
+        name: 'Nguyễn Văn Đạt',
+        phone: '0869333366',
+        avatar: 'https://picsum.photos/seed/owner-dat/100/100',
+        zalo: '0869333366',
+      }
     };
     setProperties((prev) => [...prev, newProp]);
     return newProp;
+  }, [currentUser]);
+
+  const calculatePropertyRating = useCallback((p) => {
+    let score = 0;
+    if (p.price > 0) score += 1;
+    if (p.electricity > 0 && p.water > 0) score += 1;
+    if (p.images && p.images.length >= 3 && p.description && p.description.length > 20) score += 1;
+    if (p.amenities && p.amenities.length >= 5) score += 1;
+    if (p.verified) score += 1;
+    return Math.max(1, score);
   }, []);
 
   const updateProperty = useCallback((id, updates) => {
@@ -203,6 +279,8 @@ export function AppProvider({ children }) {
     tickets,
     savedProperties,
     userRole,
+    users,
+    currentUser,
     // Setters
     setUserRole,
     // Property actions
@@ -220,12 +298,17 @@ export function AppProvider({ children }) {
     // Tickets
     createTicket,
     updateTicketStatus,
+    // Auth
+    login,
+    register,
+    logout,
     // Helpers
     getPropertyById,
     getContractsByProperty,
     getAvailableProperties,
     formatPrice,
     formatPriceShort,
+    calculatePropertyRating,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

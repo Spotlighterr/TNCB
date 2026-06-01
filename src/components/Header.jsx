@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
   House,
@@ -9,6 +9,13 @@ import {
   X,
   UserCircle,
   Buildings,
+  SignIn,
+  SignOut,
+  User,
+  Lock,
+  Phone as PhoneIcon,
+  EnvelopeSimple,
+  CheckCircle,
 } from '@phosphor-icons/react';
 
 const NAV_LINKS = [
@@ -18,13 +25,90 @@ const NAV_LINKS = [
 ];
 
 export default function Header() {
-  const { userRole, setUserRole } = useApp();
+  const { currentUser, login, register, logout } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regRole, setRegRole] = useState('tenant');
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const res = login(email, password);
+    if (res.success) {
+      setAuthSuccess('Đăng nhập thành công!');
+      setTimeout(() => {
+        setIsAuthOpen(false);
+        setAuthSuccess('');
+        setEmail('');
+        setPassword('');
+        navigate('/dashboard');
+      }, 1000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    if (!regName || !regEmail || !regPhone || !regPassword) {
+      setAuthError('Vui lòng điền đầy đủ các thông tin.');
+      return;
+    }
+    const res = register(regName, regEmail, regPhone, regPassword, regRole);
+    if (res.success) {
+      setAuthSuccess('Đăng ký tài khoản thành công!');
+      setTimeout(() => {
+        setIsAuthOpen(false);
+        setAuthSuccess('');
+        setRegName('');
+        setRegEmail('');
+        setRegPhone('');
+        setRegPassword('');
+        navigate('/dashboard');
+      }, 1000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleQuickLogin = (roleType) => {
+    setEmail(roleType === 'tenant' ? 'tenant@tncb.vn' : 'landlord@tncb.vn');
+    setPassword('123');
+    const res = login(
+      roleType === 'tenant' ? 'tenant@tncb.vn' : 'landlord@tncb.vn',
+      '123'
+    );
+    if (res.success) {
+      setAuthSuccess('Đăng nhập nhanh thành công!');
+      setTimeout(() => {
+        setIsAuthOpen(false);
+        setAuthSuccess('');
+        setEmail('');
+        setPassword('');
+        navigate('/dashboard');
+      }, 800);
+    }
   };
 
   return (
@@ -55,25 +139,67 @@ export default function Header() {
 
         {/* Right Section */}
         <div className="header-actions">
-          {/* Role Switcher */}
-          <div className="role-switcher hide-mobile" id="role-switcher">
+          {currentUser ? (
+            /* User Panel (Logged In) */
+            <div className="user-profile-wrapper">
+              <button
+                className="user-profile-trigger"
+                onClick={() => setProfileOpen(!profileOpen)}
+                id="profile-trigger-btn"
+              >
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="user-trigger-avatar"
+                />
+                <span className="user-trigger-name hide-mobile">{currentUser.name}</span>
+              </button>
+
+              {profileOpen && (
+                <div className="profile-dropdown glass-strong animate-scale-in" id="profile-dropdown">
+                  <div className="profile-dropdown-header">
+                    <strong>{currentUser.name}</strong>
+                    <span className="profile-dropdown-role">
+                      {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / Ở ghép'}
+                    </span>
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="profile-dropdown-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <ChartBar size={18} />
+                    Trang quản trị
+                  </Link>
+                  <button
+                    className="profile-dropdown-item logout-btn"
+                    onClick={() => {
+                      logout();
+                      setProfileOpen(false);
+                      navigate('/');
+                    }}
+                    id="logout-btn"
+                  >
+                    <SignOut size={18} />
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Login Button (Logged Out) */
             <button
-              className={`role-btn ${userRole === 'tenant' ? 'active' : ''}`}
-              onClick={() => setUserRole('tenant')}
-              id="role-tenant-btn"
+              className="btn btn-primary"
+              onClick={() => {
+                setIsAuthOpen(true);
+                setAuthMode('login');
+              }}
+              id="login-trigger-btn"
             >
-              <UserCircle size={16} weight="fill" />
-              Khách thuê
+              <SignIn size={18} weight="bold" />
+              <span>Đăng nhập</span>
             </button>
-            <button
-              className={`role-btn ${userRole === 'landlord' ? 'active' : ''}`}
-              onClick={() => setUserRole('landlord')}
-              id="role-landlord-btn"
-            >
-              <Buildings size={16} weight="fill" />
-              Chủ trọ
-            </button>
-          </div>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button
@@ -87,7 +213,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="mobile-menu animate-fade-in" id="mobile-menu">
           <nav className="mobile-nav">
@@ -103,21 +229,241 @@ export default function Header() {
               </Link>
             ))}
           </nav>
-          <div className="mobile-role-switcher">
-            <button
-              className={`role-btn ${userRole === 'tenant' ? 'active' : ''}`}
-              onClick={() => { setUserRole('tenant'); setMobileMenuOpen(false); }}
-            >
-              <UserCircle size={16} weight="fill" />
-              Khách thuê
+          {currentUser ? (
+            <div className="mobile-auth-section">
+              <div className="mobile-user-info">
+                <img src={currentUser.avatar} alt="" className="user-trigger-avatar" />
+                <div>
+                  <strong>{currentUser.name}</strong>
+                  <p className="text-caption" style={{ fontSize: '11px' }}>
+                    {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / Ở ghép'}
+                  </p>
+                </div>
+              </div>
+              <button
+                className="btn btn-secondary"
+                style={{ width: '100%', marginTop: 'var(--space-2)' }}
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                  navigate('/');
+                }}
+              >
+                <SignOut size={16} />
+                Đăng xuất
+              </button>
+            </div>
+          ) : (
+            <div className="mobile-auth-section">
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  setIsAuthOpen(true);
+                  setAuthMode('login');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <SignIn size={18} />
+                Đăng nhập
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Auth Modal Overlay */}
+      {isAuthOpen && (
+        <div className="auth-overlay animate-fade-in" onClick={() => setIsAuthOpen(false)}>
+          <div
+            className="auth-modal glass-strong animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+            id="auth-modal"
+          >
+            <button className="auth-close-btn" onClick={() => setIsAuthOpen(false)}>
+              <X size={20} />
             </button>
-            <button
-              className={`role-btn ${userRole === 'landlord' ? 'active' : ''}`}
-              onClick={() => { setUserRole('landlord'); setMobileMenuOpen(false); }}
-            >
-              <Buildings size={16} weight="fill" />
-              Chủ trọ
-            </button>
+
+            {/* Modal Title Tabs */}
+            <div className="auth-tabs">
+              <button
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthError('');
+                }}
+              >
+                Đăng nhập
+              </button>
+              <button
+                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthError('');
+                }}
+              >
+                Đăng ký
+              </button>
+            </div>
+
+            {authError && <div className="auth-error-banner">{authError}</div>}
+            {authSuccess && (
+              <div className="auth-success-banner">
+                <CheckCircle size={18} weight="fill" />
+                <span>{authSuccess}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            {authMode === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="auth-form" id="login-form">
+                <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                  <label className="form-label">Email tài khoản</label>
+                  <div className="auth-input-wrap">
+                    <EnvelopeSimple size={18} />
+                    <input
+                      type="email"
+                      className="auth-input"
+                      required
+                      placeholder="email@tncb.vn"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <label className="form-label">Mật khẩu</label>
+                  <div className="auth-input-wrap">
+                    <Lock size={18} />
+                    <input
+                      type="password"
+                      className="auth-input"
+                      required
+                      placeholder="Mật khẩu của bạn"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  Xác nhận đăng nhập
+                </button>
+
+                {/* Quick login / Demo Accounts helper */}
+                <div className="quick-login-box">
+                  <span className="quick-login-label">Đăng nhập nhanh để test thử:</span>
+                  <div className="quick-login-buttons">
+                    <button
+                      type="button"
+                      className="quick-login-btn tenant-quick"
+                      onClick={() => handleQuickLogin('tenant')}
+                    >
+                      <UserCircle size={14} weight="fill" />
+                      Sinh viên ở ghép
+                    </button>
+                    <button
+                      type="button"
+                      className="quick-login-btn landlord-quick"
+                      onClick={() => handleQuickLogin('landlord')}
+                    >
+                      <Buildings size={14} weight="fill" />
+                      Chủ nhà cho thuê
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* Register Form */}
+            {authMode === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="auth-form" id="register-form">
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="form-label">Họ và tên</label>
+                  <div className="auth-input-wrap">
+                    <User size={18} />
+                    <input
+                      className="auth-input"
+                      required
+                      placeholder="Nguyễn Văn A"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="form-label">Email đăng ký</label>
+                  <div className="auth-input-wrap">
+                    <EnvelopeSimple size={18} />
+                    <input
+                      type="email"
+                      className="auth-input"
+                      required
+                      placeholder="email@tncb.vn"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="form-label">Số điện thoại liên hệ</label>
+                  <div className="auth-input-wrap">
+                    <PhoneIcon size={18} />
+                    <input
+                      className="auth-input"
+                      required
+                      placeholder="09XXXXXXXX"
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                  <label className="form-label">Mật khẩu</label>
+                  <div className="auth-input-wrap">
+                    <Lock size={18} />
+                    <input
+                      type="password"
+                      className="auth-input"
+                      required
+                      placeholder="Tối thiểu 6 ký tự"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <label className="form-label" style={{ marginBottom: 'var(--space-1)' }}>
+                    Tôi là:
+                  </label>
+                  <div className="role-selector-row">
+                    <div
+                      className={`role-select-box ${regRole === 'tenant' ? 'active' : ''}`}
+                      onClick={() => setRegRole('tenant')}
+                    >
+                      <UserCircle size={20} />
+                      <span>Tìm ở ghép</span>
+                    </div>
+                    <div
+                      className={`role-select-box ${regRole === 'landlord' ? 'active' : ''}`}
+                      onClick={() => setRegRole('landlord')}
+                    >
+                      <Buildings size={20} />
+                      <span>Chủ trọ cho thuê</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  Đăng ký tài khoản
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -130,6 +476,7 @@ export default function Header() {
           height: var(--header-height);
           display: flex;
           align-items: center;
+          border-bottom: 1px solid var(--color-border);
         }
 
         .header-inner {
@@ -191,34 +538,324 @@ export default function Header() {
           gap: var(--space-3);
         }
 
-        .role-switcher {
-          display: flex;
-          background: var(--bg-secondary);
-          border-radius: var(--radius-subtle);
-          padding: 3px;
-          gap: 2px;
+        /* Profile Panel Trigger */
+        .user-profile-wrapper {
+          position: relative;
         }
 
-        .role-btn {
+        .user-profile-trigger {
           display: flex;
           align-items: center;
-          gap: var(--space-1);
-          padding: var(--space-2) var(--space-3);
-          border-radius: 6px;
+          gap: var(--space-2);
+          padding: 4px var(--space-3) 4px 4px;
+          border-radius: var(--radius-pill);
+          background: var(--bg-secondary);
+          border: 1px solid var(--color-border);
+          transition: background var(--duration-fast) var(--ease-smooth);
+        }
+
+        .user-profile-trigger:hover {
+          background: var(--bg-tertiary);
+        }
+
+        .user-trigger-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid var(--color-border-strong);
+        }
+
+        .user-trigger-name {
+          font-size: var(--text-sm);
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-main);
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+          position: absolute;
+          top: calc(100% + var(--space-2));
+          right: 0;
+          width: 220px;
+          border-radius: var(--radius-main);
+          padding: var(--space-2);
+          z-index: var(--z-dropdown);
+          animation: scaleIn var(--duration-fast) var(--ease-tactile) both;
+        }
+
+        .profile-dropdown-header {
+          padding: var(--space-3) var(--space-4);
+          border-bottom: 1px solid var(--color-divider);
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          margin-bottom: var(--space-1);
+        }
+
+        .profile-dropdown-header strong {
+          font-size: var(--text-sm);
+          color: var(--color-text-main);
+        }
+
+        .profile-dropdown-role {
           font-size: var(--text-xs);
+          color: var(--color-accent);
           font-weight: var(--weight-medium);
+        }
+
+        .profile-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
+          padding: var(--space-3) var(--space-4);
+          border-radius: var(--radius-subtle);
+          font-size: var(--text-sm);
+          color: var(--color-text-muted);
+          width: 100%;
+          text-align: left;
+          transition: all var(--duration-fast) var(--ease-smooth);
+        }
+
+        .profile-dropdown-item:hover {
+          background: var(--bg-secondary);
+          color: var(--color-text-main);
+        }
+
+        .profile-dropdown-item.logout-btn:hover {
+          color: var(--color-error);
+          background: rgba(220, 38, 38, 0.08);
+        }
+
+        /* Mobile Auth section */
+        .mobile-auth-section {
+          padding-top: var(--space-4);
+          border-top: 1px solid var(--color-divider);
+        }
+
+        .mobile-user-info {
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
+          margin-bottom: var(--space-3);
+        }
+
+        /* Auth Modal Overlay */
+        .auth-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(11, 15, 25, 0.45);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: var(--z-modal-backdrop);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: var(--content-padding);
+        }
+
+        .auth-modal {
+          width: 100%;
+          max-width: 440px;
+          border-radius: var(--radius-lg);
+          padding: var(--space-8) var(--space-6) var(--space-6);
+          position: relative;
+          box-shadow: var(--shadow-xl);
+          animation: scaleIn var(--duration-spring) var(--ease-tactile) both;
+        }
+
+        .auth-close-btn {
+          position: absolute;
+          top: var(--space-4);
+          right: var(--space-4);
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: var(--color-text-muted);
           transition: all var(--duration-fast) var(--ease-smooth);
         }
 
-        .role-btn:hover {
+        .auth-close-btn:hover {
+          background: var(--bg-secondary);
           color: var(--color-text-main);
         }
 
-        .role-btn.active {
-          background: var(--color-surface);
+        .auth-tabs {
+          display: flex;
+          border-bottom: 2px solid var(--color-divider);
+          margin-bottom: var(--space-6);
+          gap: var(--space-4);
+        }
+
+        .auth-tab {
+          padding-bottom: var(--space-3);
+          font-size: var(--text-base);
+          font-weight: var(--weight-bold);
+          color: var(--color-text-subtle);
+          position: relative;
+          transition: all var(--duration-fast) var(--ease-smooth);
+          border: none;
+          background: none;
+        }
+
+        .auth-tab.active {
           color: var(--color-accent);
-          box-shadow: var(--shadow-xs);
+        }
+
+        .auth-tab.active::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: var(--color-accent);
+          border-radius: var(--radius-pill);
+        }
+
+        .auth-input-wrap {
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
+          padding: var(--space-3) var(--space-4);
+          background: var(--color-surface);
+          border: 1px solid var(--color-border-strong);
+          border-radius: var(--radius-subtle);
+          transition: border-color var(--duration-fast) var(--ease-smooth);
+        }
+
+        .auth-input-wrap:focus-within {
+          border-color: var(--color-accent);
+          box-shadow: 0 0 0 3px var(--color-accent-subtle);
+        }
+
+        .auth-input-wrap svg {
+          color: var(--color-text-subtle);
+          flex-shrink: 0;
+        }
+
+        .auth-input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          font-size: var(--text-sm);
+          color: var(--color-text-main);
+        }
+
+        .auth-input::placeholder {
+          color: var(--color-text-subtle);
+        }
+
+        /* Error/Success Banners */
+        .auth-error-banner {
+          background: rgba(220, 38, 38, 0.08);
+          border: 1px solid rgba(220, 38, 38, 0.2);
+          color: var(--color-error);
+          padding: var(--space-3);
+          border-radius: var(--radius-subtle);
+          font-size: var(--text-xs);
+          margin-bottom: var(--space-4);
+          font-weight: var(--weight-medium);
+        }
+
+        .auth-success-banner {
+          background: var(--color-accent-subtle);
+          border: 1px solid var(--color-accent-muted);
+          color: var(--color-accent);
+          padding: var(--space-3);
+          border-radius: var(--radius-subtle);
+          font-size: var(--text-xs);
+          margin-bottom: var(--space-4);
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          font-weight: var(--weight-medium);
+        }
+
+        /* Role Picker Row */
+        .role-selector-row {
+          display: flex;
+          gap: var(--space-3);
+        }
+
+        .role-select-box {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-2);
+          padding: var(--space-4) var(--space-2);
+          border-radius: var(--radius-main);
+          border: 1px solid var(--color-border);
+          background: var(--bg-secondary);
+          cursor: pointer;
+          transition: all var(--duration-fast) var(--ease-smooth);
+          color: var(--color-text-muted);
+        }
+
+        .role-select-box:hover {
+          background: var(--bg-tertiary);
+          color: var(--color-text-main);
+        }
+
+        .role-select-box.active {
+          background: var(--color-accent-subtle);
+          border-color: var(--color-accent);
+          color: var(--color-accent);
+          font-weight: var(--weight-semibold);
+        }
+
+        /* Quick login helper */
+        .quick-login-box {
+          margin-top: var(--space-6);
+          padding-top: var(--space-4);
+          border-top: 1px dashed var(--color-divider);
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .quick-login-label {
+          font-size: var(--text-xs);
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-subtle);
+        }
+
+        .quick-login-buttons {
+          display: flex;
+          gap: var(--space-2);
+        }
+
+        .quick-login-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px var(--space-2);
+          border-radius: var(--radius-subtle);
+          font-size: 11px;
+          font-weight: var(--weight-semibold);
+          border: 1px solid var(--color-border-strong);
+          background: var(--bg-secondary);
+          color: var(--color-text-main);
+          transition: all var(--duration-fast) var(--ease-smooth);
+          cursor: pointer;
+        }
+
+        .quick-login-btn.tenant-quick:hover {
+          background: var(--bg-tertiary);
+          border-color: var(--color-accent-muted);
+          color: var(--color-accent);
+        }
+
+        .quick-login-btn.landlord-quick:hover {
+          background: var(--bg-tertiary);
+          border-color: var(--color-accent-muted);
+          color: var(--color-accent);
         }
 
         .mobile-menu-toggle {
@@ -264,26 +901,6 @@ export default function Header() {
         .mobile-nav-link.active {
           color: var(--color-accent);
           background: var(--color-accent-subtle);
-        }
-
-        .mobile-role-switcher {
-          display: flex;
-          gap: var(--space-2);
-          padding-top: var(--space-4);
-          border-top: 1px solid var(--color-divider);
-        }
-
-        .mobile-role-switcher .role-btn {
-          flex: 1;
-          justify-content: center;
-          padding: var(--space-3);
-          background: var(--bg-secondary);
-          border-radius: var(--radius-subtle);
-        }
-
-        .mobile-role-switcher .role-btn.active {
-          background: var(--color-accent-subtle);
-          color: var(--color-accent);
         }
       `}</style>
     </header>
