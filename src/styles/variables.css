@@ -34,12 +34,12 @@
   --color-text-muted: #475569;
   --color-text-subtle: #94a3b8;
 
-  /* Accent: Emerald (Taste Skill Color Lock) */
-  --color-accent: #059669;
-  --color-accent-hover: #047857;
-  --color-accent-light: #10b981;
-  --color-accent-subtle: rgba(5, 150, 105, 0.08);
-  --color-accent-muted: rgba(5, 150, 105, 0.15);
+  /* Accent: Cyan/Sky Blue (FindX Brand Color Lock) */
+  --color-accent: #0ea5e9;
+  --color-accent-hover: #0284c7;
+  --color-accent-light: #38bdf8;
+  --color-accent-subtle: rgba(14, 165, 233, 0.08);
+  --color-accent-muted: rgba(14, 165, 233, 0.15);
 
   /* Semantic Colors */
   --color-success: #059669;
@@ -125,11 +125,11 @@
   --color-text-muted: #94a3b8;
   --color-text-subtle: #64748b;
 
-  --color-accent: #10b981;
-  --color-accent-hover: #34d399;
-  --color-accent-light: #6ee7b7;
-  --color-accent-subtle: rgba(16, 185, 129, 0.12);
-  --color-accent-muted: rgba(16, 185, 129, 0.20);
+  --color-accent: #38bdf8;
+  --color-accent-hover: #0ea5e9;
+  --color-accent-light: #7dd3fc;
+  --color-accent-subtle: rgba(56, 189, 248, 0.12);
+  --color-accent-muted: rgba(56, 189, 248, 0.20);
 
   --color-surface: #141b2d;
   --color-surface-raised: #1e293b;

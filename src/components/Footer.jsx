@@ -7,6 +7,7 @@ import {
   MagnifyingGlass,
   ChartBar,
   Heart,
+  FacebookLogo,
 } from '@phosphor-icons/react';
 
 export default function Footer() {
@@ -52,11 +53,15 @@ export default function Footer() {
             <ul className="footer-links">
               <li className="footer-contact-item">
                 <Phone size={16} weight="regular" />
-                <span>0869 333 366</span>
+                <span>034 629 7668</span>
               </li>
               <li className="footer-contact-item">
                 <EnvelopeSimple size={16} weight="regular" />
-                <span>support@findx.vn</span>
+                <span>tncb.findx@gmail.com</span>
+              </li>
+              <li className="footer-contact-item">
+                <FacebookLogo size={16} weight="regular" />
+                <a href="https://facebook.com" target="_blank" rel="noreferrer">FindX - Tìm Nhà Cùng Bạn</a>
               </li>
             </ul>
           </div>

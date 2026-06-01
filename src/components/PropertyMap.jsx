@@ -36,7 +36,7 @@ export default function PropertyMap({ lat, lng, address, title }) {
         <div style="
           width: 32px;
           height: 32px;
-          background: var(--color-accent, #059669);
+          background: var(--color-accent, #0ea5e9);
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
           border: 3px solid #fff;

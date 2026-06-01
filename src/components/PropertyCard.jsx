@@ -184,20 +184,20 @@ export default function PropertyCard({ property, index = 0 }) {
           align-items: center;
           gap: 4px;
           padding: 4px 10px;
-          background: rgba(52, 211, 153, 0.18);
-          color: #059669;
+          background: rgba(14, 165, 233, 0.18);
+          color: #0284c7;
           font-size: 11px;
           font-weight: var(--weight-bold);
           border-radius: var(--radius-subtle);
-          border: 1px solid rgba(52, 211, 153, 0.3);
+          border: 1px solid rgba(14, 165, 233, 0.3);
           backdrop-filter: blur(4px);
         }
 
         /* Dark mode verified badge */
         :root[data-theme="dark"] .verified-badge {
-          color: #34d399;
-          background: rgba(16, 185, 129, 0.15);
-          border-color: rgba(16, 185, 129, 0.25);
+          color: #38bdf8;
+          background: rgba(56, 189, 248, 0.15);
+          border-color: rgba(56, 189, 248, 0.25);
         }
 
         .property-card-save {

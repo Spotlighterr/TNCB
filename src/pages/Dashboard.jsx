@@ -32,6 +32,7 @@ import {
   CookingPot,
   ShieldCheck,
   UserCircle,
+  FacebookLogo,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -1542,20 +1543,27 @@ export default function Dashboard() {
 
             {/* Emergency Hotline */}
             <div className="dashboard-section" style={{ marginTop: 'var(--space-8)' }}>
-              <h3 className="dashboard-section-title">Hotline hỗ trợ kỹ thuật</h3>
+              <h3 className="dashboard-section-title">Thông tin liên hệ liên lạc hỗ trợ</h3>
               <div className="hotline-grid">
                 <div className="hotline-card">
-                  <Phone size={20} color="var(--color-error)" />
+                  <Phone size={20} color="var(--color-accent)" />
                   <div>
-                    <strong>Sửa chữa kỹ thuật khẩn cấp</strong>
-                    <p className="text-mono">0869 333 366</p>
+                    <strong>Hotline Tìm Nhà Cùng Bạn</strong>
+                    <p className="text-mono">034 629 7668</p>
                   </div>
                 </div>
                 <div className="hotline-card">
                   <EnvelopeSimple size={20} color="var(--color-info)" />
                   <div>
                     <strong>Email hỗ trợ</strong>
-                    <p className="text-mono">support@findx.vn</p>
+                    <p className="text-mono">tncb.findx@gmail.com</p>
+                  </div>
+                </div>
+                <div className="hotline-card">
+                  <FacebookLogo size={20} color="#1877f2" />
+                  <div>
+                    <strong>Facebook Page</strong>
+                    <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-mono" style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontWeight: '500' }}>FindX - Tìm Nhà Cùng Bạn</a>
                   </div>
                 </div>
               </div>
