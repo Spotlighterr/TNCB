@@ -58,7 +58,7 @@ const LANDLORD_TABS = [
 const TENANT_TABS = [
   { id: 'saved', label: 'Phòng đã lưu', icon: Heart },
   { id: 'rental', label: 'Phòng đang thuê', icon: House },
-  { id: 'my-listings', label: 'Tin ở ghép của tôi', icon: FileText },
+  { id: 'my-listings', label: 'Tin khách thuê của tôi', icon: FileText },
   { id: 'tickets', label: 'Yêu cầu hỗ trợ', icon: Wrench },
   { id: 'contacts', label: 'Liên hệ chủ trọ', icon: Phone },
 ];
@@ -280,7 +280,7 @@ export default function Dashboard() {
       setEditingRoomId(null);
     } else {
       addProperty(data);
-      showToast(currentUser.role === 'tenant' ? 'Đăng tin tìm ở ghép thành công!' : 'Thêm phòng trọ mới thành công!');
+      showToast(currentUser.role === 'tenant' ? 'Đăng tin khách thuê thành công!' : 'Thêm phòng trọ mới thành công!');
       setIsAddingRoom(false);
     }
   };
@@ -468,7 +468,7 @@ export default function Dashboard() {
         <div className="sidebar-header">
           <Buildings size={24} weight="duotone" color="var(--color-accent)" />
           <span className="sidebar-title">
-            {userRole === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / ở ghép'}
+            {userRole === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
           </span>
         </div>
 
@@ -499,7 +499,7 @@ export default function Dashboard() {
                   {editingRoomId
                     ? 'Chỉnh sửa thông tin bài đăng'
                     : currentUser.role === 'tenant'
-                    ? 'Đăng tin tìm bạn ở ghép mới'
+                    ? 'Đăng tin tìm khách thuê mới'
                     : 'Thêm phòng trọ mới cho thuê'}
                 </h3>
                 <button
@@ -522,7 +522,7 @@ export default function Dashboard() {
                       required
                       placeholder={
                         currentUser.role === 'tenant'
-                          ? 'Ví dụ: Tìm nam ở ghép gấp tại Studio Chùa Láng gần FTU'
+                          ? 'Ví dụ: Tìm nam ở cùng gấp tại Studio Chùa Láng gần FTU'
                           : 'Ví dụ: Căn hộ Studio Ban Công Kính Đầy Đủ Tiện Nghi Cầu Giấy'
                       }
                       value={roomForm.title}
@@ -679,13 +679,13 @@ export default function Dashboard() {
                   </div>
 
                   <div className="form-group full-width">
-                    <label className="form-label">Mô tả phòng / Yêu cầu ở ghép</label>
+                    <label className="form-label">Mô tả phòng / Yêu cầu tìm khách thuê</label>
                     <textarea
                       className="input"
                       rows={4}
                       placeholder={
                         currentUser.role === 'tenant'
-                          ? 'Mô tả chi tiết phòng trọ hiện tại của bạn và các tiêu chuẩn tìm bạn ở cùng (sạch sẽ, không hút thuốc, sinh viên trường Ngoại thương...)'
+                          ? 'Mô tả chi tiết phòng trọ hiện tại của bạn và các tiêu chuẩn tìm khách thuê ở cùng (sạch sẽ, không hút thuốc, sinh viên trường Ngoại thương...)'
                           : 'Nhập mô tả chi tiết phòng trọ phục vụ sinh viên tìm thuê...'
                       }
                       value={roomForm.description}
@@ -729,7 +729,7 @@ export default function Dashboard() {
                     Hủy bỏ
                   </button>
                   <button type="submit" className="btn btn-primary" id="save-room-btn">
-                    {editingRoomId ? 'Lưu cập nhật' : currentUser.role === 'tenant' ? 'Đăng tin ở ghép' : 'Thêm phòng mới'}
+                    {editingRoomId ? 'Lưu cập nhật' : currentUser.role === 'tenant' ? 'Đăng tin tìm khách thuê' : 'Thêm phòng mới'}
                   </button>
                 </div>
               </form>
@@ -1301,10 +1301,10 @@ export default function Dashboard() {
         {userRole === 'tenant' && activeTab === 'my-listings' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
             <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Tin tìm bạn ở ghép của tôi</h2>
+              <h2 className="dashboard-page-title">Tin tìm khách thuê của tôi</h2>
               <button className="btn btn-primary" onClick={handleAddRoomClick}>
                 <Plus size={18} />
-                Đăng tin ở ghép
+                Đăng tin tìm khách thuê
               </button>
             </div>
 
@@ -1353,7 +1353,7 @@ export default function Dashboard() {
                             <button
                               className="btn btn-ghost btn-sm"
                               onClick={() => {
-                                if (confirm('Bạn có chắc chắn muốn xóa bài đăng ở ghép này?')) {
+                                if (confirm('Bạn có chắc chắn muốn xóa bài đăng tìm khách thuê này?')) {
                                   deleteProperty(p.id);
                                   showToast('Xóa tin đăng thành công!');
                                 }
@@ -1373,9 +1373,9 @@ export default function Dashboard() {
             ) : (
               <div className="dashboard-empty">
                 <FileText size={48} color="var(--color-text-subtle)" />
-                <p>Bạn chưa đăng bài tìm ở ghép nào hiện tại.</p>
+                <p>Bạn chưa đăng bài tìm khách thuê nào hiện tại.</p>
                 <button className="btn btn-primary" onClick={handleAddRoomClick}>
-                  Đăng tin tìm ở ghép ngay
+                  Đăng tin tìm khách thuê ngay
                 </button>
               </div>
             )}

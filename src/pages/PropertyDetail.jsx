@@ -90,7 +90,7 @@ export default function PropertyDetail() {
                   </span>
                 )}
                 <span className={`badge ${property.postType === 'find_roommate' ? 'badge-roommate' : 'badge-status'}`}>
-                  {property.postType === 'find_roommate' ? 'Tìm ở ghép' : 'Cho thuê'}
+                  {property.postType === 'find_roommate' ? 'Khách thuê' : 'Cho thuê'}
                 </span>
                 <span className="badge badge-status">{property.type}</span>
               </div>
@@ -202,7 +202,7 @@ export default function PropertyDetail() {
                 <div>
                   <h4 className="contact-name">{property.owner.name}</h4>
                   <p className="text-caption">
-                    {property.postType === 'find_roommate' ? 'Bạn đang ở ghép' : 'Chủ trọ'}
+                    {property.postType === 'find_roommate' ? 'Khách thuê' : 'Chủ trọ'}
                   </p>
                 </div>
               </div>

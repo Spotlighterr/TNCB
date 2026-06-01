@@ -161,7 +161,7 @@ export default function Header() {
                   <div className="profile-dropdown-header">
                     <strong>{currentUser.name}</strong>
                     <span className="profile-dropdown-role">
-                      {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / Ở ghép'}
+                      {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
                     </span>
                   </div>
                   <Link
@@ -237,7 +237,7 @@ export default function Header() {
                 <div>
                   <strong>{currentUser.name}</strong>
                   <p className="text-caption" style={{ fontSize: '11px' }}>
-                    {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê / Ở ghép'}
+                    {currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
                   </p>
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function Header() {
                       onClick={() => handleQuickLogin('tenant')}
                     >
                       <UserCircle size={14} weight="fill" />
-                      Sinh viên ở ghép
+                      Sinh viên (Khách thuê)
                     </button>
                     <button
                       type="button"
@@ -449,7 +449,7 @@ export default function Header() {
                       onClick={() => setRegRole('tenant')}
                     >
                       <UserCircle size={20} />
-                      <span>Tìm ở ghép</span>
+                      <span>Khách thuê</span>
                     </div>
                     <div
                       className={`role-select-box ${regRole === 'landlord' ? 'active' : ''}`}

@@ -54,7 +54,7 @@ export default function PropertyCard({ property, index = 0 }) {
             </span>
           )}
           <span className={`post-type-badge ${property.postType === 'find_roommate' ? 'roommate' : 'rent'}`}>
-            {property.postType === 'find_roommate' ? 'Ở ghép' : 'Cho thuê'}
+            {property.postType === 'find_roommate' ? 'Khách thuê' : 'Cho thuê'}
           </span>
         </div>
 
