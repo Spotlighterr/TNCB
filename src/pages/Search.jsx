@@ -221,10 +221,10 @@ export default function Search() {
               id="sort-by-select"
             >
               <option value="">Mặc định</option>
-              <option value="az">Tên A => Z</option>
-              <option value="za">Tên Z => A</option>
-              <option value="price-asc">Giá thấp => cao</option>
-              <option value="price-desc">Giá cao => thấp</option>
+              <option value="az">Tên A ➜ Z</option>
+              <option value="za">Tên Z ➜ A</option>
+              <option value="price-asc">Giá thấp ➜ cao</option>
+              <option value="price-desc">Giá cao ➜ thấp</option>
             </select>
           </div>
         </div>

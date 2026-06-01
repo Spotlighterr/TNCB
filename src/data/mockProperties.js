@@ -482,4 +482,4 @@ for (let i = 1; i <= 90; i++) {
   });
 }
 
-export const properties = [...baseProperties, ...generatedProperties];
+export const mockProperties = [...baseProperties, ...generatedProperties];
