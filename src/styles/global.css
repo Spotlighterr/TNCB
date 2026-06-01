@@ -173,14 +173,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-hover {
-  transition: transform var(--duration-spring) var(--ease-tactile),
-              box-shadow var(--duration-spring) var(--ease-tactile),
-              border-color var(--duration-spring) var(--ease-tactile);
+  transition: transform var(--duration-spring) var(--ease-bounce),
+              box-shadow var(--duration-spring) var(--ease-bounce),
+              border-color var(--duration-spring) var(--ease-bounce);
 }
 
 .card-hover:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-8px) scale(1.025);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow-accent);
+  border-color: var(--color-accent);
 }
 
 /* ============================================
@@ -197,7 +198,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: var(--text-sm);
   line-height: 1;
   white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease-tactile);
+  transition: all var(--duration-spring) var(--ease-spring);
   cursor: pointer;
   user-select: none;
   position: relative;
@@ -208,7 +209,7 @@ h1, h2, h3, h4, h5, h6 {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255, 255, 255, 0.25) 0%, transparent 60%);
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255, 255, 255, 0.3) 0%, transparent 60%);
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-smooth);
   pointer-events: none;
@@ -218,8 +219,13 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 1;
 }
 
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
 .btn:active {
-  transform: scale(0.96);
+  transform: translateY(1px) scale(0.95);
 }
 
 .btn-primary {
@@ -229,12 +235,11 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-primary:hover {
   background: var(--color-accent-hover);
-  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
 }
 
 .btn-primary:active {
-  transform: translateY(0) scale(0.97);
+  background: var(--color-accent-hover);
 }
 
 .btn-secondary {
@@ -245,7 +250,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-secondary:hover {
   background: var(--color-accent-muted);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
 }
 
 .btn-ghost {
@@ -255,7 +260,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-ghost:hover {
   background: var(--bg-secondary);
-  transform: translateY(-1px);
 }
 
 .btn-lg {
@@ -774,8 +778,9 @@ a:focus-visible {
 }
 
 /* ============================================
-   REDUCED MOTION — Accessibility
+   REDUCED MOTION — Disabled for rich visual demo
    ============================================ */
+/* 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -802,6 +807,7 @@ a:focus-visible {
     animation: none !important;
   }
 }
+*/
 
 /* ============================================
    RESPONSIVE (tablet & phone)
