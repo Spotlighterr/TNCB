@@ -112,7 +112,8 @@ export default function Header() {
   };
 
   return (
-    <header className="header glass" id="main-header">
+    <>
+      <header className="header glass" id="main-header">
       <div className="header-inner container">
         {/* Logo */}
         <Link to="/" className="header-logo" id="logo-link">
@@ -271,9 +272,10 @@ export default function Header() {
           )}
         </div>
       )}
+    </header>
 
-      {/* Auth Modal Overlay */}
-      {isAuthOpen && (
+    {/* Auth Modal Overlay */}
+    {isAuthOpen && (
         <div className="auth-overlay animate-fade-in" onClick={() => setIsAuthOpen(false)}>
           <div
             className="auth-modal glass-strong animate-scale-in"
@@ -903,6 +905,6 @@ export default function Header() {
           background: var(--color-accent-subtle);
         }
       `}</style>
-    </header>
+    </>
   );
 }
