@@ -1,0 +1,67 @@
+# ============================================
+# TNCB Rent - Production-Ready Docker Compose Stack
+# Integrates: Frontend, API Backend, Redis Cache & Cloudflare Tunnel
+# ============================================
+
+version: '3.8'
+
+services:
+  # 1. Frontend Web App (Nginx Serving React SPA)
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: tncb-frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - tncb-network
+    depends_on:
+      - api
+
+  # 2. Mock API Backend (representing Node.js/Go API)
+  api:
+    image: node:20-alpine
+    container_name: tncb-api
+    restart: always
+    command: >
+      sh -c "echo 'Starting Mock Backend API...' && 
+             mkdir -p /app && 
+             echo 'console.log(\"API Backend Running on port 5000...\"); setInterval(() => {}, 1000);' > /app/server.js && 
+             node /app/server.js"
+    expose:
+      - "5000"
+    networks:
+      - tncb-network
+    depends_on:
+      - redis
+
+  # 3. Redis Caching Layer (Rate Limiting, Hot Cache)
+  redis:
+    image: redis:7-alpine
+    container_name: tncb-redis
+    restart: always
+    expose:
+      - "6379"
+    command: redis-server --requirepass strongredispassword
+    networks:
+      - tncb-network
+
+  # 4. Cloudflare Tunnel Container (No Public IP & No Inbound Ports required!)
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tncb-cf-tunnel
+    restart: always
+    environment:
+      # In production, replace this token with your actual Cloudflare Tunnel token
+      - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
+    command: tunnel --no-autoupdate run
+    networks:
+      - tncb-network
+    depends_on:
+      - frontend
+
+networks:
+  tncb-network:
+    driver: bridge
