@@ -17,7 +17,14 @@
 | **Đăng nhập / Đăng ký** | Phân quyền **Khách thuê** và **Chủ trọ** (dữ liệu lưu local, demo) |
 | **Giao diện** | Light/Dark mode, bottom navigation trên mobile, thiết kế responsive |
 
-> **Lưu ý:** Phiên bản hiện tại dùng **dữ liệu mẫu (mock)** trong trình duyệt, chưa kết nối API backend thật.
+## Cập nhật dữ liệu hành chính & UI mới nhất (Tháng 6/2026)
+
+Dự án đã được nâng cấp toàn diện về mặt dữ liệu địa lý hành chính và tối ưu giao diện:
+- **Cập nhật địa chỉ sáp nhập Hà Nội (Nghị quyết 1656/NQ-UBTVQH15)**: Tích hợp đầy đủ các phường sáp nhập mới (VD: *Phường Cầu Giấy*, *Phường Nghĩa Đô*, *Phường Đống Đa*...) đồng thời duy trì tùy chọn các phường cũ (VD: *Dịch Vọng Hậu*, *Láng Hạ*) để người dùng thuận tiện tìm kiếm theo cả thói quen cũ và mới.
+- **Bao phủ 100% quận huyện**: Mở rộng danh mục đầy đủ **30 quận, huyện, thị xã** của Hà Nội và **22 quận, huyện, thành phố** của TP. Hồ Chí Minh kèm danh sách phường xã đồng bộ.
+- **Sắp xếp bảng chữ cái (A-Z)**: Toàn bộ danh sách chọn trong bộ lọc (Thành phố, Quận/Huyện, Phường/Xã, Loại phòng) được tự động sắp xếp theo thứ tự bảng chữ cái tiếng Việt chuẩn xác (locale-aware).
+- **Tối ưu hiển thị giá**: Chuyển đổi toàn bộ định dạng giá từ viết tắt (`4.5tr/th`) sang đầy đủ rõ ràng (`4.5 triệu/tháng`), đồng thời chuyển màu chữ sang tông đơn sắc (`var(--color-text-main)`) tinh tế theo tiêu chuẩn Taste Skill.
+- **Nâng cấp nhãn "Xác thực"**: Đổi sang tông màu xanh lá cây đậm chất uy tín (Success Green) trên cả Light và Dark Mode, tạo cảm giác an tâm và tin cậy cho khách thuê trọ.
 
 ---
 
