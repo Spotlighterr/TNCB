@@ -915,12 +915,17 @@ export default function Dashboard() {
                           </td>
                         )}
                         <td>
-                          <div
-                            className={`switch ${p.isRented ? 'active' : ''}`}
-                            onClick={() => togglePropertyStatus(p.id)}
-                            title={p.isRented ? 'Đang thuê' : 'Trống'}
-                            id={`switch-${p.id}`}
-                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <div
+                              className={`switch ${p.isRented ? 'active' : ''}`}
+                              onClick={() => togglePropertyStatus(p.id)}
+                              title={p.isRented ? 'Đã cho thuê (Full)' : 'Còn trống'}
+                              id={`switch-${p.id}`}
+                            />
+                            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: p.isRented ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
+                              {p.isRented ? 'Full' : 'Còn trống'}
+                            </span>
+                          </div>
                         </td>
                         <td>
                           <div className="room-actions">
