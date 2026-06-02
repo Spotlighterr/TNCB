@@ -583,7 +583,7 @@ export default function Header() {
               <form onSubmit={handleLoginSubmit} className="auth-form" id="login-form">
                 <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
                   <label className="form-label">Email tài khoản</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <EnvelopeSimple size={18} />
                     <input
                       type="email"
@@ -593,12 +593,12 @@ export default function Header() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Mật khẩu</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <Lock size={18} />
                     <input
                       type="password"
@@ -608,7 +608,7 @@ export default function Header() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 {/* Forgot Password Link */}
@@ -638,7 +638,7 @@ export default function Header() {
               <form onSubmit={handleRegisterStep1} className="auth-form" id="register-form">
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Họ và tên</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <User size={18} />
                     <input
                       className="auth-input"
@@ -647,12 +647,12 @@ export default function Header() {
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Email đăng ký</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <EnvelopeSimple size={18} />
                     <input
                       type="email"
@@ -662,14 +662,14 @@ export default function Header() {
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">
                     Số điện thoại <span className="required-badge">Bắt buộc</span>
                   </label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <PhoneIcon size={18} />
                     <input
                       className="auth-input"
@@ -678,13 +678,13 @@ export default function Header() {
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
                     />
-                  </div>
+                  </label>
                   <span className="form-hint">Mã OTP xác thực sẽ được gửi đến số này qua Zalo</span>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Mật khẩu</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <Lock size={18} />
                     <input
                       type="password"
@@ -694,7 +694,7 @@ export default function Header() {
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
@@ -783,7 +783,7 @@ export default function Header() {
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
                   <label className="form-label">Số điện thoại đăng ký</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <PhoneIcon size={18} />
                     <input
                       className="auth-input"
@@ -792,7 +792,7 @@ export default function Header() {
                       value={forgotPhone}
                       onChange={(e) => setForgotPhone(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
@@ -848,7 +848,7 @@ export default function Header() {
                 {/* New Password Fields */}
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">Mật khẩu mới</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <Lock size={18} />
                     <input
                       type="password"
@@ -858,12 +858,12 @@ export default function Header() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
                   <label className="form-label">Xác nhận mật khẩu mới</label>
-                  <div className="auth-input-wrap">
+                  <label className="auth-input-wrap">
                     <Lock size={18} />
                     <input
                       type="password"
@@ -873,7 +873,7 @@ export default function Header() {
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
@@ -1179,6 +1179,7 @@ export default function Header() {
           border: 1px solid var(--color-border-strong);
           border-radius: var(--radius-subtle);
           transition: border-color var(--duration-fast) var(--ease-smooth);
+          cursor: text;
         }
 
         .auth-input-wrap:focus-within {
@@ -1197,6 +1198,14 @@ export default function Header() {
           background: transparent;
           font-size: var(--text-sm);
           color: var(--color-text-main);
+          outline: none !important;
+          box-shadow: none !important;
+        }
+
+        .auth-input:focus,
+        .auth-input:focus-visible {
+          outline: none !important;
+          box-shadow: none !important;
         }
 
         .auth-input::placeholder {
@@ -1365,15 +1374,17 @@ export default function Header() {
           background: var(--color-surface);
           border: 2px solid var(--color-border-strong);
           border-radius: var(--radius-main);
-          outline: none;
+          outline: none !important;
           transition: all var(--duration-fast) var(--ease-tactile);
           font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
         }
 
-        .otp-digit-input:focus {
+        .otp-digit-input:focus,
+        .otp-digit-input:focus-visible {
           border-color: var(--color-accent);
           box-shadow: 0 0 0 3px var(--color-accent-subtle);
           transform: scale(1.05);
+          outline: none !important;
         }
 
         .otp-digit-input.filled {

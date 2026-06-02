@@ -180,7 +180,7 @@ export default function ProfileModal({ isOpen, onClose }) {
           <form onSubmit={handleSubmit} className="profile-form" id="profile-edit-form">
             <div className="profile-form-group">
               <label className="form-label">Họ và tên</label>
-              <div className="auth-input-wrap">
+              <label className="auth-input-wrap">
                 <User size={18} />
                 <input
                   className="auth-input"
@@ -189,12 +189,12 @@ export default function ProfileModal({ isOpen, onClose }) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
-              </div>
+              </label>
             </div>
 
             <div className="profile-form-group">
               <label className="form-label">Email</label>
-              <div className="auth-input-wrap">
+              <label className="auth-input-wrap">
                 <EnvelopeSimple size={18} />
                 <input
                   type="email"
@@ -204,12 +204,12 @@ export default function ProfileModal({ isOpen, onClose }) {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
-              </div>
+              </label>
             </div>
 
             <div className="profile-form-group">
               <label className="form-label">Số điện thoại</label>
-              <div className="auth-input-wrap">
+              <label className="auth-input-wrap">
                 <PhoneIcon size={18} />
                 <input
                   className="auth-input"
@@ -218,12 +218,12 @@ export default function ProfileModal({ isOpen, onClose }) {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
-              </div>
+              </label>
             </div>
 
             <div className="profile-form-group">
               <label className="form-label">Vai trò</label>
-              <div className="auth-input-wrap" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+              <label className="auth-input-wrap" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
                 <User size={18} />
                 <input
                   className="auth-input"
@@ -231,7 +231,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                   value={currentUser.role === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
                   style={{ cursor: 'not-allowed' }}
                 />
-              </div>
+              </label>
             </div>
 
             <button
