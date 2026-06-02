@@ -358,9 +358,9 @@ export function AppProvider({ children }) {
 
   const checkDuplicateProperty = useCallback((newProperty) => {
     const ownerId = currentUser ? currentUser.id : 'user-landlord';
-    // Chỉ so sánh với các bài đăng đang hoạt động của chính chủ nhà này
+    // Chỉ so sánh với các bài đăng đang hoạt động của chính chủ nhà này và chưa bị gỡ xuống, và trạng thái không phải pending hay unlisted
     const activePosts = properties.filter(
-      (p) => p.postedBy === ownerId && !p.isRented
+      (p) => p.postedBy === ownerId && !p.isRented && !p.isUnlisted && p.status !== 'pending' && p.status !== 'unlisted'
     );
 
     let maxScore = 0;
@@ -437,10 +437,11 @@ export function AppProvider({ children }) {
   }, [currentUser, properties, calculateDistance, getJaccardSimilarity]);
 
   const addProperty = useCallback((property) => {
+    const isUserAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
     const newProp = {
       ...property,
       id: `prop-${Date.now()}`,
-      verified: false,
+      verified: isUserAdmin ? true : false,
       postType: currentUser ? (currentUser.role === 'tenant' ? 'find_roommate' : 'find_tenant') : 'find_tenant',
       postedBy: currentUser ? currentUser.id : 'user-landlord',
       owner: currentUser ? {
@@ -483,6 +484,22 @@ export function AppProvider({ children }) {
     setProperties((prev) =>
       prev.map((p) =>
         p.id === id ? { ...p, isRented: !p.isRented } : p
+      )
+    );
+  }, []);
+
+  const toggleUnlistProperty = useCallback((id) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, isUnlisted: !p.isUnlisted } : p
+      )
+    );
+  }, []);
+
+  const toggleVerifyProperty = useCallback((id) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, verified: !p.verified } : p
       )
     );
   }, []);
@@ -582,7 +599,7 @@ export function AppProvider({ children }) {
   );
 
   const getAvailableProperties = useCallback(
-    () => properties.filter((p) => !p.isRented),
+    () => properties.filter((p) => !p.isRented && !p.isUnlisted && p.status !== 'pending'),
     [properties]
   );
 
@@ -625,6 +642,8 @@ export function AppProvider({ children }) {
     updateProperty,
     deleteProperty,
     togglePropertyStatus,
+    toggleUnlistProperty,
+    toggleVerifyProperty,
     // Saved
     toggleSaveProperty,
     isPropertySaved,

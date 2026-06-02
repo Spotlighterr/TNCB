@@ -114,15 +114,20 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
   * **Trang chủ (`/`):** Hero section tối giản + Bento Stats Grid.
   * **Tìm kiếm (`/search`):** Giao diện danh bạ dạng Editorial Grid Layout kèm bộ lọc thông minh.
   * **Chi tiết (`/property/:id`):** Trình diễn album ảnh trượt, chi phí dịch vụ, bản đồ tương tác Leaflet.js ở chân trang.
-  * **Dashboard (`/dashboard`):** Dashboard kép linh hoạt đổi vai trò Khách thuê / Chủ trọ.
+  * **Dashboard (`/dashboard`):** Dashboard ba vai trò cực kỳ linh hoạt (Khách thuê / Chủ nhà / Quản trị viên Admin).
+* **Phân quyền Admin:** Tài khoản `admin@tncb.vn` có quyền quản trị tối cao (sửa/xóa/gỡ bất kỳ tin nào, gắn/gỡ nhãn xác thực nhanh, và truy cập hàng chờ duyệt tin trùng lặp).
 * Chi tiết sơ đồ khối kiến trúc xem tại [project_architecture.md](project_architecture.md).
 
 ### Thuật toán xử lý chính
 1. **Bộ lọc thông minh:** Lọc cascade động theo Quận huyện tùy biến theo Thành phố, kiểm tra khoảng giá nhập (tự định dạng VND) và tiện ích tích hợp mà không tải lại trang.
-2. **Tính hóa đơn hàng tháng:** Tự động tính toán lượng điện nước tiêu thụ (`Chỉ số mới - Chỉ số cũ * Đơn giá`) cộng gộp tiền nhà và phí dịch vụ tạo hóa đơn mới.
+2. **Gỡ & Đăng lại tin (Unlist/Publish):** Ẩn lập tức bài đăng khỏi trang tìm kiếm công khai/bản đồ mà không xóa dữ liệu, đồng thời loại bỏ bài đăng đó khỏi tập kiểm tra trùng lặp của thuật toán.
 3. **Đồng bộ trạng thái bản đồ:** Chủ trọ gạt Switch phòng trống $\leftrightarrow$ đang thuê $\rightarrow$ cập nhật tức thì trạng thái marker trên bản đồ của khách thuê.
-4. **Lưu tin yêu thích (Saved properties):** Quản lý mảng danh sách phòng yêu thích lưu local và cập nhật badge số lượng trên thanh tiêu đề.
-5. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
+4. **Lọc trùng tin tự động 3 lớp & Hàng chờ Admin:** 
+   - Kiểm tra khoảng cách GPS (công thức Haversine < 15m).
+   - Kiểm tra tổ hợp đặc tính phòng (loại phòng, diện tích, giá).
+   - Tính độ tương đồng văn bản Jaccard ($\ge 80\%$ chặn spam; $50\% \to 79\%$ chuyển trạng thái `pending` sang hàng chờ duyệt thủ công của Admin hiển thị giao diện đối chiếu song song).
+5. **Lưu tin yêu thích (Saved properties):** Quản lý mảng danh sách phòng yêu thích lưu local và cập nhật badge số lượng trên thanh tiêu đề.
+6. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
 
 ---
 

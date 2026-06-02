@@ -33,6 +33,8 @@ import {
   ShieldCheck,
   UserCircle,
   FacebookLogo,
+  Eye,
+  EyeSlash,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -53,7 +55,13 @@ const LANDLORD_TABS = [
   { id: 'overview', label: 'Tổng quan', icon: ChartBar },
   { id: 'rooms', label: 'Quản lý phòng', icon: House },
   { id: 'contracts', label: 'Hợp đồng', icon: FileText },
-  { id: 'bills', label: 'Hóa đơn', icon: Receipt },
+];
+
+const ADMIN_TABS = [
+  { id: 'overview', label: 'Tổng quan', icon: ChartBar },
+  { id: 'rooms', label: 'Quản lý bài đăng', icon: House },
+  { id: 'pending-reviews', label: 'Kiểm duyệt tin', icon: ShieldCheck },
+  { id: 'contracts', label: 'Hợp đồng', icon: FileText },
 ];
 
 const TENANT_TABS = [
@@ -81,12 +89,15 @@ export default function Dashboard() {
     addProperty,
     checkDuplicateProperty,
     updateProperty,
+    toggleUnlistProperty,
+    toggleVerifyProperty,
     createContract,
     addBill,
     createTicket,
   } = useApp();
 
-  const tabs = userRole === 'landlord' ? LANDLORD_TABS : TENANT_TABS;
+  const isAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
+  const tabs = isAdmin ? ADMIN_TABS : (userRole === 'landlord' ? LANDLORD_TABS : TENANT_TABS);
   const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -188,10 +199,12 @@ export default function Dashboard() {
   }
 
   // --- Filter listings by logged in user ---
-  // Landlords can manage all their mock properties (with user-landlord id or default mocks)
-  const landlordProperties = properties.filter(
-    (p) => p.postedBy === currentUser.id || p.postedBy === 'user-landlord'
-  );
+  // Landlords can manage all their mock properties. Admin can manage ALL properties.
+  const landlordProperties = isAdmin
+    ? properties
+    : properties.filter(
+        (p) => p.postedBy === currentUser.id || p.postedBy === 'user-landlord'
+      );
 
   // Tenants can manage properties they posted (postType is roommate)
   const tenantProperties = properties.filter((p) => p.postedBy === currentUser.id);
@@ -293,21 +306,43 @@ export default function Dashboard() {
     // Giả lập Background Worker kiểm duyệt bài viết chạy ngầm trong 1.2s
     setTimeout(() => {
       setIsCheckingDuplicate(false);
+      
+      // Admin được bỏ qua kiểm tra trùng và tự động đăng bài hoạt động ngay
+      if (isAdmin) {
+        const adminData = { ...data, status: 'active', verified: true };
+        if (editingRoomId) {
+          updateProperty(editingRoomId, adminData);
+          showToast('Admin: Cập nhật thông tin thành công!');
+          setEditingRoomId(null);
+        } else {
+          addProperty(adminData);
+          showToast('Admin: Đăng tin mới thành công và đã tự động xác thực!');
+          setIsAddingRoom(false);
+        }
+        return;
+      }
+
       const report = checkDuplicateProperty(data);
 
-      if (report.isDuplicate) {
-        // Trùng lặp cao (Score >= 80) -> Chặn đăng bài và hiển thị Modal báo lỗi
-        setDuplicateReport(report);
-      } else if (report.isSuspicious) {
-        // Trùng lặp trung bình (Score 50-79) -> Cho phép đăng nhưng ở trạng thái chờ duyệt (Pending)
-        const pendingData = { ...data, status: 'pending' };
+      if (report.confidenceScore >= 50) {
+        // Phát hiện trùng lặp cao hoặc trung bình (Score >= 50) -> Đăng dưới dạng chờ duyệt và gửi báo cáo cho Admin
+        const pendingData = {
+          ...data,
+          status: 'pending',
+          duplicateReport: {
+            confidenceScore: report.confidenceScore,
+            matchedPropertyId: report.matchedProperty.id,
+            reasons: report.reasons,
+          }
+        };
+
         if (editingRoomId) {
           updateProperty(editingRoomId, pendingData);
-          showToast('Tin đăng đã được cập nhật (Chờ kiểm duyệt do nghi ngờ trùng lặp)');
+          showToast(`Tin đăng cập nhật trùng khớp ${report.confidenceScore}%. Đã gửi lại Admin duyệt.`);
           setEditingRoomId(null);
         } else {
           addProperty(pendingData);
-          showToast('Đăng tin thành công! Hệ thống tạm giữ tin để kiểm duyệt do nghi ngờ trùng lặp.');
+          showToast(`Phát hiện tin trùng lặp (${report.confidenceScore}%). Bài đăng đã được gửi tới hàng chờ Admin duyệt.`);
           setIsAddingRoom(false);
         }
       } else {
@@ -812,17 +847,10 @@ export default function Dashboard() {
         {/* ===================== LANDLORD ONLY VIEWS ===================== */}
 
         {/* 1. Overview */}
-        {userRole === 'landlord' && activeTab === 'overview' && !isAddingRoom && !editingRoomId && (
+        {(userRole === 'landlord' || isAdmin) && activeTab === 'overview' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Tổng quan doanh thu</h2>
-            <div className="overview-cards">
-              <div className="overview-card">
-                <CurrencyDollar size={24} color="var(--color-accent)" />
-                <div className="overview-card-info">
-                  <span className="overview-card-label">Doanh thu dự kiến</span>
-                  <span className="overview-card-value price text-mono">{formatPriceShort(totalRevenue)}</span>
-                </div>
-              </div>
+            <h2 className="dashboard-page-title">Tổng quan hoạt động</h2>
+            <div className="overview-cards" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div className="overview-card">
                 <House size={24} color="var(--color-info)" />
                 <div className="overview-card-info">
@@ -835,15 +863,6 @@ export default function Dashboard() {
                 <div className="overview-card-info">
                   <span className="overview-card-label">Đang thuê</span>
                   <span className="overview-card-value text-mono">{rentedCount}</span>
-                </div>
-              </div>
-              <div className="overview-card">
-                <Receipt size={24} color="var(--color-warning)" />
-                <div className="overview-card-info">
-                  <span className="overview-card-label">Tiền nợ</span>
-                  <span className="overview-card-value text-mono" style={{ color: 'var(--color-warning)' }}>
-                    {formatPriceShort(totalUnpaid)}
-                  </span>
                 </div>
               </div>
             </div>
@@ -874,11 +893,13 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 2. Room Management (Landlord view) */}
-        {userRole === 'landlord' && activeTab === 'rooms' && !isAddingRoom && !editingRoomId && (
+        {/* 2. Room Management (Landlord view / Admin view) */}
+        {(userRole === 'landlord' || isAdmin) && activeTab === 'rooms' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
             <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Quản lý phòng trọ của tôi</h2>
+              <h2 className="dashboard-page-title">
+                {isAdmin ? 'Quản lý bài đăng toàn hệ thống' : 'Quản lý phòng trọ của tôi'}
+              </h2>
               <button
                 className="btn btn-primary animate-scale-in"
                 onClick={handleAddRoomClick}
@@ -897,7 +918,9 @@ export default function Dashboard() {
                     <th>Quận</th>
                     <th>Giá</th>
                     <th>Diện tích</th>
-                    <th>Trạng thái</th>
+                    <th>Hiển thị</th>
+                    {isAdmin && <th>Xác thực</th>}
+                    <th>Tình trạng</th>
                     <th>Thao tác</th>
                   </tr>
                 </thead>
@@ -917,6 +940,20 @@ export default function Dashboard() {
                       <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
                       <td><span className="text-mono">{p.area} m&sup2;</span></td>
                       <td>
+                        <span className={`badge ${p.isUnlisted ? 'badge-rented' : 'badge-available'}`}>
+                          {p.isUnlisted ? 'Đã ẩn (Gỡ)' : 'Đang đăng'}
+                        </span>
+                      </td>
+                      {isAdmin && (
+                        <td>
+                          <div
+                            className={`switch ${p.verified ? 'active' : ''}`}
+                            onClick={() => toggleVerifyProperty(p.id)}
+                            title={p.verified ? 'Đã xác thực' : 'Chưa xác thực'}
+                          />
+                        </td>
+                      )}
+                      <td>
                         <div
                           className={`switch ${p.isRented ? 'active' : ''}`}
                           onClick={() => togglePropertyStatus(p.id)}
@@ -926,6 +963,14 @@ export default function Dashboard() {
                       </td>
                       <td>
                         <div className="room-actions">
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => toggleUnlistProperty(p.id)}
+                            title={p.isUnlisted ? 'Đăng lại (Hiện)' : 'Gỡ xuống (Ẩn)'}
+                            style={{ color: p.isUnlisted ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                          >
+                            {p.isUnlisted ? <Eye size={16} /> : <EyeSlash size={16} />}
+                          </button>
                           <button
                             className="btn btn-ghost btn-sm"
                             onClick={() => handleEditRoomClick(p)}
@@ -1114,186 +1159,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 4. Bills */}
-        {userRole === 'landlord' && activeTab === 'bills' && !isCreatingBill && (
-          <div className="animate-fade-in">
-            <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Hóa đơn điện nước hàng tháng</h2>
-              <button className="btn btn-primary" onClick={() => handleAddBillClick()}>
-                <Plus size={18} />
-                Tạo hóa đơn
-              </button>
-            </div>
 
-            {contracts.map((c) => {
-              const prop = getPropertyById(c.propertyId);
-              return (
-                <div key={c.id} className="dashboard-section" style={{ marginTop: '0', marginBottom: 'var(--space-6)' }}>
-                  <h3 className="dashboard-section-title" style={{ fontSize: 'var(--text-base)', borderLeft: '3px solid var(--color-accent)', paddingLeft: '8px' }}>
-                    {prop?.title || c.id} ({c.tenantName})
-                  </h3>
-                  <div className="bills-list">
-                    {c.bills.map((b) => (
-                      <div key={b.id} className="bill-card card">
-                        <div className="bill-header">
-                          <span className="text-mono" style={{ fontWeight: 600 }}>Tháng {b.month}</span>
-                          <span className={`badge ${b.paid ? 'badge-available' : 'badge-rented'}`}>
-                            {b.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                          </span>
-                        </div>
-                        <div className="bill-details">
-                          <span>Điện: {b.electricityUsage} kWh x {b.electricityRate.toLocaleString()} = <strong>{(b.electricityUsage * b.electricityRate).toLocaleString()}đ</strong></span>
-                          <span>Nước: {b.waterUsage} ng x {b.waterRate.toLocaleString()} = <strong>{(b.waterUsage * b.waterRate).toLocaleString()}đ</strong></span>
-                          <span>Dịch vụ: <strong>{b.serviceCharge.toLocaleString()}đ</strong></span>
-                          <span>Tiền phòng: <strong>{b.rent.toLocaleString()}đ</strong></span>
-                        </div>
-                        <div className="bill-footer">
-                          <span className="price text-mono" style={{ fontSize: 'var(--text-lg)' }}>
-                            Tổng: {b.total.toLocaleString()} VND
-                          </span>
-                          {!b.paid && (
-                            <button
-                              className="btn btn-primary btn-sm"
-                              onClick={() => {
-                                markBillPaid(c.id, b.id);
-                                showToast('Hóa đơn đã đóng thành công!');
-                              }}
-                            >
-                              Đánh dấu đã thu
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {userRole === 'landlord' && activeTab === 'bills' && isCreatingBill && (
-          <div className="form-container animate-fade-in">
-            <div className="form-header">
-              <h3 className="form-title">Tạo hóa đơn tháng mới</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingBill(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleBillSubmit} id="bill-form">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label className="form-label">Chọn Hợp đồng / Phòng thuê *</label>
-                  <select
-                    className="select"
-                    required
-                    value={billForm.contractId}
-                    onChange={(e) => handleBillContractChange(e.target.value)}
-                  >
-                    <option value="">-- Chọn hợp đồng --</option>
-                    {contracts.filter((c) => c.status === 'active').map((c) => {
-                      const prop = getPropertyById(c.propertyId);
-                      return (
-                        <option key={c.id} value={c.id}>
-                          [{c.tenantName}] - {prop?.title || 'Phòng'}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Hóa đơn cho tháng *</label>
-                  <input
-                    type="month"
-                    className="input text-mono"
-                    required
-                    value={billForm.month}
-                    onChange={(e) => setBillForm({ ...billForm, month: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Số điện tiêu thụ (kWh) *</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    required
-                    value={billForm.electricityUsage}
-                    onChange={(e) => setBillForm({ ...billForm, electricityUsage: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Đơn giá điện (VND/kWh)</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    value={billForm.electricityRate}
-                    onChange={(e) => setBillForm({ ...billForm, electricityRate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Số người dùng nước *</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    required
-                    value={billForm.waterUsage}
-                    onChange={(e) => setBillForm({ ...billForm, waterUsage: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Đơn giá nước (VND/người)</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    value={billForm.waterRate}
-                    onChange={(e) => setBillForm({ ...billForm, waterRate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Phí dịch vụ cố định (VND)</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    value={billForm.serviceCharge}
-                    onChange={(e) => setBillForm({ ...billForm, serviceCharge: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Tiền phòng (VND)</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    value={billForm.rent}
-                    onChange={(e) => setBillForm({ ...billForm, rent: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Calculated Dynamic Total Box */}
-              <div className="bill-total-box animate-scale-in">
-                <span className="form-label" style={{ display: 'block', marginBottom: '4px' }}>Tổng số tiền dự kiến</span>
-                <span className="bill-total-value">{calculatedBillTotal.toLocaleString('vi-VN')} VND</span>
-              </div>
-
-              <div className="form-actions-row">
-                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingBill(false)}>
-                  Hủy
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Tạo hóa đơn
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* ===================== TENANT ONLY VIEWS ===================== */}
 
@@ -1344,18 +1210,6 @@ export default function Dashboard() {
                     <div className="rental-details">
                       <span>Hợp đồng: {c.startDate} - {c.endDate}</span>
                       <span>Giá thuê: <strong className="price">{formatPrice(c.monthlyRent)}</strong></span>
-                    </div>
-                    <div className="rental-bills">
-                      <h4 style={{ marginBottom: 'var(--space-3)' }}>Lịch sử hóa đơn</h4>
-                      {c.bills.map((b) => (
-                        <div key={b.id} className="bill-mini">
-                          <span className="text-mono">{b.month}</span>
-                          <span className="text-mono">{b.total.toLocaleString()} VND</span>
-                          <span className={`badge ${b.paid ? 'badge-available' : 'badge-rented'}`}>
-                            {b.paid ? 'Đã đóng' : 'Chưa đóng'}
-                          </span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 );
@@ -1409,12 +1263,20 @@ export default function Dashboard() {
                         <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
                         <td><span className="text-mono">{p.area} m&sup2;</span></td>
                         <td>
-                          <span className={`badge ${p.isRented ? 'badge-rented' : 'badge-available'}`}>
-                            {p.isRented ? 'Đã tìm được' : 'Đang tìm'}
+                          <span className={`badge ${p.isUnlisted ? 'badge-rented' : (p.isRented ? 'badge-rented' : 'badge-available')}`}>
+                            {p.isUnlisted ? 'Đã ẩn (Gỡ)' : (p.isRented ? 'Đã tìm được' : 'Đang tìm')}
                           </span>
                         </td>
                         <td>
                           <div className="room-actions">
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => toggleUnlistProperty(p.id)}
+                              title={p.isUnlisted ? 'Đăng lại (Hiện)' : 'Gỡ xuống (Ẩn)'}
+                              style={{ color: p.isUnlisted ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                            >
+                              {p.isUnlisted ? <Eye size={16} /> : <EyeSlash size={16} />}
+                            </button>
                             <button
                               className="btn btn-ghost btn-sm"
                               onClick={() => handleEditRoomClick(p)}
@@ -1656,38 +1518,61 @@ export default function Dashboard() {
       {/* Duplicate Report Modal */}
       {duplicateReport && (
         <div className="duplicate-modal-overlay" id="duplicate-modal-overlay">
-          <div className="duplicate-modal-card glass-strong animate-fade-in">
+          <div className="duplicate-modal-card glass-strong animate-fade-in" style={{ maxWidth: duplicateReport.isAdminReview ? '640px' : '520px' }}>
             <div className="duplicate-modal-header">
-              <span className="warning-badge">PHÁT HIỆN TRÙNG LẶP ({duplicateReport.confidenceScore}%)</span>
-              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-text-main)', marginTop: 'var(--space-1)' }}>Cảnh Báo Tin Đăng Trùng Lặp</h3>
+              <span className="warning-badge" style={{ backgroundColor: duplicateReport.isAdminReview ? 'rgba(5, 150, 105, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: duplicateReport.isAdminReview ? 'var(--color-accent)' : '#ef4444', borderColor: duplicateReport.isAdminReview ? 'rgba(5, 150, 105, 0.2)' : 'rgba(239, 68, 68, 0.2)' }}>
+                {duplicateReport.isAdminReview ? 'CẦN ADMIN DUYỆT TIN' : 'PHÁT HIỆN TRÙNG LẶP'} ({duplicateReport.confidenceScore}%)
+              </span>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-text-main)', marginTop: 'var(--space-1)' }}>
+                {duplicateReport.isAdminReview ? 'Đối Chiếu Kiểm Duyệt Tin Trùng Lặp' : 'Cảnh Báo Tin Đăng Trùng Lặp'}
+              </h3>
             </div>
             
             <div className="duplicate-modal-body">
               <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.5', margin: 0 }}>
-                Tin đăng bạn vừa nhập có độ trùng lặp cao với một bài viết khác đã đăng trước đó của bạn trên hệ thống. 
-                Vui lòng kiểm tra lại để tránh spam tin đăng rác.
+                {duplicateReport.isAdminReview 
+                  ? 'Tin đăng dưới đây của người dùng đang được tạm giữ. Hãy đối chiếu thông tin so khớp tự động dưới đây để duyệt hoặc từ chối tin đăng.' 
+                  : 'Tin đăng bạn vừa nhập có độ trùng lặp cao với một bài viết khác đã đăng trước đó của bạn trên hệ thống. Vui lòng kiểm tra lại để tránh spam tin đăng rác.'}
               </p>
               
-              <div className="reasons-list">
+              <div className="reasons-list" style={{ borderLeftColor: duplicateReport.isAdminReview ? 'var(--color-accent)' : '#ef4444' }}>
                 <strong style={{ color: 'var(--color-text-main)', display: 'block', marginBottom: 'var(--space-2)' }}>Chi tiết phân tích thuật toán:</strong>
                 <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', padding: 0, margin: 0 }}>
                   {duplicateReport.reasons.map((reason, idx) => (
                     <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-muted)', listStyle: 'none' }}>
-                      <span style={{ color: '#ef4444' }}>✓</span> {reason}
+                      <span style={{ color: duplicateReport.isAdminReview ? 'var(--color-accent)' : '#ef4444' }}>✓</span> {reason}
                     </li>
                   ))}
                 </ul>
               </div>
 
               {duplicateReport.matchedProperty && (
-                <div className="comparison-container">
-                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-muted)' }}>Bài đăng gốc đã tồn tại:</span>
-                  <div className="comp-card">
-                    <img src={duplicateReport.matchedProperty.images?.[0]} alt="old room" />
-                    <div className="comp-info">
-                      <span className="comp-title">{duplicateReport.matchedProperty.title}</span>
-                      <span className="comp-meta text-mono">{duplicateReport.matchedProperty.type} • {duplicateReport.matchedProperty.area}m² • {formatPrice(duplicateReport.matchedProperty.price)}</span>
-                      <span className="comp-address">{duplicateReport.matchedProperty.address}</span>
+                <div className="comparison-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  {duplicateReport.isAdminReview && duplicateReport.pendingProperty && (
+                    <div>
+                      <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-accent)' }}>1. Tin đăng mới (Đang chờ duyệt):</span>
+                      <div className="comp-card" style={{ borderLeft: '3px solid var(--color-accent)' }}>
+                        <img src={duplicateReport.pendingProperty.images?.[0]} alt="new room" />
+                        <div className="comp-info">
+                          <span className="comp-title">{duplicateReport.pendingProperty.title}</span>
+                          <span className="comp-meta text-mono">{duplicateReport.pendingProperty.type} • {duplicateReport.pendingProperty.area}m² • {formatPrice(duplicateReport.pendingProperty.price)}</span>
+                          <span className="comp-address">{duplicateReport.pendingProperty.address}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-muted)' }}>
+                      {duplicateReport.isAdminReview ? '2. Tin đăng cũ đã tồn tại (Bài viết trùng khớp):' : 'Bài đăng gốc đã tồn tại:'}
+                    </span>
+                    <div className="comp-card">
+                      <img src={duplicateReport.matchedProperty.images?.[0]} alt="old room" />
+                      <div className="comp-info">
+                        <span className="comp-title">{duplicateReport.matchedProperty.title}</span>
+                        <span className="comp-meta text-mono">{duplicateReport.matchedProperty.type} • {duplicateReport.matchedProperty.area}m² • {formatPrice(duplicateReport.matchedProperty.price)}</span>
+                        <span className="comp-address">{duplicateReport.matchedProperty.address}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1695,24 +1580,56 @@ export default function Dashboard() {
             </div>
 
             <div className="duplicate-modal-actions">
-              <button 
-                type="button" 
-                className="btn btn-ghost"
-                onClick={() => setDuplicateReport(null)}
-              >
-                Chỉnh sửa tin hiện tại
-              </button>
-              {duplicateReport.matchedProperty && (
-                <button 
-                  type="button" 
-                  className="btn btn-primary"
-                  onClick={() => {
-                    handleEditRoomClick(duplicateReport.matchedProperty);
-                    setDuplicateReport(null);
-                  }}
-                >
-                  Chỉnh sửa tin cũ bị trùng
-                </button>
+              {duplicateReport.isAdminReview ? (
+                <>
+                  <button 
+                    type="button" 
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      if (confirm('Bạn có chắc chắn muốn TỪ CHỐI và XÓA bài đăng này?')) {
+                        deleteProperty(duplicateReport.pendingProperty.id);
+                        showToast('Đã từ chối và xóa bài đăng trùng lặp.');
+                        setDuplicateReport(null);
+                      }
+                    }}
+                    style={{ color: 'var(--color-error)' }}
+                  >
+                    Từ chối & Xóa tin
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={() => {
+                      updateProperty(duplicateReport.pendingProperty.id, { status: 'active', verified: true });
+                      showToast('Đã duyệt và công khai bài viết thành công!');
+                      setDuplicateReport(null);
+                    }}
+                  >
+                    Duyệt & Công khai tin
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    type="button" 
+                    className="btn btn-ghost"
+                    onClick={() => setDuplicateReport(null)}
+                  >
+                    Chỉnh sửa tin hiện tại
+                  </button>
+                  {duplicateReport.matchedProperty && (
+                    <button 
+                      type="button" 
+                      className="btn btn-primary"
+                      onClick={() => {
+                        handleEditRoomClick(duplicateReport.matchedProperty);
+                        setDuplicateReport(null);
+                      }}
+                    >
+                      Chỉnh sửa tin cũ bị trùng
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

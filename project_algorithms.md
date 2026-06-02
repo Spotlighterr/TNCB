@@ -61,9 +61,9 @@ flowchart TD
 
 ---
 
-## 2. Thuật Toán Tính Hóa Đơn Điện Nước (Monthly Billing Calculation)
+## 2. Thuật Toán Gỡ & Đăng Lại Bài Viết (Unlist & Publish Property Logic)
 
-Dành cho Chủ trọ tại Dashboard (`Dashboard.jsx`), hệ thống tự động tính toán tổng số tiền dựa trên chỉ số điện nước tiêu thụ thực tế.
+Thuật toán xử lý trạng thái ẩn/hiện tin đăng của chủ nhà hoặc Admin (`isUnlisted`) để tạm ẩn tin khỏi bộ tìm kiếm và bản đồ mà không xóa bài.
 
 ```mermaid
 flowchart TD
@@ -73,38 +73,28 @@ flowchart TD
     classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px;
 
     %% Nodes
-    Start([Yêu cầu tạo hóa đơn phòng]):::startEnd
-    GetContract[Lấy hợp đồng đang hoạt động của phòng]:::process
-    InputIndices[Nhập chỉ số Điện mới & Nước mới <br> từ form nhập liệu]:::process
+    Start([Click nút 'Gỡ bài' hoặc 'Đăng lại' ở Dashboard]):::startEnd
+    GetProp[Xác định ID phòng trọ & trạng thái isUnlisted hiện tại]:::process
+    ToggleUnlist[Đảo ngược trạng thái: isUnlisted = !isUnlisted]:::process
+    UpdateContext[Cập nhật phòng trọ trong State properties của AppContext]:::process
+    WriteStorage[Ghi mảng properties mới xuống LocalStorage TNCB_PROPERTIES]:::process
     
-    CheckIndices{Chỉ số mới >= Chỉ số cũ <br> trong hóa đơn gần nhất?}:::decision
-    AlertError[Hiển thị cảnh báo lỗi nhập liệu <br> Chỉ số mới không hợp lệ]:::process
+    CheckUnlist{Trạng thái isUnlisted mới là gì?}:::decision
+    HideProp[Ẩn phòng khỏi trang Tìm kiếm công khai <br> & Bỏ qua phòng trong so khớp trùng lặp]:::process
+    ShowProp[Hiển thị lại phòng trên trang Tìm kiếm công khai <br> & Đưa phòng vào danh sách so khớp trùng lặp]:::process
     
-    CalcElec[Tính tiền điện: <br> Số kwh = Mới - Cũ <br> Tiền điện = Số kwh * Đơn giá điện]:::process
-    CalcWater[Tính tiền nước: <br> Nếu tính theo đầu người: Nước = Số khách * Đơn giá nước <br> Nếu tính theo khối: Nước = Khối tiêu thụ * Đơn giá nước]:::process
-    
-    CalcTotal[Tổng hóa đơn = Tiền phòng + Tiền điện + Tiền nước + Phí dịch vụ]:::process
-    CreateBill[Tạo đối tượng Bill: ID, Tháng, Chi tiết số liệu, Tổng tiền, Trạng thái: Chưa đóng]:::process
-    
-    SaveDB[Cập nhật mảng contracts trong Context <br> & Đồng bộ tự động xuống LocalStorage]:::process
-    Notify[Gửi thông báo hóa đơn tới Dashboard Khách thuê]:::process
-    End([Hoàn thành tạo hóa đơn]):::startEnd
+    End([Giao diện và cơ sở dữ liệu cập nhật lập tức]):::startEnd
 
     %% Connections
-    Start --> GetContract
-    GetContract --> InputIndices
-    InputIndices --> CheckIndices
-    
-    CheckIndices -->|Sai| AlertError
-    AlertError --> InputIndices
-    
-    CheckIndices -->|Đúng| CalcElec
-    CalcElec --> CalcWater
-    CalcWater --> CalcTotal
-    CalcTotal --> CreateBill
-    CreateBill --> SaveDB
-    SaveDB --> Notify
-    Notify --> End
+    Start --> GetProp
+    GetProp --> ToggleUnlist
+    ToggleUnlist --> UpdateContext
+    UpdateContext --> WriteStorage
+    WriteStorage --> CheckUnlist
+    CheckUnlist -->|Đúng - Đã gỡ| HideProp
+    CheckUnlist -->|Sai - Công khai| ShowProp
+    HideProp --> End
+    ShowProp --> End
 ```
 
 ---
@@ -180,3 +170,76 @@ flowchart TD
     SyncStorage --> UpdateUI
     UpdateUI --> End
 ```
+
+---
+
+## 5. Thuật Toán Lọc Trùng Tin Tự Động & Hàng Chờ Duyệt Trực Quan Của Admin (Deduplication & Admin Review Queue)
+
+Quy trình lọc trùng 3 lớp tự động kết hợp xét duyệt thủ công trực quan bằng màn hình so sánh của Admin.
+
+```mermaid
+flowchart TD
+    %% Styling
+    classDef startEnd fill:#f43f5e,stroke:#be123c,stroke-width:2px,color:#fff;
+    classDef process fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px;
+
+    %% Nodes
+    Start([Chủ trọ gửi Form đăng tin phòng mới]):::startEnd
+    CheckUser{Người đăng là Admin?}:::decision
+    BypassCheck[Bỏ qua lọc trùng <br> & Đặt status = 'active', verified = true]:::process
+    
+    GeoCheck[1. Tính khoảng cách GPS với tin cũ của chủ trọ <br> dùng công thức Haversine]:::process
+    CheckDist{Khoảng cách < 15 mét?}:::decision
+    
+    RoomCompare[2. Đối chiếu: Loại phòng, Diện tích, Giá thuê]:::process
+    CheckRoomDiff{Khác biệt ít nhất 1 thông số?}:::decision
+    
+    TextCompare[3. Tính độ tương đồng văn bản Jaccard <br> tiêu đề và mô tả]:::process
+    CheckScore{Độ trùng lặp >= 80%?}:::decision
+    CheckPending{Độ trùng lặp từ 50% đến 79%?}:::decision
+    
+    BlockPost[Từ chối đăng bài <br> Hiển thị cảnh báo Spam lập tức]:::process
+    PendingPost[Đặt status = 'pending' <br> Lưu báo cáo trùng lặp duplicateReport]:::process
+    NormalPost[Đặt status = 'active' <br> Công khai bài đăng]:::process
+    
+    NotifyAdmin[Đưa tin vào Hàng chờ Duyệt của Admin]:::process
+    AdminAction{Admin xem so sánh song song <br> & Quyết định duyệt?}:::decision
+    
+    ApprovePost[Duyệt & Công khai tin <br> Đổi status = 'active', verified = true]:::process
+    RejectPost[Từ chối & Xóa tin <br> Gọi hàm deleteProperty]:::process
+    
+    End([Kết thúc quy trình]):::startEnd
+
+    %% Connections
+    Start --> CheckUser
+    CheckUser -->|Có| BypassCheck
+    CheckUser -->|Không| GeoCheck
+    
+    GeoCheck --> CheckDist
+    CheckDist -->|Không trùng vị trí| NormalPost
+    CheckDist -->|Trùng vị trí| RoomCompare
+    
+    RoomCompare --> CheckRoomDiff
+    CheckRoomDiff -->|Có khác biệt - Phòng khác cùng nhà| NormalPost
+    CheckRoomDiff -->|Giống hệt thông số phòng| TextCompare
+    
+    TextCompare --> CheckScore
+    CheckScore -->|Có| BlockPost
+    CheckScore -->|Không| CheckPending
+    
+    CheckPending -->|Đúng| PendingPost
+    CheckPending -->|Sai| NormalPost
+    
+    PendingPost --> NotifyAdmin
+    NotifyAdmin --> AdminAction
+    AdminAction -->|Đồng ý duyệt| ApprovePost
+    AdminAction -->|Từ chối xóa| RejectPost
+    
+    BypassCheck --> End
+    NormalPost --> End
+    BlockPost --> End
+    ApprovePost --> End
+    RejectPost --> End
+```
+

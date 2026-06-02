@@ -28,7 +28,7 @@ Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tươ
 
 4. **Trang Cá Nhân Khách Thuê (Tenant Dashboard)**
    - **Saved Properties**: Danh sách các phòng trọ đã lưu yêu thích để so sánh.
-   - **My Rental**: Thông tin phòng trọ đang thuê hiện tại, thời hạn hợp đồng, lịch sử các hóa đơn điện nước đã đóng.
+   - **My Rental**: Thông tin phòng trọ đang thuê hiện tại, thời hạn hợp đồng.
    - **Yêu Cầu Hỗ Trợ & Danh Bạ Chủ Trọ (Support Ticket & Direct Contact)**: 
      - Gửi phản hồi kỹ thuật trực tiếp tới chủ trọ (VD: điều hòa hỏng, rò rỉ nước) và theo dõi trạng thái xử lý của ticket.
      - **Bảng Danh Bạ Hotline Liên Hệ**: Bổ sung một bảng thông tin liên hệ trực tiếp của chủ trọ và đội ngũ kỹ thuật sửa chữa (Hotline, số Zalo kỹ thuật, email hỗ trợ) bên cạnh form gửi ticket để khách thuê nhanh chóng liên lạc trực tiếp trong các trường hợp sự cố khẩn cấp.
@@ -39,7 +39,7 @@ Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tươ
 Chủ trọ (Landlord) sử dụng hệ thống như một "Hệ điều hành mini" quản trị tài sản:
 
 1. **Dashboard Tổng Quan (Overview)**
-   - Thẻ thống kê: Tổng doanh thu dự kiến tháng này, tỷ lệ phòng đang trống, số tiền đã thu và số tiền còn nợ từ khách thuê.
+   - Thẻ thống kê: Tỷ lệ phòng đang trống, tổng số phòng hoạt động trên hệ thống, số lượng khách thuê.
    - Hoạt động gần đây: Cảnh báo hợp đồng sắp hết hạn hoặc yêu cầu sửa chữa mới từ khách thuê.
 
 2. **Quản Lý Phòng Trọ (Room Management)**
@@ -47,9 +47,8 @@ Chủ trọ (Landlord) sử dụng hệ thống như một "Hệ điều hành m
    - **Thêm/Sửa Phòng**: Form điền thông tin chi tiết phòng trọ (Tải ảnh mẫu, chọn tiện ích, nhập giá điện nước, định vị tọa độ mẫu trên bản đồ).
    - **Bật Tắt Trạng Thái Nhanh**: Chuyển trạng thái phòng Trống sang Đang thuê bằng một nút gạt Switch mượt mà, lập tức thay đổi hiển thị của phòng trên bản đồ tìm kiếm.
 
-3. **Quản Lý Hợp Đồng & Hóa Đơn (Contract & Billing)**
+3. **Quản Lý Hợp Đồng (Contract Management)**
    - **Quản Lý Hợp Đồng**: Tạo hợp đồng điện tử cơ bản cho phòng trọ, lưu trữ thông tin khách thuê (Họ tên, SĐT, Ngày bắt đầu, Ngày kết thúc).
-   - **Tạo Hóa Đơn Hàng Tháng**: Nhập số điện/nước tiêu thụ mới, hệ thống tự động tính toán tổng hóa đơn phòng kèm nút gửi cảnh báo đóng tiền nhà.
 
 ---
 
@@ -141,4 +140,23 @@ Quy tắc này giúp loại bỏ hoàn toàn cảm giác chuyển động tuyế
 
 1. **Bộ so khớp khoảng cách GPS (Haversine Formula):** Đo khoảng cách thực tế giữa tin đăng mới và tập bài viết cũ. Khoảng cách $\Delta < 15\text{m}$ bằng GPS được coi là nằm chung một tòa nhà vật lý, tránh sai số do cách viết địa chỉ khác nhau.
 2. **Bộ kiểm tra thông số phòng:** So sánh tổ hợp `[Loại phòng + Diện tích + Giá thuê]`. Nếu trùng vị trí địa lý nhưng khác một trong ba thông số này, bài đăng được xác định là phòng khác trong cùng tòa nhà và được tự động duyệt.
-3. **So khớp văn bản (Jaccard Similarity) & Ảnh:** Tính độ tương đồng tiêu đề và mô tả. Nếu chỉ số tin cậy (Confidence Score) $\ge 80\%$, bài viết bị chặn đăng và hiển thị cảnh báo chi tiết. Nếu chỉ số từ $50\% \to 79\%$, hệ thống lưu dưới dạng `pending_review` (chờ duyệt).
+3. **So khớp văn bản (Jaccard Similarity) & Ảnh:** Tính độ tương đồng tiêu đề và mô tả. Nếu chỉ số tin cậy (Confidence Score) $\ge 80\%$, bài viết bị chặn đăng và hiển thị cảnh báo chi tiết. Nếu chỉ số từ $50\% \to 79\%$, hệ thống tự động lưu dưới dạng trạng thái chờ duyệt `status: 'pending'` và chuyển tiếp hồ sơ báo cáo trùng lặp tới Admin.
+
+---
+
+## 🔑 3. Quyền Hạn Quản Trị Hệ Thống (Admin Powers & Control Flows)
+
+Tài khoản Admin (`admin@tncb.vn` / mật khẩu: `admin`) được cấp quyền hạn đặc biệt để giám sát toàn bộ hoạt động của ứng dụng:
+
+1. **Kiểm Duyệt Tin Trùng Lặp Thủ Công (Admin Review Queue):**
+   - Các bài đăng bị phát hiện trùng lặp từ $50\% \to 79\%$ sẽ bị tạm khóa ở trạng thái `pending` và hiển thị trong danh mục **"Kiểm duyệt tin"** trên Sidebar của Admin.
+   - Admin truy cập để mở **Modal Đối Chiếu Song Song (Double-sided Comparison Modal)**: xem chi tiết so sánh trực quan giữa Tin mới đăng và Tin cũ gốc bị trùng khớp kèm lý do hệ thống phát hiện.
+   - Admin có hai hành động quyết định trực tiếp: **"Duyệt & Công khai"** (chuyển sang `status: 'active'`, tự động kích hoạt `verified: true`) hoặc **"Từ chối & Xóa tin"** (loại bỏ hoàn toàn khỏi hệ thống).
+
+2. **Quản Lý Toàn Bộ Bài Đăng Trong Hệ Thống:**
+   - Admin có quyền chỉnh sửa, xóa hoặc gỡ xuống (Unlist/Publish) bất kỳ bài viết nào của tất cả các chủ trọ trong hệ thống (không bị giới hạn bởi quyền sở hữu bài đăng).
+   - Tại bảng quản lý phòng trọ, Admin được trang bị thêm nút chuyển đổi **"Xác thực"** để nhanh chóng gắn hoặc gỡ nhãn chứng nhận uy tín (Verified Badge) của bất kỳ bài viết nào.
+
+3. **Khả Năng Gỡ Tin Đăng (Unlist / Publish):**
+   - Chủ nhà (hoặc Admin) có quyền tạm gỡ bài đăng khỏi trạng thái hiển thị công khai (`isUnlisted: true`).
+   - Bài đăng bị gỡ sẽ lập tức biến mất khỏi trang tìm kiếm công khai và bản đồ, đồng thời **hoàn toàn bị loại trừ** khỏi tập so sánh của thuật toán phát hiện trùng lặp, tạo không gian cho việc cập nhật hoặc tái bản sau này mà không bị đánh dấu spam.

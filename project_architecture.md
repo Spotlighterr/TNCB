@@ -64,6 +64,7 @@ graph TD
     %% Styling
     classDef tenant fill:#ecfdf5,stroke:#059669,stroke-width:2px;
     classDef landlord fill:#fff7ed,stroke:#ea580c,stroke-width:2px;
+    classDef admin fill:#faf5ff,stroke:#9333ea,stroke-width:2px;
     classDef shared fill:#f8fafc,stroke:#64748b,stroke-width:2px;
 
     %% Nodes
@@ -76,19 +77,27 @@ graph TD
     Detail["Chi Tiết Phòng <br> (Carousel, Utilities, Contact, Leaflet Map)"]:::tenant
     TDash["Tenant Dashboard"]:::tenant
     Saved["Saved Properties"]:::tenant
-    MyRental["My Rental <br> (Hợp đồng, Hóa đơn đã thanh toán)"]:::tenant
+    MyRental["My Rental <br> (Hợp đồng thuê phòng)"]:::tenant
     Support["Support Tickets & <br> Hotline kỹ thuật chủ trọ"]:::tenant
 
     %% Landlord Flow
     Landlord["Chủ Trọ (Landlord)"]:::landlord
     LDash["Landlord Dashboard <br> (Glassmorphic Sidebar)"]:::landlord
-    Overview["Widgets Thống Kê <br> (Doanh thu, Nợ, Phòng trống)"]:::landlord
-    RoomMgmt["Quản Lý Phòng <br> (Thêm/sửa, Bật/tắt Status Switch)"]:::landlord
-    Billing["Hợp Đồng & Hóa Đơn <br> (Tạo hóa đơn điện nước tự động)"]:::landlord
+    Overview["Widgets Thống Kê <br> (Tỷ lệ phòng trống, Tổng bài đăng)"]:::landlord
+    RoomMgmt["Quản Lý Phòng <br> (Thêm/sửa, Bật/tắt Status Switch, Gỡ bài)"]:::landlord
+    Contract["Quản Lý Hợp Đồng <br> (Lập hợp đồng thuê trọ điện tử)"]:::landlord
+
+    %% Admin Flow
+    Admin["Quản Trị Viên (Admin)"]:::admin
+    ADash["Admin Dashboard"]:::admin
+    AOverview["Widgets Thống Kê <br> (Tỷ lệ phòng trống, Bài đăng hệ thống)"]:::admin
+    ARoomMgmt["Quản Lý Bài Đăng <br> (Sửa, Xóa, Gỡ bài toàn hệ thống, Xác thực)"]:::admin
+    AReview["Kiểm Duyệt Tin Trùng <br> (Hàng chờ pending, Modal so sánh song song)"]:::admin
 
     %% Edges
     RoleSelector -->|Khách thuê| Tenant
     RoleSelector -->|Chủ trọ| Landlord
+    RoleSelector -->|Admin| Admin
 
     Tenant --> Home
     Tenant --> Search
@@ -101,7 +110,12 @@ graph TD
     Landlord --> LDash
     LDash --> Overview
     LDash --> RoomMgmt
-    LDash --> Billing
+    LDash --> Contract
+
+    Admin --> ADash
+    ADash --> AOverview
+    ADash --> ARoomMgmt
+    ADash --> AReview
 ```
 
 ---
@@ -179,7 +193,10 @@ Cơ chế cập nhật dữ liệu tự động giữa client-side state và Loc
    - Trình duyệt đọc dữ liệu từ `localStorage` thông qua các key `TNCB_PROPERTIES`, `TNCB_CONTRACTS`, `TNCB_SAVED`, và `TNCB_USER`.
    - Nếu `localStorage` trống, hệ thống sẽ nạp dữ liệu mặc định từ `mockProperties.js` và `mockContracts.js`, sau đó lưu ngược lại vào `localStorage`.
 
-2. **Cập nhật (User Action):**
-   - Khi Chủ trọ thêm phòng trọ mới hoặc thay đổi trạng thái phòng (Switch Trống $\leftrightarrow$ Đang thuê) $\rightarrow$ React State `properties` cập nhật $\rightarrow$ kích hoạt `useEffect` $\rightarrow$ Tự động ghi đè xuống `TNCB_PROPERTIES` trong `localStorage`.
-   - Khi Khách thuê lưu phòng yêu thích $\rightarrow$ React State `savedProperties` cập nhật $\rightarrow$ kích hoạt `useEffect` $\rightarrow$ Tự động ghi đè xuống `TNCB_SAVED` trong `localStorage`.
-   - Mọi thay đổi về dữ liệu phòng trọ lập tức cập nhật thời gian thực lên bản đồ chỉ dẫn Leaflet trên trang chi tiết và lưới tìm kiếm.
+2. **Cập nhật & Lọc trùng (User Action & Deduplication Flow):**
+   - Khi Chủ trọ thêm phòng trọ mới $\rightarrow$ Hệ thống chạy thuật toán kiểm tra trùng lặp (Haversine khoảng cách GPS + Jaccard văn bản tiêu đề/mô tả).
+     - Nếu trùng lặp cao ($\ge 50\%$), thuộc tính `status` được đặt thành `'pending'` và kèm `duplicateReport` chi tiết, bài viết bị ẩn khỏi tập hiển thị công khai và đưa vào hàng chờ duyệt của Admin.
+     - Nếu không trùng lặp (hoặc do Admin đăng), bài viết được đặt là `status: 'active'`.
+   - Khi Chủ trọ/Admin thay đổi trạng thái thuê phòng (Trống $\leftrightarrow$ Đang thuê) hoặc gỡ bài đăng (Unlist $\leftrightarrow$ Publish) $\rightarrow$ React State `properties` cập nhật $\rightarrow$ kích hoạt `useEffect` ghi đè xuống `TNCB_PROPERTIES` trong `localStorage`.
+     - Bài đăng ở trạng thái `isUnlisted === true` hoặc `status === 'pending'` sẽ lập tức được ẩn khỏi danh sách tìm kiếm công khai và bản đồ Leaflet.
+   - Khi Khách thuê lưu phòng yêu thích $\rightarrow$ React State `savedProperties` cập nhật $\rightarrow$ ghi đè xuống `TNCB_SAVED` trong `localStorage`.
