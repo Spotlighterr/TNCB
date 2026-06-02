@@ -2,7 +2,7 @@
 
 **FindX** (FTU Housing Bank). Repo được làm cho mục đích nghiên cứu cá nhân của tôi, có thể được deploy miễn phí. Anh nào ủng hộ bạn đi =((
 
-**Demo:** [https://findxtest.netlify.app/](https://findxtest.netlify.app/)
+**Demo:** [[https://findx-backtest-01.onrender.com/](https://findx-backtest-01.onrender.com/)
 
 ---
 
