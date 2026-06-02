@@ -20,11 +20,11 @@ Phiên bản này nâng cấp toàn diện quyền hạn tài khoản Admin (`ad
 * **Tính năng Gỡ/Đăng lại tin (Unlist/Publish):**
   * Chủ nhà hoặc Admin có quyền tạm gỡ bài đăng (`isUnlisted: true`).
   * Bài đăng bị gỡ lập tức ẩn khỏi tìm kiếm công khai, bản đồ và **không tham gia** vào tập so sánh trùng lặp của thuật toán.
+* **Gộp trang Tổng quan & Quản lý:** Hợp nhất hai màn hình "Tổng quan" và "Quản lý phòng/bài đăng" thành một giao diện tích hợp duy nhất để tinh giản thao tác. Thay thế thẻ chỉ số phòng trống/đang thuê cũ bằng thẻ thống kê "Tin đăng" và "Bài đang hoạt động".
 
 #### 🗑️ Các chức năng loại bỏ:
 * **Gỡ bỏ Mô-đun Hóa đơn (Billing Clean-up):** Xóa bỏ hoàn toàn tab Hóa đơn khỏi Sidebar của chủ trọ và khách thuê, loại bỏ lịch sử hóa đơn ở khách thuê và các form nhập chỉ số tính tiền.
 * **Gỡ bỏ Mô-đun Hợp đồng (Contract Clean-up):** Loại bỏ hoàn toàn tab "Hợp đồng" khỏi thanh Sidebar của chủ trọ và Admin, gỡ bỏ form tạo hợp đồng mới và widget cảnh báo hợp đồng gần đây ở tab Tổng quan.
-* **Tinh chỉnh Tab Tổng quan (Overview):** Loại bỏ hoàn toàn hai thẻ chỉ số "Doanh thu dự kiến" và "Tiền nợ" để tập trung vào việc kết nối dịch vụ phi lợi nhuận.
 
 ---
 

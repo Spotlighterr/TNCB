@@ -83,14 +83,12 @@ graph TD
     %% Landlord Flow
     Landlord["Chủ Trọ (Landlord)"]:::landlord
     LDash["Landlord Dashboard <br> (Glassmorphic Sidebar)"]:::landlord
-    Overview["Widgets Thống Kê <br> (Tỷ lệ phòng trống, Tổng bài đăng)"]:::landlord
-    RoomMgmt["Quản Lý Phòng <br> (Thêm/sửa, Bật/tắt Status Switch, Gỡ bài)"]:::landlord
+    OverviewMgmt["Tổng Quan & Quản Lý <br> (Thống kê tin đăng + Lưới bài đăng, sửa/xóa/gỡ)"]:::landlord
 
     %% Admin Flow
     Admin["Quản Trị Viên (Admin)"]:::admin
     ADash["Admin Dashboard"]:::admin
-    AOverview["Widgets Thống Kê <br> (Tỷ lệ phòng trống, Bài đăng hệ thống)"]:::admin
-    ARoomMgmt["Quản Lý Bài Đăng <br> (Sửa, Xóa, Gỡ bài toàn hệ thống, Xác thực)"]:::admin
+    AOverviewMgmt["Tổng Quan & Quản Lý <br> (Thống kê hệ thống + Bài đăng toàn sàn, xác thực/sửa/xóa/gỡ)"]:::admin
     AReview["Kiểm Duyệt Tin Trùng <br> (Hàng chờ pending, Modal so sánh song song)"]:::admin
 
     %% Edges
@@ -107,12 +105,10 @@ graph TD
     TDash --> Support
 
     Landlord --> LDash
-    LDash --> Overview
-    LDash --> RoomMgmt
+    LDash --> OverviewMgmt
 
     Admin --> ADash
-    ADash --> AOverview
-    ADash --> ARoomMgmt
+    ADash --> AOverviewMgmt
     ADash --> AReview
 ```
 

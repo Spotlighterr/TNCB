@@ -36,16 +36,12 @@ Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tươ
 ---
 
 ### B. Trải Nghiệm Chủ Trọ & Quản Trị (Landlord AMS Flow)
-Chủ trọ (Landlord) sử dụng hệ thống như một "Hệ điều hành mini" quản trị tài sản:
+Chủ trọ (Landlord) và Admin sử dụng hệ thống qua giao diện tích hợp:
 
-1. **Dashboard Tổng Quan (Overview)**
-   - Thẻ thống kê: Tỷ lệ phòng đang trống, tổng số phòng hoạt động trên hệ thống, số lượng khách thuê.
-   - Hoạt động gần đây: Cảnh báo các yêu cầu sửa chữa mới từ khách thuê.
-
-2. **Quản Lý Phòng Trọ (Room Management)**
-   - **Danh Sách Phòng**: Bảng quản lý tất cả phòng trọ thuộc sở hữu, hiển thị mã phòng, diện tích, giá thuê, trạng thái trống/đang thuê.
-   - **Thêm/Sửa Phòng**: Form điền thông tin chi tiết phòng trọ (Tải ảnh mẫu, chọn tiện ích, nhập giá điện nước, định vị tọa độ mẫu trên bản đồ).
-   - **Bật Tắt Trạng Thái Nhanh**: Chuyển trạng thái phòng Trống sang Đang thuê bằng một nút gạt Switch mượt mà, lập tức thay đổi hiển thị của phòng trên bản đồ tìm kiếm.
+1. **Tổng Quan & Quản Lý Bài Đăng (Overview & Management)**
+   - **Thẻ thống kê:** Hiển thị tổng số **Tin đăng** (tập hợp bài viết) và số **Bài đang hoạt động** (các bài công khai không bị unlisted/pending) trên hệ thống.
+   - **Thêm/Sửa Phòng:** Nút bấm thêm bài đăng ở thanh tiêu đề mở form điền thông tin phòng trọ (Ảnh mẫu, chọn tiện ích, nhập giá điện nước, tọa độ).
+   - **Danh Sách Bài Đăng:** Bảng quản trị trực tiếp hiển thị thông tin bài viết, diện tích, giá thuê, công tắc gạt gỡ/hiển thị bài đăng (`isUnlisted`), và công tắc gạt trạng thái phòng trống/đang thuê (`isRented`).
 
 
 

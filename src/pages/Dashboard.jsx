@@ -52,13 +52,11 @@ const ICON_COMPONENTS = {
 
 // Dashboard sub-sections
 const LANDLORD_TABS = [
-  { id: 'overview', label: 'Tổng quan', icon: ChartBar },
-  { id: 'rooms', label: 'Quản lý phòng', icon: House },
+  { id: 'overview', label: 'Tổng quan & Quản lý', icon: ChartBar },
 ];
 
 const ADMIN_TABS = [
-  { id: 'overview', label: 'Tổng quan', icon: ChartBar },
-  { id: 'rooms', label: 'Quản lý bài đăng', icon: House },
+  { id: 'overview', label: 'Tổng quan & Quản lý', icon: ChartBar },
   { id: 'pending-reviews', label: 'Kiểm duyệt tin', icon: ShieldCheck },
 ];
 
@@ -513,15 +511,8 @@ export default function Dashboard() {
   };
 
   // --- Landlord Computations ---
-  const totalRevenue = contracts
-    .filter((c) => c.status === 'active')
-    .reduce((sum, c) => sum + c.monthlyRent, 0);
-  const rentedCount = properties.filter((p) => p.isRented).length;
-  const vacantCount = properties.filter((p) => !p.isRented).length;
-  const unpaidBills = contracts
-    .flatMap((c) => c.bills)
-    .filter((b) => !b.paid);
-  const totalUnpaid = unpaidBills.reduce((sum, b) => sum + b.total, 0);
+  const totalListings = landlordProperties.length;
+  const activeListings = landlordProperties.filter((p) => p.status === 'active' && !p.isUnlisted).length;
 
   // --- Tenant Computations ---
   const savedProps = properties.filter((p) => savedProperties.includes(p.id));
@@ -570,8 +561,8 @@ export default function Dashboard() {
               <div className="skeleton" style={{ width: '120px', height: '40px', borderRadius: 'var(--radius-subtle)' }} />
             </div>
             
-            <div className="overview-cards">
-              {Array.from({ length: 4 }).map((_, i) => (
+            <div className="overview-cards" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              {Array.from({ length: 2 }).map((_, i) => (
                 <div key={i} className="skeleton-card card" style={{ padding: '20px', height: '110px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div className="skeleton" style={{ width: '28px', height: '28px', borderRadius: '50%' }} />
                   <div className="skeleton" style={{ width: '80px', height: '10px' }} />
@@ -844,37 +835,12 @@ export default function Dashboard() {
 
         {/* ===================== LANDLORD ONLY VIEWS ===================== */}
 
-        {/* 1. Overview */}
+        {/* 1. Overview & Room Management Merged */}
         {(userRole === 'landlord' || isAdmin) && activeTab === 'overview' && !isAddingRoom && !editingRoomId && (
-          <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Tổng quan hoạt động</h2>
-            <div className="overview-cards" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-              <div className="overview-card">
-                <House size={24} color="var(--color-info)" />
-                <div className="overview-card-info">
-                  <span className="overview-card-label">Phòng trống</span>
-                  <span className="overview-card-value text-mono">{vacantCount}</span>
-                </div>
-              </div>
-              <div className="overview-card">
-                <SealCheck size={24} color="var(--color-success)" />
-                <div className="overview-card-info">
-                  <span className="overview-card-label">Đang thuê</span>
-                  <span className="overview-card-value text-mono">{rentedCount}</span>
-                </div>
-              </div>
-            </div>
-
-
-          </div>
-        )}
-
-        {/* 2. Room Management (Landlord view / Admin view) */}
-        {(userRole === 'landlord' || isAdmin) && activeTab === 'rooms' && !isAddingRoom && !editingRoomId && (
           <div className="animate-fade-in">
             <div className="dashboard-page-header">
               <h2 className="dashboard-page-title">
-                {isAdmin ? 'Quản lý bài đăng toàn hệ thống' : 'Quản lý phòng trọ của tôi'}
+                {isAdmin ? 'Tổng quan & Quản lý bài đăng' : 'Tổng quan & Quản lý phòng'}
               </h2>
               <button
                 className="btn btn-primary animate-scale-in"
@@ -886,93 +852,113 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="rooms-table-wrap">
-              <table className="rooms-table">
-                <thead>
-                  <tr>
-                    <th>Phòng</th>
-                    <th>Quận</th>
-                    <th>Giá</th>
-                    <th>Diện tích</th>
-                    <th>Hiển thị</th>
-                    {isAdmin && <th>Xác thực</th>}
-                    <th>Tình trạng</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {landlordProperties.map((p) => (
-                    <tr key={p.id}>
-                      <td>
-                        <div className="room-cell">
-                          <img src={p.images[0]} alt="" className="room-cell-img" />
-                          <div>
-                            <div className="room-cell-title">{p.title}</div>
-                            <div className="text-caption">{p.city}</div>
+            <div className="overview-cards" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 'var(--space-8)' }}>
+              <div className="overview-card">
+                <Buildings size={24} color="var(--color-info)" />
+                <div className="overview-card-info">
+                  <span className="overview-card-label">Tin đăng</span>
+                  <span className="overview-card-value text-mono">{totalListings}</span>
+                </div>
+              </div>
+              <div className="overview-card">
+                <SealCheck size={24} color="var(--color-success)" />
+                <div className="overview-card-info">
+                  <span className="overview-card-label">Bài đang hoạt động</span>
+                  <span className="overview-card-value text-mono">{activeListings}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-section">
+              <h3 className="dashboard-section-title">Danh sách bài đăng của bạn</h3>
+              <div className="rooms-table-wrap">
+                <table className="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>Phòng</th>
+                      <th>Quận</th>
+                      <th>Giá</th>
+                      <th>Diện tích</th>
+                      <th>Hiển thị</th>
+                      {isAdmin && <th>Xác thực</th>}
+                      <th>Tình trạng</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {landlordProperties.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="room-cell">
+                            <img src={p.images[0]} alt="" className="room-cell-img" />
+                            <div>
+                              <div className="room-cell-title">{p.title}</div>
+                              <div className="text-caption">{p.city}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>{p.district}</td>
-                      <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
-                      <td><span className="text-mono">{p.area} m&sup2;</span></td>
-                      <td>
-                        <span className={`badge ${p.isUnlisted ? 'badge-rented' : 'badge-available'}`}>
-                          {p.isUnlisted ? 'Đã ẩn (Gỡ)' : 'Đang đăng'}
-                        </span>
-                      </td>
-                      {isAdmin && (
+                        </td>
+                        <td>{p.district}</td>
+                        <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
+                        <td><span className="text-mono">{p.area} m&sup2;</span></td>
+                        <td>
+                          <span className={`badge ${p.isUnlisted ? 'badge-rented' : 'badge-available'}`}>
+                            {p.isUnlisted ? 'Đã ẩn (Gỡ)' : 'Đang đăng'}
+                          </span>
+                        </td>
+                        {isAdmin && (
+                          <td>
+                            <div
+                              className={`switch ${p.verified ? 'active' : ''}`}
+                              onClick={() => toggleVerifyProperty(p.id)}
+                              title={p.verified ? 'Đã xác thực' : 'Chưa xác thực'}
+                            />
+                          </td>
+                        )}
                         <td>
                           <div
-                            className={`switch ${p.verified ? 'active' : ''}`}
-                            onClick={() => toggleVerifyProperty(p.id)}
-                            title={p.verified ? 'Đã xác thực' : 'Chưa xác thực'}
+                            className={`switch ${p.isRented ? 'active' : ''}`}
+                            onClick={() => togglePropertyStatus(p.id)}
+                            title={p.isRented ? 'Đang thuê' : 'Trống'}
+                            id={`switch-${p.id}`}
                           />
                         </td>
-                      )}
-                      <td>
-                        <div
-                          className={`switch ${p.isRented ? 'active' : ''}`}
-                          onClick={() => togglePropertyStatus(p.id)}
-                          title={p.isRented ? 'Đang thuê' : 'Trống'}
-                          id={`switch-${p.id}`}
-                        />
-                      </td>
-                      <td>
-                        <div className="room-actions">
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => toggleUnlistProperty(p.id)}
-                            title={p.isUnlisted ? 'Đăng lại (Hiện)' : 'Gỡ xuống (Ẩn)'}
-                            style={{ color: p.isUnlisted ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
-                          >
-                            {p.isUnlisted ? <Eye size={16} /> : <EyeSlash size={16} />}
-                          </button>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleEditRoomClick(p)}
-                            title="Chỉnh sửa"
-                          >
-                            <PencilSimple size={16} />
-                          </button>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => {
-                              if (confirm('Bạn có chắc chắn muốn xóa phòng trọ này?')) {
-                                deleteProperty(p.id);
-                                showToast('Xóa phòng trọ thành công!');
-                              }
-                            }}
-                            style={{ color: 'var(--color-error)' }}
-                            title="Xóa"
-                          >
-                            <Trash size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <td>
+                          <div className="room-actions">
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => toggleUnlistProperty(p.id)}
+                              title={p.isUnlisted ? 'Đăng lại (Hiện)' : 'Gỡ xuống (Ẩn)'}
+                              style={{ color: p.isUnlisted ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                            >
+                              {p.isUnlisted ? <Eye size={16} /> : <EyeSlash size={16} />}
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => handleEditRoomClick(p)}
+                              title="Chỉnh sửa"
+                            >
+                              <PencilSimple size={16} />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                if (confirm('Bạn có chắc chắn muốn xóa phòng trọ này?')) {
+                                  deleteProperty(p.id);
+                                  showToast('Xóa phòng trọ thành công!');
+                                }
+                              }}
+                              style={{ color: 'var(--color-error)' }}
+                              title="Xóa"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
