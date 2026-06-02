@@ -73,6 +73,10 @@ export default function Search() {
       list.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
       list.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'date-desc') {
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (sortBy === 'date-asc') {
+      list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
     }
     return list;
   }, [filteredProperties, sortBy]);
@@ -247,6 +251,8 @@ export default function Search() {
               <option value="za">Tên Z ➜ A</option>
               <option value="price-asc">Giá thấp ➜ cao</option>
               <option value="price-desc">Giá cao ➜ thấp</option>
+              <option value="date-desc">Mới nhất</option>
+              <option value="date-asc">Cũ nhất</option>
             </select>
           </div>
         </div>

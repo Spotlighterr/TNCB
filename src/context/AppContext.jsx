@@ -22,7 +22,11 @@ export function AppProvider({ children }) {
       if (type === 'Studio') type = 'Chung cư mini';
       else if (type === 'Duplex') type = 'Nhà ở cải tạo thành nhà trọ (không chung chủ)';
       else if (type === 'Phòng trọ') type = 'Nhà trọ không chung chủ';
-      return { ...prop, type };
+      return {
+        ...prop,
+        type,
+        createdAt: prop.createdAt || new Date().toISOString(),
+      };
     });
   });
   const [contracts, setContracts] = useState(() =>
@@ -464,6 +468,7 @@ export function AppProvider({ children }) {
     const newProp = {
       ...property,
       id: `prop-${Date.now()}`,
+      createdAt: new Date().toISOString(),
       verified: isUserAdmin ? true : false,
       postType: currentUser ? (currentUser.role === 'tenant' ? 'find_roommate' : 'find_tenant') : 'find_tenant',
       postedBy: currentUser ? currentUser.id : 'user-landlord',

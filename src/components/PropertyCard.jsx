@@ -5,6 +5,7 @@ import {
   MapPin,
   SealCheck,
   ArrowsOutSimple,
+  CalendarBlank,
 } from '@phosphor-icons/react';
 
 export default function PropertyCard({ property, index = 0 }) {
@@ -12,6 +13,25 @@ export default function PropertyCard({ property, index = 0 }) {
   const saved = isPropertySaved(property.id);
 
   const rating = calculatePropertyRating(property);
+
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 5) return `${diffWeeks} tuần trước`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} tháng trước`;
+    return `${Math.floor(diffMonths / 12)} năm trước`;
+  };
 
   const renderStars = (score) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -67,6 +87,13 @@ export default function PropertyCard({ property, index = 0 }) {
           <MapPin size={14} weight="fill" color="var(--color-accent)" />
           <span>{property.district}, {property.city}</span>
         </div>
+
+        {property.createdAt && (
+          <div className="property-card-date">
+            <CalendarBlank size={13} weight="regular" color="var(--color-text-subtle)" />
+            <span>{formatTimeAgo(property.createdAt)}</span>
+          </div>
+        )}
 
         {/* Trust Rating Stars */}
         <div className="property-card-rating">
@@ -251,6 +278,14 @@ export default function PropertyCard({ property, index = 0 }) {
           gap: var(--space-1);
           font-size: var(--text-xs);
           color: var(--color-text-muted);
+        }
+
+        .property-card-date {
+          display: flex;
+          align-items: center;
+          gap: var(--space-1);
+          font-size: 11px;
+          color: var(--color-text-subtle);
         }
 
         .property-card-rating {

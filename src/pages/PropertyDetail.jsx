@@ -25,6 +25,7 @@ import {
   Car,
   CookingPot,
   ShieldCheck,
+  CalendarBlank,
 } from '@phosphor-icons/react';
 
 const ICON_MAP = {
@@ -103,6 +104,31 @@ export default function PropertyDetail() {
   const saved = isPropertySaved(property.id);
   const rating = calculatePropertyRating(property);
 
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 5) return `${diffWeeks} tuần trước`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} tháng trước`;
+    return `${Math.floor(diffMonths / 12)} năm trước`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
   const renderStars = (score) => {
     return Array.from({ length: 5 }, (_, i) => (
       <span
@@ -154,6 +180,14 @@ export default function PropertyDetail() {
                 <MapPin size={16} weight="fill" color="var(--color-accent)" />
                 <span>{property.address}</span>
               </div>
+
+              {property.createdAt && (
+                <div className="detail-posted-date">
+                  <CalendarBlank size={15} weight="regular" />
+                  <span>Đăng {formatTimeAgo(property.createdAt)}</span>
+                  <span className="detail-posted-date-exact">({formatDate(property.createdAt)})</span>
+                </div>
+              )}
 
               {/* Completeness Rating score */}
               <div className="detail-rating-box glass">
@@ -377,6 +411,19 @@ export default function PropertyDetail() {
           gap: var(--space-2);
           font-size: var(--text-sm);
           color: var(--color-text-muted);
+        }
+
+        .detail-posted-date {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          font-size: var(--text-sm);
+          color: var(--color-text-muted);
+        }
+
+        .detail-posted-date-exact {
+          font-size: var(--text-xs);
+          color: var(--color-text-subtle);
         }
 
         /* Detail Rating Box */
