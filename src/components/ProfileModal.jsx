@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   X,
@@ -26,7 +26,35 @@ export default function ProfileModal({ isOpen, onClose }) {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen || !currentUser) return null;
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (isOpen) {
+      setShouldRender(true);
+      setIsClosing(false);
+      setFormData({
+        name: currentUser?.name || '',
+        email: currentUser?.email || '',
+        phone: currentUser?.phone || '',
+      });
+      setAvatarPreview(currentUser?.avatar || '');
+      setAvatarFile(null);
+      setError('');
+      setSuccess('');
+    } else if (shouldRender) {
+      setIsClosing(true);
+      timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 250);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isOpen, currentUser]);
+
+  if (!shouldRender || !currentUser) return null;
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -88,9 +116,9 @@ export default function ProfileModal({ isOpen, onClose }) {
 
   return (
     <>
-      <div className="profile-modal-overlay animate-fade-in" onClick={onClose}>
+      <div className={`profile-modal-overlay animate-fade-in ${isClosing ? 'is-closing' : ''}`} onClick={onClose}>
         <div
-          className="profile-modal glass-strong animate-scale-in"
+          className={`profile-modal glass-strong animate-scale-in ${isClosing ? 'is-closing' : ''} ${isSubmitting ? 'is-submitting' : ''} ${success ? 'is-success' : ''}`}
           onClick={(e) => e.stopPropagation()}
           id="profile-modal"
         >
@@ -208,10 +236,17 @@ export default function ProfileModal({ isOpen, onClose }) {
             <button
               type="submit"
               className="btn btn-primary btn-lg"
-              style={{ width: '100%', marginTop: 'var(--space-2)' }}
+              style={{ width: '100%', marginTop: 'var(--space-2)', gap: 'var(--space-2)' }}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {isSubmitting ? (
+                <>
+                  <div className="btn-spinner"></div>
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                'Lưu thay đổi'
+              )}
             </button>
           </form>
         </div>
@@ -373,6 +408,71 @@ export default function ProfileModal({ isOpen, onClose }) {
           display: flex;
           flex-direction: column;
           gap: var(--space-1);
+        }
+
+        /* Animations & Premium Micro-interactions */
+        .profile-modal-overlay.is-closing {
+          animation: fadeOut 0.25s var(--ease-smooth) both;
+        }
+
+        .profile-modal.is-closing {
+          animation: scaleOut 0.22s var(--ease-tactile) both;
+        }
+
+        .profile-modal.is-submitting {
+          animation: modalBreathe 1.5s var(--ease-smooth) infinite;
+        }
+
+        .profile-modal.is-success {
+          animation: successPop 0.55s var(--ease-spring) both;
+          border-color: var(--color-success) !important;
+          box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25), 0 20px 50px rgba(16, 185, 129, 0.15) !important;
+        }
+
+        .is-success .profile-avatar-img {
+          animation: avatarSuccessPop 0.6s var(--ease-spring) both;
+          border-color: var(--color-success) !important;
+        }
+
+        .profile-msg {
+          animation: alertSlideIn 0.35s var(--ease-spring) both;
+        }
+
+        .btn-spinner {
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes modalBreathe {
+          0%, 100% { 
+            box-shadow: var(--shadow-xl); 
+            border-color: var(--color-border); 
+          }
+          50% { 
+            box-shadow: var(--shadow-xl), var(--shadow-glow-accent); 
+            border-color: var(--color-accent-muted); 
+          }
+        }
+
+        @keyframes successPop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.025); }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes avatarSuccessPop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.12); }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes alertSlideIn {
+          0% { opacity: 0; transform: translateY(-12px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
     </>
