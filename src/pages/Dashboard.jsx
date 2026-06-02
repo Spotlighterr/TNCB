@@ -208,6 +208,13 @@ export default function Dashboard() {
 
   // --- Form Trigger Handlers ---
 
+  const formatNumberWithDots = (val) => {
+    if (val === undefined || val === null || val === '') return '';
+    const numString = String(val).replace(/\D/g, '');
+    if (!numString) return '';
+    return Number(numString).toLocaleString('vi-VN');
+  };
+
   // Room Form triggers
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
@@ -752,18 +759,16 @@ export default function Dashboard() {
                       {currentUser.role === 'tenant' ? 'Tiền phòng chia sẻ (VND/tháng) *' : 'Giá thuê phòng (VND/tháng) *'}
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       className="input text-mono"
                       required
-                      placeholder="Nhập giá, VD: 4500000"
-                      value={roomForm.price}
-                      onChange={(e) => setRoomForm({ ...roomForm, price: e.target.value })}
+                      placeholder="Ví dụ: 4.500.000"
+                      value={formatNumberWithDots(roomForm.price)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setRoomForm({ ...roomForm, price: raw });
+                      }}
                     />
-                    {roomForm.price && (
-                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
-                        ➔ {Number(roomForm.price).toLocaleString('vi-VN')} VND
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
@@ -866,52 +871,46 @@ export default function Dashboard() {
                   <div className="form-group">
                     <label className="form-label">Đơn giá điện (VND/kWh) *</label>
                     <input
-                      type="number"
+                      type="text"
                       className="input text-mono"
                       required
-                      placeholder="Nhập giá điện, VD: 3500"
-                      value={roomForm.electricity}
-                      onChange={(e) => setRoomForm({ ...roomForm, electricity: e.target.value })}
+                      placeholder="Ví dụ: 3.500"
+                      value={formatNumberWithDots(roomForm.electricity)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setRoomForm({ ...roomForm, electricity: raw });
+                      }}
                     />
-                    {roomForm.electricity && (
-                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
-                        ➔ {Number(roomForm.electricity).toLocaleString('vi-VN')} VND/kWh
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Đơn giá nước (VND/người) *</label>
                     <input
-                      type="number"
+                      type="text"
                       className="input text-mono"
                       required
-                      placeholder="Nhập giá nước, VD: 100000"
-                      value={roomForm.water}
-                      onChange={(e) => setRoomForm({ ...roomForm, water: e.target.value })}
+                      placeholder="Ví dụ: 100.000"
+                      value={formatNumberWithDots(roomForm.water)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setRoomForm({ ...roomForm, water: raw });
+                      }}
                     />
-                    {roomForm.water && (
-                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
-                        ➔ {Number(roomForm.water).toLocaleString('vi-VN')} VND/người
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Phí dịch vụ cố định (VND/phòng) *</label>
                     <input
-                      type="number"
+                      type="text"
                       className="input text-mono"
                       required
-                      placeholder="Nhập phí dịch vụ, VD: 150000"
-                      value={roomForm.service}
-                      onChange={(e) => setRoomForm({ ...roomForm, service: e.target.value })}
+                      placeholder="Ví dụ: 150.000"
+                      value={formatNumberWithDots(roomForm.service)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setRoomForm({ ...roomForm, service: raw });
+                      }}
                     />
-                    {roomForm.service && (
-                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
-                        ➔ {Number(roomForm.service).toLocaleString('vi-VN')} VND/phòng
-                      </span>
-                    )}
                   </div>
 
                   <div className="form-group full-width">
