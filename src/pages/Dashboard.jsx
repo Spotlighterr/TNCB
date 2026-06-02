@@ -512,7 +512,7 @@ export default function Dashboard() {
 
   // --- Landlord Computations ---
   const totalListings = landlordProperties.length;
-  const activeListings = landlordProperties.filter((p) => p.status === 'active' && !p.isUnlisted).length;
+  const activeListings = landlordProperties.filter((p) => p.status !== 'pending' && !p.isUnlisted && !p.isRented).length;
 
   // --- Tenant Computations ---
   const savedProps = properties.filter((p) => savedProperties.includes(p.id));
