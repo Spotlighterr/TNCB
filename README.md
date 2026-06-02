@@ -165,7 +165,7 @@ npm run dev
    - **Build command:** `npm run build`
    - **Publish directory:** `dist`
 3. Deploy — file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
-4. Hoặc sử dụng Render.com, build .
+4. Hoặc sử dụng Render.com, build frontend.
 
 ### Docker + NGINX
 
@@ -182,7 +182,8 @@ Truy cập: [http://localhost](http://localhost)
 
 ## Mobile
 
-Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (440 × 956 CSS px), hỗ trợ **safe area** (Dynamic Island, home indicator). File stylesheet: `src/styles/mobile.css`.
+Giao diện mobile được tinh chỉnh theo viewport của iP 17 Promax (440 × 956 CSS px), hỗ trợ **safe area** (Dynamic Island, home indicator). File stylesheet: `src/styles/mobile.css`.
+Đang tiến hành xây dựng mobile app bằng React Native. 
 
 ---
 
@@ -204,7 +205,7 @@ Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (44
 ## Liên hệ
 
 - Email: vuduchuyab@gmail.com
-- discord: spotlighter
+- Discord: spotlighter
 
 ---
 
