@@ -76,7 +76,15 @@ export const WARDS = {
   'Nhà Bè': ['Thị trấn Nhà Bè', 'Xã Phú Xuân', 'Xã Phước Kiển', 'Xã Phước Lộc', 'Xã Nhơn Đức', 'Xã Long Thới', 'Xã Hiệp Phước'],
 };
 
-export const ROOM_TYPES = ['Studio', 'Duplex', 'Chung cư mini', 'Phòng trọ'];
+export const ROOM_TYPES = [
+  'Chung cư mini',
+  'Nhà trọ chung chủ',
+  'Nhà trọ không chung chủ',
+  'Nhà ở cải tạo thành nhà trọ (không chung chủ)',
+  'Nhà ở cải tạo thành nhà trọ (chung chủ)',
+  'Chung cư',
+  'Kí túc xá',
+];
 
 export const AMENITY_MAP = {
   AirConditioner: { label: 'Điều hòa', icon: 'Fan' },
@@ -97,8 +105,8 @@ const baseProperties = [
   // ========================
   {
     id: 'prop-1',
-    title: 'Studio Hiện Đại Cầu Giấy Gần ĐH Ngoại Thương',
-    type: 'Studio',
+    title: 'Nhà Trọ Hiện Đại Cầu Giấy Gần ĐH Ngoại Thương',
+    type: 'Nhà trọ không chung chủ',
     price: 4500000,
     area: 25,
     city: 'Hà Nội',
@@ -126,8 +134,8 @@ const baseProperties = [
   },
   {
     id: 'prop-2',
-    title: 'Duplex Gác Lửng Đống Đa Gần ĐH Bách Khoa',
-    type: 'Duplex',
+    title: 'Phòng Trọ Gác Lửng Đống Đa Gần ĐH Bách Khoa',
+    type: 'Nhà ở cải tạo thành nhà trọ (không chung chủ)',
     price: 5200000,
     area: 35,
     city: 'Hà Nội',
@@ -184,7 +192,7 @@ const baseProperties = [
   {
     id: 'prop-4',
     title: 'Phòng Trọ Giá Rẻ Thanh Xuân Cho Sinh Viên',
-    type: 'Phòng trọ',
+    type: 'Nhà trọ chung chủ',
     price: 2800000,
     area: 18,
     city: 'Hà Nội',
@@ -211,8 +219,8 @@ const baseProperties = [
   },
   {
     id: 'prop-5',
-    title: 'Studio Cao Cấp Nam Từ Liêm View Hồ Tây',
-    type: 'Studio',
+    title: 'Căn Hộ Chung Cư Cao Cấp Nam Từ Liêm View Đẹp',
+    type: 'Chung cư',
     price: 7500000,
     area: 38,
     city: 'Hà Nội',
@@ -244,8 +252,8 @@ const baseProperties = [
   // ============================
   {
     id: 'prop-6',
-    title: 'Studio Ban Công Kính Gần ĐH Ngoại Thương CS2',
-    type: 'Studio',
+    title: 'Nhà Trọ Ban Công Kính Gần ĐH Ngoại Thương CS2',
+    type: 'Nhà trọ không chung chủ',
     price: 6500000,
     area: 32,
     city: 'TP. Hồ Chí Minh',
@@ -273,8 +281,8 @@ const baseProperties = [
   },
   {
     id: 'prop-7',
-    title: 'Duplex Tối Giản Nguyễn Gia Trí Gần HUTECH',
-    type: 'Duplex',
+    title: 'Phòng Trọ Tối Giản Nguyễn Gia Trí Gần HUTECH',
+    type: 'Nhà ở cải tạo thành nhà trọ (không chung chủ)',
     price: 5200000,
     area: 28,
     city: 'TP. Hồ Chí Minh',
@@ -331,7 +339,7 @@ const baseProperties = [
   {
     id: 'prop-9',
     title: 'Phòng Trọ Phú Nhuận Yên Tĩnh Gần Trung Tâm',
-    type: 'Phòng trọ',
+    type: 'Nhà trọ không chung chủ',
     price: 3500000,
     area: 20,
     city: 'TP. Hồ Chí Minh',
@@ -358,8 +366,8 @@ const baseProperties = [
   },
   {
     id: 'prop-10',
-    title: 'Studio Thủ Đức Full Nội Thất Gần ĐHQG',
-    type: 'Studio',
+    title: 'Căn Hộ Chung Cư Thủ Đức Full Nội Thất Gần ĐHQG',
+    type: 'Chung cư',
     price: 5800000,
     area: 30,
     city: 'TP. Hồ Chí Minh',
@@ -412,20 +420,6 @@ const ownerNames = [
 ];
 
 const titlesTemplate = {
-  'Studio': [
-    'Studio Gác Lửng Sang Trọng Gần Tiện Ích',
-    'Căn Hộ Studio Full Nội Thất Mới Keng',
-    'Studio Ban Công Thoáng Mát View Đẹp',
-    'Phòng Studio Yên Tĩnh Cho Thuê Dài Hạn',
-    'Căn Hộ Studio Hiện Đại Cực Xịn Cho Sinh Viên'
-  ],
-  'Duplex': [
-    'Duplex Cực Rộng Rãi Ban Công Thoáng',
-    'Căn Hộ Duplex Tối Giản Hiện Đại View Xịn',
-    'Duplex Thiết Kế Bắc Âu Full Nội Thất Siêu Xinh',
-    'Duplex Gác Lửng Rộng Rãi Cho Sinh Viên Ở Ghép',
-    'Phòng Duplex Ban Công View Thành Phố'
-  ],
   'Chung cư mini': [
     'Chung Cư Mini Thang Máy Bảo Vệ 24/7 An Ninh',
     'CCMN Mới Xây Đầy Đủ Đồ Ngay Mặt Tiền',
@@ -433,12 +427,47 @@ const titlesTemplate = {
     'CCMN Cao Cấp Cạnh Các Trường Đại Học',
     'Chung Cư Mini Rộng Rãi Full Nội Thất Ở Liền'
   ],
-  'Phòng trọ': [
-    'Phòng Trọ Giá Rẻ An Ninh Tự Do Cho Sinh Viên',
-    'Phòng Trọ Sinh Viên Giá Tốt Gần Trạm Xe Buýt',
-    'Phòng Trọ Khép Kín Sạch Sẽ Ở Riêng Biệt',
-    'Phòng Trọ Giờ Giấc Tự Do Giá Hợp Lý',
-    'Phòng Trọ Sinh Viên Gần Chợ Cực Kỳ Tiện Lợi'
+  'Nhà trọ chung chủ': [
+    'Nhà Trọ Chung Chủ An Ninh Yên Tĩnh Cho Nữ Sinh',
+    'Phòng Trọ Chung Chủ Sạch Sẽ Giờ Giấc Phù Hợp',
+    'Nhà Trọ Cạnh Trường Đại Học Giao Thông Thuận Tiện',
+    'Phòng Trọ Khép Kín Chung Chủ Thân Thiện',
+    'Phòng Trọ Ở Ghép Gần Trung Tâm Giá Tốt'
+  ],
+  'Nhà trọ không chung chủ': [
+    'Nhà Trọ Không Chung Chủ Giờ Giấc Tự Do Khóa Vân Tay',
+    'Phòng Trọ Khép Kín Tự Quản Không Chung Chủ Giá Rẻ',
+    'Nhà Trọ Tự Do Lối Đi Riêng Gần ĐH Ngoại Thương',
+    'Phòng Trọ Đầy Đủ Đồ Không Chung Chủ Cực Kỳ Thoải Mái',
+    'Phòng Trọ Lối Đi Riêng Tự Do Giờ Giấc Vân Tay'
+  ],
+  'Nhà ở cải tạo thành nhà trọ (không chung chủ)': [
+    'Phòng Trọ Tiện Nghi Nhà Nguyên Căn Cải Tạo Lối Đi Riêng',
+    'Nhà Cải Tạo Phòng Trọ Khép Kín Không Chung Chủ Full Đồ',
+    'Căn Hộ Dịch Vụ Cải Tạo Sang Trọng Giờ Tự Do',
+    'Phòng Trọ Thiết Kế Đẹp Trong Nhà Cải Tạo Mới Keng',
+    'Phòng Ở Khép Kín Tách Biệt Nhà Cải Tạo Cao Cấp'
+  ],
+  'Nhà ở cải tạo thành nhà trọ (chung chủ)': [
+    'Phòng Ở Sạch Sẽ Trong Nhà Cải Tạo Chung Chủ An Ninh',
+    'Nhà Phố Cải Tạo Phòng Trọ Chung Chủ Bác Chủ Thân Thiện',
+    'Phòng Trọ Tiện Nghi Trong Nhà Cải Tạo Cần Tìm Nam/Nữ',
+    'Phòng Trọ Khép Kín Trong Nhà Cải Tạo Mát Mẻ An Toàn',
+    'Phòng Trọ Ban Công Nhà Cải Tạo Gần Bến Xe Buýt'
+  ],
+  'Chung cư': [
+    'Căn Hộ Chung Cư Cao Cấp View Đẹp Đầy Đủ Nội Thất',
+    'Chung Cư 2 Phòng Ngủ Full Đồ Cho Sinh Viên Thuê Chung',
+    'Căn Hộ Chung Cư Tiện Nghi Gần Đại Học Ngoại Thương',
+    'Chung Cư Mới Bàn Giao Thang Máy Bảo Vệ 24/7',
+    'Căn Hộ Chung Cư Giá Tốt Phù Hợp Ở Nhóm Đông'
+  ],
+  'Kí túc xá': [
+    'Kí Túc Xá Tư Nhân Cao Cấp Giường Tầng Full Tiện Ích',
+    'KTX Sleepbox Riêng Tư Hiện Đại Cho Sinh Viên',
+    'Kí Túc Xá Gần Trường Học Bao Điện Nước Dịch Vụ',
+    'KTX Homestay Máy Lạnh Giờ Tự Do Khóa Vân Tay',
+    'Giường Tầng Kí Túc Xá Đầy Đủ Tiện Nghi Giá Rẻ'
   ]
 };
 
@@ -462,18 +491,18 @@ for (let i = 1; i <= 90; i++) {
   // Set realistic price ranges based on room type
   let price = 2500000;
   let area = 18;
-  if (type === 'Studio') {
+  if (type === 'Chung cư' || type === 'Chung cư mini') {
     price = 4500000 + (i % 8) * 400000;
-    area = 24 + (i % 5) * 3;
-  } else if (type === 'Duplex') {
-    price = 5000000 + (i % 7) * 500000;
-    area = 28 + (i % 4) * 4;
-  } else if (type === 'Chung cư mini') {
-    price = 4000000 + (i % 6) * 500000;
-    area = 30 + (i % 6) * 2;
-  } else { // Phòng trọ
-    price = 1800000 + (i % 5) * 300000;
-    area = 15 + (i % 4) * 2;
+    area = 28 + (i % 5) * 3;
+  } else if (type === 'Nhà ở cải tạo thành nhà trọ (không chung chủ)' || type === 'Nhà trọ không chung chủ') {
+    price = 3200000 + (i % 7) * 300000;
+    area = 20 + (i % 4) * 2;
+  } else if (type === 'Nhà ở cải tạo thành nhà trọ (chung chủ)' || type === 'Nhà trọ chung chủ') {
+    price = 2200000 + (i % 6) * 250000;
+    area = 16 + (i % 5) * 2;
+  } else { // Kí túc xá
+    price = 1200000 + (i % 5) * 150000;
+    area = 10 + (i % 4) * 2;
   }
 
   const street = city === 'Hà Nội' ? streetsHanoi[i % streetsHanoi.length] : streetsHCMC[i % streetsHCMC.length];

@@ -15,9 +15,16 @@ function loadFromStorage(key, fallback) {
 
 export function AppProvider({ children }) {
   // Core State
-  const [properties, setProperties] = useState(() =>
-    loadFromStorage('TNCB_PROPERTIES', mockProperties)
-  );
+  const [properties, setProperties] = useState(() => {
+    const raw = loadFromStorage('TNCB_PROPERTIES', mockProperties);
+    return raw.map(prop => {
+      let type = prop.type;
+      if (type === 'Studio') type = 'Chung cư mini';
+      else if (type === 'Duplex') type = 'Nhà ở cải tạo thành nhà trọ (không chung chủ)';
+      else if (type === 'Phòng trọ') type = 'Nhà trọ không chung chủ';
+      return { ...prop, type };
+    });
+  });
   const [contracts, setContracts] = useState(() =>
     loadFromStorage('TNCB_CONTRACTS', mockContracts)
   );

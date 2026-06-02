@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { CITIES, DISTRICTS, AMENITY_MAP } from '../data/mockProperties';
+import { CITIES, DISTRICTS, ROOM_TYPES, AMENITY_MAP } from '../data/mockProperties';
 import {
   House,
   ChartBar,
@@ -135,7 +135,7 @@ export default function Dashboard() {
   // --- Form States ---
   const [roomForm, setRoomForm] = useState({
     title: '',
-    type: 'Studio',
+    type: 'Chung cư mini',
     price: '',
     area: '',
     city: 'Hà Nội',
@@ -301,7 +301,7 @@ export default function Dashboard() {
   const handleAddRoomClick = () => {
     setRoomForm({
       title: '',
-      type: 'Studio',
+      type: 'Chung cư mini',
       price: '',
       area: '',
       city: 'Hà Nội',
@@ -747,10 +747,9 @@ export default function Dashboard() {
                       value={roomForm.type}
                       onChange={(e) => setRoomForm({ ...roomForm, type: e.target.value })}
                     >
-                      <option value="Studio">Studio</option>
-                      <option value="Duplex">Duplex</option>
-                      <option value="Chung cư mini">Chung cư mini</option>
-                      <option value="Phòng trọ">Phòng trọ</option>
+                      {ROOM_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                   </div>
 
