@@ -94,6 +94,8 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 ├── project_architecture.md        # Sơ đồ khối kiến trúc hệ thống
 ├── project_algorithms.md          # Sơ đồ thuật toán khối các luồng xử lý
 ├── implementation_plan.md         # Kế hoạch triển khai kỹ thuật
+├── RELEASES.md                    # Nhật ký phát hành & cập nhật tính năng
+├── taikhoantest.md                # Danh sách tài khoản thử nghiệm
 └── README.md                      # Tài liệu dự án (file này)
 ```
 
@@ -210,6 +212,8 @@ Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (44
 | [`project_architecture.md`](project_architecture.md) | Sơ đồ khối kiến trúc hệ thống |
 | [`project_algorithms.md`](project_algorithms.md) | Sơ đồ thuật toán khối các luồng xử lý |
 | [`implementation_plan.md`](implementation_plan.md) | Kế hoạch triển khai kỹ thuật |
+| [`RELEASES.md`](RELEASES.md) | Nhật ký phát hành & cập nhật tính năng |
+| [`taikhoantest.md`](taikhoantest.md) | Danh sách tài khoản thử nghiệm |
 | [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md) | Triển khai Docker & Cloudflare Tunnel |
 
 ---
