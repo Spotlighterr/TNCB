@@ -134,3 +134,11 @@ Toàn bộ các chuyển dịch giao diện (như mở popup trên bản đồ, 
 }
 ```
 Quy tắc này giúp loại bỏ hoàn toàn cảm giác chuyển động tuyến tính thô cứng, nâng tầm trải nghiệm người dùng đạt chất lượng Awwwards cao cấp.
+
+### D. Hệ Thống Kiểm Tra & Lọc Tin Đăng Trùng Lặp (Anti-Spam Deduplication Engine)
+
+Để loại bỏ các tin đăng rác, trùng lặp nội dung gây loãng dữ liệu, nhưng vẫn bảo đảm quyền lợi đăng tin nhiều loại phòng trong cùng một tòa nhà của chủ nhà, hệ thống áp dụng thuật toán lọc trùng phân tầng:
+
+1. **Bộ so khớp khoảng cách GPS (Haversine Formula):** Đo khoảng cách thực tế giữa tin đăng mới và tập bài viết cũ. Khoảng cách $\Delta < 15\text{m}$ bằng GPS được coi là nằm chung một tòa nhà vật lý, tránh sai số do cách viết địa chỉ khác nhau.
+2. **Bộ kiểm tra thông số phòng:** So sánh tổ hợp `[Loại phòng + Diện tích + Giá thuê]`. Nếu trùng vị trí địa lý nhưng khác một trong ba thông số này, bài đăng được xác định là phòng khác trong cùng tòa nhà và được tự động duyệt.
+3. **So khớp văn bản (Jaccard Similarity) & Ảnh:** Tính độ tương đồng tiêu đề và mô tả. Nếu chỉ số tin cậy (Confidence Score) $\ge 80\%$, bài viết bị chặn đăng và hiển thị cảnh báo chi tiết. Nếu chỉ số từ $50\% \to 79\%$, hệ thống lưu dưới dạng `pending_review` (chờ duyệt).

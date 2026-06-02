@@ -79,6 +79,7 @@ export default function Dashboard() {
     deleteProperty,
     markBillPaid,
     addProperty,
+    checkDuplicateProperty,
     updateProperty,
     createContract,
     addBill,
@@ -105,6 +106,8 @@ export default function Dashboard() {
   const [selectedContractId, setSelectedContractId] = useState('');
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [toast, setToast] = useState(null);
+  const [duplicateReport, setDuplicateReport] = useState(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   const showToast = (message) => {
     setToast(message);
@@ -276,6 +279,7 @@ export default function Dashboard() {
 
     const data = {
       ...roomForm,
+      id: editingRoomId || undefined,
       price: Number(roomForm.price),
       area: Number(roomForm.area),
       electricity: Number(roomForm.electricity),
@@ -284,15 +288,41 @@ export default function Dashboard() {
       images: parsedImages,
     };
 
-    if (editingRoomId) {
-      updateProperty(editingRoomId, data);
-      showToast('Cập nhật thông tin thành công!');
-      setEditingRoomId(null);
-    } else {
-      addProperty(data);
-      showToast(currentUser.role === 'tenant' ? 'Đăng tin khách thuê thành công!' : 'Thêm phòng trọ mới thành công!');
-      setIsAddingRoom(false);
-    }
+    setIsCheckingDuplicate(true);
+
+    // Giả lập Background Worker kiểm duyệt bài viết chạy ngầm trong 1.2s
+    setTimeout(() => {
+      setIsCheckingDuplicate(false);
+      const report = checkDuplicateProperty(data);
+
+      if (report.isDuplicate) {
+        // Trùng lặp cao (Score >= 80) -> Chặn đăng bài và hiển thị Modal báo lỗi
+        setDuplicateReport(report);
+      } else if (report.isSuspicious) {
+        // Trùng lặp trung bình (Score 50-79) -> Cho phép đăng nhưng ở trạng thái chờ duyệt (Pending)
+        const pendingData = { ...data, status: 'pending' };
+        if (editingRoomId) {
+          updateProperty(editingRoomId, pendingData);
+          showToast('Tin đăng đã được cập nhật (Chờ kiểm duyệt do nghi ngờ trùng lặp)');
+          setEditingRoomId(null);
+        } else {
+          addProperty(pendingData);
+          showToast('Đăng tin thành công! Hệ thống tạm giữ tin để kiểm duyệt do nghi ngờ trùng lặp.');
+          setIsAddingRoom(false);
+        }
+      } else {
+        // An toàn -> Duyệt và hiển thị ngay lập tức
+        if (editingRoomId) {
+          updateProperty(editingRoomId, data);
+          showToast('Cập nhật thông tin thành công!');
+          setEditingRoomId(null);
+        } else {
+          addProperty(data);
+          showToast(currentUser.role === 'tenant' ? 'Đăng tin khách thuê thành công!' : 'Thêm phòng trọ mới thành công!');
+          setIsAddingRoom(false);
+        }
+      }
+    }, 1200);
   };
 
   // Contract Form triggers
@@ -1611,6 +1641,83 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+      {/* Loading Overlay for Duplicate Check */}
+      {isCheckingDuplicate && (
+        <div className="duplicate-check-overlay" id="duplicate-check-overlay">
+          <div className="duplicate-check-spinner-card glass-strong">
+            <div className="spinner"></div>
+            <h4 style={{ margin: 'var(--space-2) 0 var(--space-1) 0', fontWeight: 'var(--weight-semibold)' }}>Đang phân tích tin đăng...</h4>
+            <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>Đang chạy thuật toán kiểm tra trùng lặp trên nền hệ thống.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Report Modal */}
+      {duplicateReport && (
+        <div className="duplicate-modal-overlay" id="duplicate-modal-overlay">
+          <div className="duplicate-modal-card glass-strong animate-fade-in">
+            <div className="duplicate-modal-header">
+              <span className="warning-badge">PHÁT HIỆN TRÙNG LẶP ({duplicateReport.confidenceScore}%)</span>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-text-main)', marginTop: 'var(--space-1)' }}>Cảnh Báo Tin Đăng Trùng Lặp</h3>
+            </div>
+            
+            <div className="duplicate-modal-body">
+              <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.5', margin: 0 }}>
+                Tin đăng bạn vừa nhập có độ trùng lặp cao với một bài viết khác đã đăng trước đó của bạn trên hệ thống. 
+                Vui lòng kiểm tra lại để tránh spam tin đăng rác.
+              </p>
+              
+              <div className="reasons-list">
+                <strong style={{ color: 'var(--color-text-main)', display: 'block', marginBottom: 'var(--space-2)' }}>Chi tiết phân tích thuật toán:</strong>
+                <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', padding: 0, margin: 0 }}>
+                  {duplicateReport.reasons.map((reason, idx) => (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--color-text-muted)', listStyle: 'none' }}>
+                      <span style={{ color: '#ef4444' }}>✓</span> {reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {duplicateReport.matchedProperty && (
+                <div className="comparison-container">
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-muted)' }}>Bài đăng gốc đã tồn tại:</span>
+                  <div className="comp-card">
+                    <img src={duplicateReport.matchedProperty.images?.[0]} alt="old room" />
+                    <div className="comp-info">
+                      <span className="comp-title">{duplicateReport.matchedProperty.title}</span>
+                      <span className="comp-meta text-mono">{duplicateReport.matchedProperty.type} • {duplicateReport.matchedProperty.area}m² • {formatPrice(duplicateReport.matchedProperty.price)}</span>
+                      <span className="comp-address">{duplicateReport.matchedProperty.address}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="duplicate-modal-actions">
+              <button 
+                type="button" 
+                className="btn btn-ghost"
+                onClick={() => setDuplicateReport(null)}
+              >
+                Chỉnh sửa tin hiện tại
+              </button>
+              {duplicateReport.matchedProperty && (
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={() => {
+                    handleEditRoomClick(duplicateReport.matchedProperty);
+                    setDuplicateReport(null);
+                  }}
+                >
+                  Chỉnh sửa tin cũ bị trùng
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
           </>
         )}
       </main>
@@ -2242,6 +2349,160 @@ export default function Dashboard() {
           font-size: var(--text-2xl);
           font-weight: var(--weight-bold);
           color: var(--color-accent);
+        }
+
+        /* Duplicate Check Spinner & Modal */
+        .duplicate-check-overlay,
+        .duplicate-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.4);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          animation: fadeIn 0.3s ease both;
+        }
+
+        .duplicate-check-spinner-card {
+          background: var(--glass-bg);
+          border: 1px solid var(--glass-border);
+          box-shadow: var(--glass-shadow);
+          padding: var(--space-8);
+          border-radius: var(--radius-main);
+          text-align: center;
+          max-width: 380px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-4);
+        }
+
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid var(--color-border);
+          border-top-color: var(--color-accent);
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .duplicate-modal-card {
+          background: var(--glass-bg);
+          border: 1px solid var(--glass-border);
+          box-shadow: var(--glass-shadow);
+          padding: var(--space-6) var(--space-8);
+          border-radius: var(--radius-main);
+          max-width: 520px;
+          width: 90%;
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-5);
+        }
+
+        .duplicate-modal-header {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .warning-badge {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          padding: var(--space-1) var(--space-3);
+          border-radius: var(--radius-pill);
+          font-size: var(--text-xs);
+          font-weight: var(--weight-semibold);
+          width: fit-content;
+        }
+
+        .duplicate-modal-body {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-4);
+          font-size: var(--text-sm);
+        }
+
+        .reasons-list {
+          background: var(--bg-secondary);
+          padding: var(--space-4);
+          border-radius: var(--radius-subtle);
+          border-left: 3px solid #ef4444;
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .reasons-list ul {
+          margin: 0;
+          padding-left: var(--space-4);
+          list-style: none;
+        }
+
+        .reasons-list li {
+          color: var(--color-text-muted);
+          margin-bottom: var(--space-1);
+        }
+
+        .comparison-container {
+          margin-top: var(--space-2);
+        }
+
+        .comp-card {
+          display: flex;
+          gap: var(--space-4);
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          padding: var(--space-3);
+          border-radius: var(--radius-subtle);
+          margin-top: var(--space-2);
+        }
+
+        .comp-card img {
+          width: 80px;
+          height: 60px;
+          object-fit: cover;
+          border-radius: var(--radius-subtle);
+        }
+
+        .comp-info {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-1);
+          justify-content: center;
+        }
+
+        .comp-title {
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-main);
+          font-size: var(--text-sm);
+        }
+
+        .comp-meta {
+          font-size: var(--text-xs);
+          color: var(--color-accent);
+        }
+
+        .comp-address {
+          font-size: var(--text-xs);
+          color: var(--color-text-muted);
+        }
+
+        .duplicate-modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: var(--space-3);
+          border-top: 1px solid var(--color-divider);
+          padding-top: var(--space-4);
         }
       `}</style>
     </div>
