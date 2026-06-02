@@ -91,6 +91,8 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 │
 ├── chucnang.md                    # Đặc tả chức năng nghiệp vụ
 ├── thietke.md                     # Kế hoạch thiết kế UI/UX
+├── project_architecture.md        # Sơ đồ khối kiến trúc hệ thống
+├── project_algorithms.md          # Sơ đồ thuật toán khối các luồng xử lý
 ├── implementation_plan.md         # Kế hoạch triển khai kỹ thuật
 └── README.md                      # Tài liệu dự án (file này)
 ```
@@ -101,6 +103,26 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 |----------------|--------|
 | `node_modules/` | Dependency npm (sau `npm install`) |
 | `dist/` | Bản build production (sau `npm run build`) — Netlify publish từ đây |
+
+---
+
+## Kiến trúc & Thuật toán cốt lõi
+
+### Kiến trúc hệ thống
+* **Tầng dữ liệu:** Quản lý tập trung bằng React Context, đồng bộ tự động 2 chiều với `localStorage` qua các key `TNCB_PROPERTIES`, `TNCB_CONTRACTS`, `TNCB_SAVED`, `TNCB_USER`.
+* **Phân cấp trang:**
+  * **Trang chủ (`/`):** Hero section tối giản + Bento Stats Grid.
+  * **Tìm kiếm (`/search`):** Giao diện danh bạ dạng Editorial Grid Layout kèm bộ lọc thông minh.
+  * **Chi tiết (`/property/:id`):** Trình diễn album ảnh trượt, chi phí dịch vụ, bản đồ tương tác Leaflet.js ở chân trang.
+  * **Dashboard (`/dashboard`):** Dashboard kép linh hoạt đổi vai trò Khách thuê / Chủ trọ.
+* Chi tiết sơ đồ khối kiến trúc xem tại [project_architecture.md](project_architecture.md).
+
+### Thuật toán xử lý chính
+1. **Bộ lọc thông minh:** Lọc cascade động theo Quận huyện tùy biến theo Thành phố, kiểm tra khoảng giá nhập (tự định dạng VND) và tiện ích tích hợp mà không tải lại trang.
+2. **Tính hóa đơn hàng tháng:** Tự động tính toán lượng điện nước tiêu thụ (`Chỉ số mới - Chỉ số cũ * Đơn giá`) cộng gộp tiền nhà và phí dịch vụ tạo hóa đơn mới.
+3. **Đồng bộ trạng thái bản đồ:** Chủ trọ gạt Switch phòng trống $\leftrightarrow$ đang thuê $\rightarrow$ cập nhật tức thì trạng thái marker trên bản đồ của khách thuê.
+4. **Lưu tin yêu thích (Saved properties):** Quản lý mảng danh sách phòng yêu thích lưu local và cập nhật badge số lượng trên thanh tiêu đề.
+5. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
 
 ---
 
@@ -180,6 +202,8 @@ Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (44
 |------|----------|
 | [`chucnang.md`](chucnang.md) | Đặc tả chức năng & luồng người dùng |
 | [`thietke.md`](thietke.md) | Kế hoạch thiết kế giao diện |
+| [`project_architecture.md`](project_architecture.md) | Sơ đồ khối kiến trúc hệ thống |
+| [`project_algorithms.md`](project_algorithms.md) | Sơ đồ thuật toán khối các luồng xử lý |
 | [`implementation_plan.md`](implementation_plan.md) | Kế hoạch triển khai kỹ thuật |
 | [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md) | Triển khai Docker & Cloudflare Tunnel |
 
