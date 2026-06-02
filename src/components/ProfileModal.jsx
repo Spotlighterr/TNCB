@@ -52,7 +52,8 @@ export default function ProfileModal({ isOpen, onClose }) {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isOpen, currentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!shouldRender || !currentUser) return null;
 
