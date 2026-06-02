@@ -77,7 +77,7 @@ graph TD
     Detail["Chi Tiết Phòng <br> (Carousel, Utilities, Contact, Leaflet Map)"]:::tenant
     TDash["Tenant Dashboard"]:::tenant
     Saved["Saved Properties"]:::tenant
-    MyRental["My Rental <br> (Hợp đồng thuê phòng)"]:::tenant
+    MyRental["My Rental <br> (Phòng đang thuê)"]:::tenant
     Support["Support Tickets & <br> Hotline kỹ thuật chủ trọ"]:::tenant
 
     %% Landlord Flow
@@ -85,7 +85,6 @@ graph TD
     LDash["Landlord Dashboard <br> (Glassmorphic Sidebar)"]:::landlord
     Overview["Widgets Thống Kê <br> (Tỷ lệ phòng trống, Tổng bài đăng)"]:::landlord
     RoomMgmt["Quản Lý Phòng <br> (Thêm/sửa, Bật/tắt Status Switch, Gỡ bài)"]:::landlord
-    Contract["Quản Lý Hợp Đồng <br> (Lập hợp đồng thuê trọ điện tử)"]:::landlord
 
     %% Admin Flow
     Admin["Quản Trị Viên (Admin)"]:::admin
@@ -110,7 +109,6 @@ graph TD
     Landlord --> LDash
     LDash --> Overview
     LDash --> RoomMgmt
-    LDash --> Contract
 
     Admin --> ADash
     ADash --> AOverview

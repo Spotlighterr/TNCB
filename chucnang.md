@@ -28,7 +28,7 @@ Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tươ
 
 4. **Trang Cá Nhân Khách Thuê (Tenant Dashboard)**
    - **Saved Properties**: Danh sách các phòng trọ đã lưu yêu thích để so sánh.
-   - **My Rental**: Thông tin phòng trọ đang thuê hiện tại, thời hạn hợp đồng.
+   - **My Rental**: Thông tin phòng trọ đang thuê hiện tại.
    - **Yêu Cầu Hỗ Trợ & Danh Bạ Chủ Trọ (Support Ticket & Direct Contact)**: 
      - Gửi phản hồi kỹ thuật trực tiếp tới chủ trọ (VD: điều hòa hỏng, rò rỉ nước) và theo dõi trạng thái xử lý của ticket.
      - **Bảng Danh Bạ Hotline Liên Hệ**: Bổ sung một bảng thông tin liên hệ trực tiếp của chủ trọ và đội ngũ kỹ thuật sửa chữa (Hotline, số Zalo kỹ thuật, email hỗ trợ) bên cạnh form gửi ticket để khách thuê nhanh chóng liên lạc trực tiếp trong các trường hợp sự cố khẩn cấp.
@@ -40,15 +40,14 @@ Chủ trọ (Landlord) sử dụng hệ thống như một "Hệ điều hành m
 
 1. **Dashboard Tổng Quan (Overview)**
    - Thẻ thống kê: Tỷ lệ phòng đang trống, tổng số phòng hoạt động trên hệ thống, số lượng khách thuê.
-   - Hoạt động gần đây: Cảnh báo hợp đồng sắp hết hạn hoặc yêu cầu sửa chữa mới từ khách thuê.
+   - Hoạt động gần đây: Cảnh báo các yêu cầu sửa chữa mới từ khách thuê.
 
 2. **Quản Lý Phòng Trọ (Room Management)**
    - **Danh Sách Phòng**: Bảng quản lý tất cả phòng trọ thuộc sở hữu, hiển thị mã phòng, diện tích, giá thuê, trạng thái trống/đang thuê.
    - **Thêm/Sửa Phòng**: Form điền thông tin chi tiết phòng trọ (Tải ảnh mẫu, chọn tiện ích, nhập giá điện nước, định vị tọa độ mẫu trên bản đồ).
    - **Bật Tắt Trạng Thái Nhanh**: Chuyển trạng thái phòng Trống sang Đang thuê bằng một nút gạt Switch mượt mà, lập tức thay đổi hiển thị của phòng trên bản đồ tìm kiếm.
 
-3. **Quản Lý Hợp Đồng (Contract Management)**
-   - **Quản Lý Hợp Đồng**: Tạo hợp đồng điện tử cơ bản cho phòng trọ, lưu trữ thông tin khách thuê (Họ tên, SĐT, Ngày bắt đầu, Ngày kết thúc).
+
 
 ---
 

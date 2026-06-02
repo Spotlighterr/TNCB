@@ -13,7 +13,7 @@
 | **Trang chủ** | Hero + tìm kiếm nhanh theo thành phố/quận, phòng nổi bật, thống kê dạng Bento |
 | **Tìm phòng** (`/search`) | Lưới phòng trọ, bộ lọc theo quận, giá, loại phòng và tiện ích |
 | **Chi tiết phòng** (`/property/:id`) | Carousel ảnh, bảng giá/chi phí, tiện ích, liên hệ chủ trọ, bản đồ (Leaflet) |
-| **Quản lý** (`/dashboard`) | Dashboard khách thuê & chủ trọ: lưu phòng, quản lý phòng, hợp đồng, hóa đơn (mock) |
+| **Quản lý** (`/dashboard`) | Dashboard khách thuê, chủ trọ & Admin: lưu phòng, quản lý bài đăng, ẩn/hiện và kiểm duyệt tin |
 | **Đăng nhập / Đăng ký** | Phân quyền **Khách thuê** và **Chủ trọ** (dữ liệu lưu local, demo) |
 | **Giao diện** | Light/Dark mode, bottom navigation trên mobile, thiết kế responsive |
 

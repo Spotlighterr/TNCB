@@ -54,14 +54,12 @@ const ICON_COMPONENTS = {
 const LANDLORD_TABS = [
   { id: 'overview', label: 'Tổng quan', icon: ChartBar },
   { id: 'rooms', label: 'Quản lý phòng', icon: House },
-  { id: 'contracts', label: 'Hợp đồng', icon: FileText },
 ];
 
 const ADMIN_TABS = [
   { id: 'overview', label: 'Tổng quan', icon: ChartBar },
   { id: 'rooms', label: 'Quản lý bài đăng', icon: House },
   { id: 'pending-reviews', label: 'Kiểm duyệt tin', icon: ShieldCheck },
-  { id: 'contracts', label: 'Hợp đồng', icon: FileText },
 ];
 
 const TENANT_TABS = [
@@ -867,29 +865,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Recent Activity */}
-            <div className="dashboard-section">
-              <h3 className="dashboard-section-title">Hoạt động hợp đồng gần đây</h3>
-              <div className="activity-list">
-                {contracts
-                  .filter((c) => c.status === 'active')
-                  .slice(0, 3)
-                  .map((c) => {
-                    const prop = getPropertyById(c.propertyId);
-                    return (
-                      <div key={c.id} className="activity-item">
-                        <div className="badge badge-available">Đang thuê</div>
-                        <div className="activity-info">
-                          <strong>{prop?.title || 'Phòng trọ'}</strong>
-                          <span className="text-caption">
-                            Khách: {c.tenantName} | HĐ: {c.startDate} - {c.endDate}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
+
           </div>
         )}
 
@@ -1001,163 +977,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 3. Contracts */}
-        {userRole === 'landlord' && activeTab === 'contracts' && !isCreatingContract && (
-          <div className="animate-fade-in">
-            <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Hợp đồng thuê nhà</h2>
-              <button className="btn btn-primary" onClick={handleAddContractClick}>
-                <Plus size={18} />
-                Tạo hợp đồng
-              </button>
-            </div>
 
-            <div className="contracts-list">
-              {contracts.map((c) => {
-                const prop = getPropertyById(c.propertyId);
-                return (
-                  <div key={c.id} className="contract-card card-elevated">
-                    <div className="contract-header">
-                      <div>
-                        <h4>{prop?.title || 'Phòng trọ'}</h4>
-                        <p className="text-caption">Khách thuê: {c.tenantName} | SĐT: {c.tenantPhone}</p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span className={`badge ${c.status === 'active' ? 'badge-available' : 'badge-rented'}`}>
-                          {c.status === 'active' ? 'Đang hoạt động' : 'Hết hạn'}
-                        </span>
-                        {c.status === 'active' && (
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => handleAddBillClick(c.id)}
-                          >
-                            <Receipt size={14} />
-                            Tạo HĐơn
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="contract-details">
-                      <span>Ngày bắt đầu: <strong>{c.startDate}</strong></span>
-                      <span>Ngày kết thúc: <strong>{c.endDate}</strong></span>
-                      <span>Giá thuê: <strong className="price">{formatPrice(c.monthlyRent)}</strong></span>
-                      <span>Đặt cọc: <strong className="text-mono">{c.deposit.toLocaleString()} VND</strong></span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {userRole === 'landlord' && activeTab === 'contracts' && isCreatingContract && (
-          <div className="form-container animate-fade-in">
-            <div className="form-header">
-              <h3 className="form-title">Tạo hợp đồng thuê mới</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingContract(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleContractSubmit} id="contract-form">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label className="form-label">Chọn phòng trọ trống *</label>
-                  <select
-                    className="select"
-                    required
-                    value={contractForm.propertyId}
-                    onChange={(e) => handleContractRoomChange(e.target.value)}
-                  >
-                    <option value="">-- Chọn phòng trống --</option>
-                    {properties
-                      .filter((p) => !p.isRented || p.id === contractForm.propertyId)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          [{p.type}] {p.title} ({p.district}) - {p.price.toLocaleString()}đ
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Họ và tên khách thuê *</label>
-                  <input
-                    className="input"
-                    required
-                    placeholder="Nguyễn Văn A"
-                    value={contractForm.tenantName}
-                    onChange={(e) => setContractForm({ ...contractForm, tenantName: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Số điện thoại khách thuê *</label>
-                  <input
-                    className="input text-mono"
-                    required
-                    placeholder="09XXXXXXXX"
-                    value={contractForm.tenantPhone}
-                    onChange={(e) => setContractForm({ ...contractForm, tenantPhone: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Ngày bắt đầu hợp đồng *</label>
-                  <input
-                    type="date"
-                    className="input text-mono"
-                    required
-                    value={contractForm.startDate}
-                    onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Ngày kết thúc hợp đồng *</label>
-                  <input
-                    type="date"
-                    className="input text-mono"
-                    required
-                    value={contractForm.endDate}
-                    onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Tiền thuê thỏa thuận (VND/tháng) *</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    required
-                    value={contractForm.monthlyRent}
-                    onChange={(e) => setContractForm({ ...contractForm, monthlyRent: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Tiền đặt cọc đặt trước (VND) *</label>
-                  <input
-                    type="number"
-                    className="input text-mono"
-                    required
-                    value={contractForm.deposit}
-                    onChange={(e) => setContractForm({ ...contractForm, deposit: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions-row">
-                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingContract(false)}>
-                  Hủy bỏ
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Tạo hợp đồng
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
 
 

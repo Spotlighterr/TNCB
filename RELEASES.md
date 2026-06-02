@@ -23,6 +23,7 @@ Phiên bản này nâng cấp toàn diện quyền hạn tài khoản Admin (`ad
 
 #### 🗑️ Các chức năng loại bỏ:
 * **Gỡ bỏ Mô-đun Hóa đơn (Billing Clean-up):** Xóa bỏ hoàn toàn tab Hóa đơn khỏi Sidebar của chủ trọ và khách thuê, loại bỏ lịch sử hóa đơn ở khách thuê và các form nhập chỉ số tính tiền.
+* **Gỡ bỏ Mô-đun Hợp đồng (Contract Clean-up):** Loại bỏ hoàn toàn tab "Hợp đồng" khỏi thanh Sidebar của chủ trọ và Admin, gỡ bỏ form tạo hợp đồng mới và widget cảnh báo hợp đồng gần đây ở tab Tổng quan.
 * **Tinh chỉnh Tab Tổng quan (Overview):** Loại bỏ hoàn toàn hai thẻ chỉ số "Doanh thu dự kiến" và "Tiền nợ" để tập trung vào việc kết nối dịch vụ phi lợi nhuận.
 
 ---
