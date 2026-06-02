@@ -34,12 +34,14 @@ Mỗi khi bắt đầu một phiên làm việc mới hoặc tiếp nhận một
 > - Tệp `chucnang.md` là nguồn dữ liệu chính xác duy nhất của chức năng & logic nghiệp vụ.
 > - Tệp `project_architecture.md` là nguồn dữ liệu chính xác duy nhất của sơ đồ khối kiến trúc hệ thống.
 > - Tệp `project_algorithms.md` là nguồn dữ liệu chính xác duy nhất của sơ đồ thuật toán khối.
+> - Tệp `RELEASES.md` là nhật ký ghi nhận lịch sử nâng cấp các tính năng lớn.
 
 Sau **bất kỳ thay đổi, nâng cấp hay sửa đổi nào** liên quan đến giao diện, nghiệp vụ, kiến trúc hoặc thuật toán hệ thống:
 - **Cập nhật Thiết kế**: Ghi nhận ngay các thay đổi (bảng màu, font, bo góc, layout) vào tệp [thietke.md](file:///d:/TNCB/thietke.md).
 - **Cập nhật Chức năng**: Ghi nhận ngay các thay đổi (luồng nghiệp vụ, cấu trúc dữ liệu Mock Data, logic React State, cơ chế lưu trữ) vào tệp [chucnang.md](file:///d:/TNCB/chucnang.md).
 - **Cập nhật Kiến trúc**: Ghi nhận ngay các thay đổi về sơ đồ khối, phân cấp component vào tệp [project_architecture.md](file:///d:/TNCB/project_architecture.md).
 - **Cập nhật Thuật toán**: Ghi nhận ngay các thay đổi về luồng xử lý logic, tính toán vào tệp [project_algorithms.md](file:///d:/TNCB/project_algorithms.md).
+- **Cập nhật Nhật ký phát hành (Releases)**: Khi hoàn thành một tính năng hoặc nâng cấp lớn, ghi nhận chi tiết nội dung và phiên bản cập nhật vào tệp [RELEASES.md](file:///d:/TNCB/RELEASES.md).
 - Trình bày chi tiết lý do và cấu trúc mã nguồn mới của sự thay đổi đó trong các tệp tương ứng để Agent ở các session tiếp theo luôn hiểu đúng 100% hiện trạng dự án.
 
 ---
