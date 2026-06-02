@@ -34,7 +34,9 @@ export function AppProvider({ children }) {
     loadFromStorage('TNCB_USERS', [
       { id: 'user-admin', email: 'admin@tncb.vn', name: 'Quản Trị Viên TNCB', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-admin/100/100', phone: '0869333366', password: 'admin' },
       { id: 'user-tenant', email: 'tenant@tncb.vn', name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' },
-      { id: 'user-landlord', email: 'landlord@tncb.vn', name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' }
+      { id: 'user-landlord', email: 'landlord@tncb.vn', name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' },
+      { id: 'user-test-landlord', email: 'testlandlord@tncb.vn', name: 'Chủ Trọ Thử Nghiệm', role: 'landlord', avatar: 'https://picsum.photos/seed/test-landlord/100/100', phone: '0901234567', password: '123' },
+      { id: 'user-test-tenant', email: 'testtenant@tncb.vn', name: 'Khách Thuê Thử Nghiệm', role: 'tenant', avatar: 'https://picsum.photos/seed/test-tenant/100/100', phone: '0907654321', password: '123' }
     ])
   );
   const [currentUser, setCurrentUser] = useState(() =>
@@ -93,19 +95,33 @@ export function AppProvider({ children }) {
   }, [currentUser]);
 
   useEffect(() => {
-    const hasAdmin = users.some((u) => u.email === 'admin@tncb.vn');
-    if (!hasAdmin) {
-      const adminUser = {
-        id: 'user-admin',
-        email: 'admin@tncb.vn',
-        name: 'Quản Trị Viên TNCB',
-        role: 'landlord',
-        avatar: 'https://picsum.photos/seed/owner-admin/100/100',
-        phone: '0869333366',
-        password: 'admin',
-      };
-      setUsers((prev) => [adminUser, ...prev]);
-    }
+    const adminEmail = 'admin@tncb.vn';
+    const landlordEmail = 'landlord@tncb.vn';
+    const tenantEmail = 'tenant@tncb.vn';
+    const testLandlordEmail = 'testlandlord@tncb.vn';
+    const testTenantEmail = 'testtenant@tncb.vn';
+
+    setUsers((prev) => {
+      let updated = [...prev];
+      
+      if (!updated.some((u) => u.email === adminEmail)) {
+        updated.push({ id: 'user-admin', email: adminEmail, name: 'Quản Trị Viên TNCB', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-admin/100/100', phone: '0869333366', password: 'admin' });
+      }
+      if (!updated.some((u) => u.email === landlordEmail)) {
+        updated.push({ id: 'user-landlord', email: landlordEmail, name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' });
+      }
+      if (!updated.some((u) => u.email === tenantEmail)) {
+        updated.push({ id: 'user-tenant', email: tenantEmail, name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' });
+      }
+      if (!updated.some((u) => u.email === testLandlordEmail)) {
+        updated.push({ id: 'user-test-landlord', email: testLandlordEmail, name: 'Chủ Trọ Thử Nghiệm', role: 'landlord', avatar: 'https://picsum.photos/seed/test-landlord/100/100', phone: '0901234567', password: '123' });
+      }
+      if (!updated.some((u) => u.email === testTenantEmail)) {
+        updated.push({ id: 'user-test-tenant', email: testTenantEmail, name: 'Khách Thuê Thử Nghiệm', role: 'tenant', avatar: 'https://picsum.photos/seed/test-tenant/100/100', phone: '0907654321', password: '123' });
+      }
+
+      return updated;
+    });
   }, []);
 
   // ============================
