@@ -17,14 +17,6 @@
 | **Đăng nhập / Đăng ký** | Phân quyền **Khách thuê** và **Chủ trọ** (dữ liệu lưu local, demo) |
 | **Giao diện** | Light/Dark mode, bottom navigation trên mobile, thiết kế responsive |
 
-## Cập nhật dữ liệu hành chính & UI mới nhất (Tháng 6/2026)
-
-Dự án đã được nâng cấp toàn diện về mặt dữ liệu địa lý hành chính và tối ưu giao diện:
-- **Cập nhật địa chỉ sáp nhập Hà Nội (Nghị quyết 1656/NQ-UBTVQH15)**: Tích hợp đầy đủ các phường sáp nhập mới (VD: *Phường Cầu Giấy*, *Phường Nghĩa Đô*, *Phường Đống Đa*...) đồng thời duy trì tùy chọn các phường cũ (VD: *Dịch Vọng Hậu*, *Láng Hạ*) để người dùng thuận tiện tìm kiếm theo cả thói quen cũ và mới.
-- **Bao phủ 100% quận huyện**: Mở rộng danh mục đầy đủ **30 quận, huyện, thị xã** của Hà Nội và **22 quận, huyện, thành phố** của TP. Hồ Chí Minh kèm danh sách phường xã đồng bộ.
-- **Sắp xếp bảng chữ cái (A-Z)**: Toàn bộ danh sách chọn trong bộ lọc (Thành phố, Quận/Huyện, Phường/Xã, Loại phòng) được tự động sắp xếp theo thứ tự bảng chữ cái tiếng Việt chuẩn xác (locale-aware).
-- **Tối ưu hiển thị giá**: Chuyển đổi toàn bộ định dạng giá từ viết tắt (`4.5tr/th`) sang đầy đủ rõ ràng (`4.5 triệu/tháng`), đồng thời chuyển màu chữ sang tông đơn sắc (`var(--color-text-main)`) tinh tế theo tiêu chuẩn Taste Skill.
-- **Nâng cấp nhãn "Xác thực"**: Đổi sang tông màu xanh lá cây đậm chất uy tín (Success Green) trên cả Light và Dark Mode, tạo cảm giác an tâm và tin cậy cho khách thuê trọ.
 
 ---
 
@@ -173,27 +165,18 @@ npm run dev
    - **Build command:** `npm run build`
    - **Publish directory:** `dist`
 3. Deploy — file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
+4. Hoặc sử dụng Render.com, build .
 
 ### Docker + NGINX
 
 Dùng khi cần chạy stack đầy đủ (frontend + mock API + Redis + Cloudflare Tunnel). Xem hướng dẫn chi tiết trong [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md).
+Chưa bao gồm cơ sở dữ liệu (bổ sung sau).
 
 ```bash
 docker compose -f deploy/docker-compose.yml up --build -d
 ```
 
 Truy cập: [http://localhost](http://localhost)
-
----
-
-## Reload trang bị 404?
-
-Ứng dụng dùng **client-side routing** (`BrowserRouter`). Khi deploy tĩnh (Netlify, S3, …), server phải trả `index.html` cho mọi đường dẫn.
-
-- **Netlify:** đã có `public/_redirects` với rule `/* → /index.html` (HTTP 200).
-- **NGINX (Docker):** đã cấu hình `try_files` trong `deploy/nginx.conf`.
-
-Nếu vẫn gặp 404 sau khi sửa, hãy **build và deploy lại** trên Netlify.
 
 ---
 
@@ -220,14 +203,11 @@ Giao diện mobile được tinh chỉnh theo viewport **iPhone 17 Pro Max** (44
 
 ## Liên hệ
 
-- **Email:** tncb.findx@gmail.com  
-- **Hotline:** 034 629 7668  
-- **Facebook:** [FindX - Tìm Nhà Cùng Bạn](https://www.facebook.com/timnhacungban.findx)
+- Email: vuduchuyab@gmail.com
+- discord: spotlighter
 
 ---
 
 ## Bản quyền
 
-© 2026 **FindX** (FTU Housing Bank). All rights reserved.
-
-Development by **Spotlighterr**
+Development by **Spotlighterr** 
