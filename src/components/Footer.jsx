@@ -68,8 +68,8 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-          <p>&copy; 2026 FindX (FTU Housing Bank). All rights reserved.</p>
-          <p style={{ fontSize: '11px', color: 'var(--color-text-subtle)' }}>Development by Spotlighterr</p>
+          <p>&copy; 2026 All rights reserved - FindX (FTU Housing Bank).</p>
+          <p style={{ fontSize: '11px', color: 'var(--color-text-subtle)', opacity: 0.7 }}>Development by Huy Vũ (Spotlighter)</p>
         </div>
       </div>
 

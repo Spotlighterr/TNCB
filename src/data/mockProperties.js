@@ -4,16 +4,16 @@ export const CITIES = ['Hà Nội', 'TP. Hồ Chí Minh'];
 
 export const DISTRICTS = {
   'Hà Nội': [
-    'Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên', 'Cầu Giấy', 'Đống Đa', 'Hai Bà Trưng', 
-    'Hoàng Mai', 'Thanh Xuân', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông', 
-    'Sơn Tây', 'Ba Vì', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm', 
-    'Hoài Đức', 'Mê Linh', 'Mỹ Đức', 'Phú Xuyên', 'Phúc Thọ', 'Quốc Oai', 
+    'Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên', 'Cầu Giấy', 'Đống Đa', 'Hai Bà Trưng',
+    'Hoàng Mai', 'Thanh Xuân', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Hà Đông',
+    'Sơn Tây', 'Ba Vì', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm',
+    'Hoài Đức', 'Mê Linh', 'Mỹ Đức', 'Phú Xuyên', 'Phúc Thọ', 'Quốc Oai',
     'Sóc Sơn', 'Thạch Thất', 'Thanh Oai', 'Thanh Trì', 'Thường Tín', 'Ứng Hòa'
   ],
   'TP. Hồ Chí Minh': [
-    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 
-    'Quận 10', 'Quận 11', 'Quận 12', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận', 
-    'Tân Bình', 'Tân Phú', 'Bình Tân', 'Thủ Đức', 
+    'Quận 1', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+    'Quận 10', 'Quận 11', 'Quận 12', 'Bình Thạnh', 'Gò Vấp', 'Phú Nhuận',
+    'Tân Bình', 'Tân Phú', 'Bình Tân', 'Thủ Đức',
     'Bình Chánh', 'Cần Giờ', 'Củ Chi', 'Hóc Môn', 'Nhà Bè'
   ],
 };
@@ -97,6 +97,8 @@ export const AMENITY_MAP = {
   Parking: { label: 'Chỗ để xe', icon: 'Car' },
   Kitchen: { label: 'Bếp riêng', icon: 'CookingPot' },
   Security: { label: 'Bảo vệ 24/7', icon: 'ShieldCheck' },
+  Internet: { label: 'Internet', icon: 'WifiHigh' },
+  Balcony: { label: 'Ban công', icon: 'Sun' },
 };
 
 const baseProperties = [
@@ -495,9 +497,9 @@ for (let i = 1; i <= 90; i++) {
   const district = districts[i % districts.length];
   const wards = WARDS[district];
   const ward = wards[i % wards.length];
-  
+
   const type = ROOM_TYPES[i % ROOM_TYPES.length];
-  
+
   // Set realistic price ranges based on room type
   let price = 2500000;
   let area = 18;
@@ -517,7 +519,7 @@ for (let i = 1; i <= 90; i++) {
 
   const street = city === 'Hà Nội' ? streetsHanoi[i % streetsHanoi.length] : streetsHCMC[i % streetsHCMC.length];
   const address = `Số ${15 + i}, ${street}, ${ward}, ${district}, ${city}`;
-  
+
   // Generate realistic coordinates around HN and HCMC
   const baseLat = city === 'Hà Nội' ? 21.02 : 10.78;
   const baseLng = city === 'Hà Nội' ? 105.80 : 106.68;
