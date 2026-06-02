@@ -922,7 +922,13 @@ export default function Dashboard() {
                               title={p.isRented ? 'Đã cho thuê (Full)' : 'Còn trống'}
                               id={`switch-${p.id}`}
                             />
-                            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: p.isRented ? 'var(--color-text-muted)' : 'var(--color-accent)' }}>
+                            <span style={{ 
+                              fontSize: 'var(--text-xs)', 
+                              fontWeight: 'var(--weight-semibold)', 
+                              color: p.isRented ? 'var(--color-text-muted)' : 'var(--color-accent)',
+                              display: 'inline-block',
+                              width: '75px'
+                            }}>
                               {p.isRented ? 'Full' : 'Còn trống'}
                             </span>
                           </div>

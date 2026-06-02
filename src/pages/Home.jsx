@@ -29,10 +29,10 @@ export default function Home() {
   }, []);
 
   const featuredProperties = properties
-    .filter((p) => p.verified && !p.isRented)
+    .filter((p) => p.verified && !p.isRented && !p.isUnlisted && p.status === 'active')
     .slice(0, 4);
 
-  const availableCount = properties.filter((p) => !p.isRented).length;
+  const availableCount = properties.filter((p) => !p.isRented && !p.isUnlisted && p.status === 'active').length;
   const districtCount = [...new Set(properties.map((p) => p.district))].length;
 
   const handleSearch = (e) => {

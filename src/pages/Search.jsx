@@ -42,6 +42,9 @@ export default function Search() {
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
+      // Ẩn các bài đăng đã thuê (Full), bài viết đã gỡ (isUnlisted) hoặc đang chờ duyệt (pending)
+      if (p.isRented || p.isUnlisted || p.status === 'pending') return false;
+
       if (city && p.city !== city) return false;
       if (district && p.district !== district) return false;
       if (ward && p.ward !== ward) return false;
