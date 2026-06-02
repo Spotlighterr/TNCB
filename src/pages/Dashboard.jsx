@@ -35,6 +35,7 @@ import {
   FacebookLogo,
   Eye,
   EyeSlash,
+  UploadSimple,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -141,7 +142,7 @@ export default function Dashboard() {
     district: '',
     address: '',
     coords: [21.0285, 105.7823],
-    images: '',
+    images: [],
     amenities: [],
     electricity: 3500,
     water: 100000,
@@ -208,6 +209,88 @@ export default function Dashboard() {
   // --- Form Trigger Handlers ---
 
   // Room Form triggers
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Max dimension 1000px
+          const MAX_DIM = 1000;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Export as JPEG with 0.7 quality to keep file size small
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files || files.length === 0) return;
+
+    const currentCount = roomForm.images.length;
+    if (currentCount + files.length > 10) {
+      showToast('Bạn chỉ được chọn tối đa 10 ảnh.');
+      return;
+    }
+
+    const newImages = [...roomForm.images];
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Vui lòng chỉ chọn tệp hình ảnh.');
+        continue;
+      }
+
+      try {
+        if (file.size > 2 * 1024 * 1024) {
+          showToast(`Ảnh "${file.name}" vượt quá 2MB. Đang nén...`);
+        }
+        const compressed = await compressImage(file);
+        newImages.push(compressed);
+      } catch (err) {
+        console.error(err);
+        showToast(`Lỗi xử lý ảnh "${file.name}".`);
+      }
+    }
+
+    setRoomForm((prev) => ({
+      ...prev,
+      images: newImages,
+    }));
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setRoomForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove),
+    }));
+  };
+
   const handleAddRoomClick = () => {
     setRoomForm({
       title: '',
@@ -218,7 +301,7 @@ export default function Dashboard() {
       district: DISTRICTS['Hà Nội'][0],
       address: '',
       coords: [21.0285, 105.7823],
-      images: `https://picsum.photos/seed/prop-${Date.now()}/800/600`,
+      images: [],
       amenities: [],
       electricity: 3500,
       water: 100000,
@@ -239,7 +322,7 @@ export default function Dashboard() {
       district: room.district,
       address: room.address,
       coords: room.coords,
-      images: room.images.join(', '),
+      images: [...room.images],
       amenities: room.amenities,
       electricity: room.electricity,
       water: room.water,
@@ -277,14 +360,37 @@ export default function Dashboard() {
 
   const handleRoomSubmit = (e) => {
     e.preventDefault();
-    if (!roomForm.title || !roomForm.price || !roomForm.area) {
-      alert('Vui lòng điền các thông tin bắt buộc.');
+    if (
+      !roomForm.title ||
+      !roomForm.price ||
+      !roomForm.area ||
+      !roomForm.address ||
+      !roomForm.electricity ||
+      !roomForm.water ||
+      !roomForm.service ||
+      !roomForm.description
+    ) {
+      showToast('Vui lòng điền đầy đủ các thông tin bắt buộc.');
       return;
     }
 
-    const parsedImages = roomForm.images
-      ? roomForm.images.split(',').map((img) => img.trim()).filter(Boolean)
-      : [`https://picsum.photos/seed/prop-${Date.now()}/800/600`];
+    if (roomForm.images.length === 0) {
+      showToast('Vui lòng tải lên ít nhất 1 hình ảnh minh họa.');
+      return;
+    }
+
+    if (roomForm.amenities.length === 0) {
+      showToast('Vui lòng chọn ít nhất 1 tiện nghi của phòng.');
+      return;
+    }
+
+    let finalCoords = roomForm.coords;
+    if (!editingRoomId) {
+      finalCoords = [
+        roomForm.coords[0] + (Math.random() - 0.5) * 0.02,
+        roomForm.coords[1] + (Math.random() - 0.5) * 0.02
+      ];
+    }
 
     const data = {
       ...roomForm,
@@ -294,7 +400,8 @@ export default function Dashboard() {
       electricity: Number(roomForm.electricity),
       water: Number(roomForm.water),
       service: Number(roomForm.service),
-      images: parsedImages,
+      images: roomForm.images,
+      coords: finalCoords,
     };
 
     setIsCheckingDuplicate(true);
@@ -652,6 +759,11 @@ export default function Dashboard() {
                       value={roomForm.price}
                       onChange={(e) => setRoomForm({ ...roomForm, price: e.target.value })}
                     />
+                    {roomForm.price && (
+                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
+                        ➔ {Number(roomForm.price).toLocaleString('vi-VN')} VND
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -693,91 +805,120 @@ export default function Dashboard() {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Địa chỉ chính xác</label>
+                    <label className="form-label">Địa chỉ chi tiết *</label>
                     <input
                       className="input"
+                      required
                       placeholder="Ví dụ: 91 Chùa Láng, Láng Thượng"
                       value={roomForm.address}
                       onChange={(e) => setRoomForm({ ...roomForm, address: e.target.value })}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Tọa độ GPS (Vĩ độ, Kinh độ)</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="form-group full-width">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Hình ảnh minh họa (Được tải tối đa 10 ảnh, mỗi ảnh ≤ 2MB) *</span>
+                      <span className="text-caption" style={{ margin: 0, fontSize: '11px' }}>
+                        Đã chọn: <strong>{roomForm.images.length}/10</strong> ảnh
+                      </span>
+                    </label>
+                    
+                    <div 
+                      className="image-upload-dropzone" 
+                      onClick={() => document.getElementById('room-images-input').click()}
+                    >
+                      <UploadSimple size={24} color="var(--color-text-subtle)" />
+                      <span className="dropzone-text">
+                        Nhấp vào đây để chọn ảnh từ thiết bị
+                      </span>
+                      <span className="dropzone-hint">
+                        Định dạng hỗ trợ: JPG, PNG, WEBP. Ảnh lớn hơn 2MB sẽ được tự động nén.
+                      </span>
                       <input
-                        type="number"
-                        step="0.000001"
-                        className="input text-mono"
-                        placeholder="Lat"
-                        value={roomForm.coords[0]}
-                        onChange={(e) =>
-                          setRoomForm({
-                            ...roomForm,
-                            coords: [Number(e.target.value), roomForm.coords[1]],
-                          })
-                        }
-                      />
-                      <input
-                        type="number"
-                        step="0.000001"
-                        className="input text-mono"
-                        placeholder="Lng"
-                        value={roomForm.coords[1]}
-                        onChange={(e) =>
-                          setRoomForm({
-                            ...roomForm,
-                            coords: [roomForm.coords[0], Number(e.target.value)],
-                          })
-                        }
+                        id="room-images-input"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
                       />
                     </div>
-                  </div>
 
-                  <div className="form-group full-width">
-                    <label className="form-label">Hình ảnh minh họa (Đường dẫn ảnh, ngăn cách bởi dấu phẩy)</label>
-                    <input
-                      className="input text-mono"
-                      placeholder="URL 1, URL 2..."
-                      value={roomForm.images}
-                      onChange={(e) => setRoomForm({ ...roomForm, images: e.target.value })}
-                    />
+                    {roomForm.images.length > 0 && (
+                      <div className="upload-preview-grid">
+                        {roomForm.images.map((img, index) => (
+                          <div key={index} className="upload-preview-item">
+                            <img src={img} alt={`Preview ${index}`} />
+                            <button
+                              type="button"
+                              className="upload-preview-remove"
+                              onClick={() => handleRemoveImage(index)}
+                              title="Xóa ảnh này"
+                            >
+                              <X size={12} weight="bold" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Đơn giá điện (VND/kWh)</label>
+                    <label className="form-label">Đơn giá điện (VND/kWh) *</label>
                     <input
                       type="number"
                       className="input text-mono"
+                      required
+                      placeholder="Nhập giá điện, VD: 3500"
                       value={roomForm.electricity}
                       onChange={(e) => setRoomForm({ ...roomForm, electricity: e.target.value })}
                     />
+                    {roomForm.electricity && (
+                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
+                        ➔ {Number(roomForm.electricity).toLocaleString('vi-VN')} VND/kWh
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Đơn giá nước (VND/người)</label>
+                    <label className="form-label">Đơn giá nước (VND/người) *</label>
                     <input
                       type="number"
                       className="input text-mono"
+                      required
+                      placeholder="Nhập giá nước, VD: 100000"
                       value={roomForm.water}
                       onChange={(e) => setRoomForm({ ...roomForm, water: e.target.value })}
                     />
+                    {roomForm.water && (
+                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
+                        ➔ {Number(roomForm.water).toLocaleString('vi-VN')} VND/người
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Phí dịch vụ cố định (VND/phòng)</label>
+                    <label className="form-label">Phí dịch vụ cố định (VND/phòng) *</label>
                     <input
                       type="number"
                       className="input text-mono"
+                      required
+                      placeholder="Nhập phí dịch vụ, VD: 150000"
                       value={roomForm.service}
                       onChange={(e) => setRoomForm({ ...roomForm, service: e.target.value })}
                     />
+                    {roomForm.service && (
+                      <span className="form-helper-text" style={{ display: 'block', fontSize: '11px', color: 'var(--color-accent)', marginTop: '4px', fontWeight: '500' }}>
+                        ➔ {Number(roomForm.service).toLocaleString('vi-VN')} VND/phòng
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group full-width">
-                    <label className="form-label">Mô tả phòng / Yêu cầu tìm khách thuê</label>
+                    <label className="form-label">Mô tả phòng / Yêu cầu tìm khách thuê *</label>
                     <textarea
                       className="input"
+                      required
                       rows={4}
                       placeholder={
                         currentUser.role === 'tenant'
@@ -2237,6 +2378,85 @@ export default function Dashboard() {
           gap: var(--space-3);
           border-top: 1px solid var(--color-divider);
           padding-top: var(--space-4);
+        }
+
+        /* Dynamic Image Upload & Preview Styling */
+        .image-upload-dropzone {
+          border: 2px dashed var(--color-border-strong);
+          border-radius: var(--radius-main);
+          padding: var(--space-6) var(--space-4);
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: var(--space-2);
+          cursor: pointer;
+          background: rgba(255, 255, 255, 0.02);
+          transition: all var(--duration-normal) var(--ease-smooth);
+          margin-top: var(--space-1);
+        }
+
+        .image-upload-dropzone:hover {
+          border-color: var(--color-accent);
+          background: var(--color-accent-subtle);
+        }
+
+        .dropzone-text {
+          font-weight: var(--weight-semibold);
+          color: var(--color-text-main);
+          font-size: var(--text-sm);
+        }
+
+        .dropzone-hint {
+          font-size: var(--text-xs);
+          color: var(--color-text-muted);
+          max-width: 360px;
+        }
+
+        .upload-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+          gap: var(--space-3);
+          margin-top: var(--space-4);
+        }
+
+        .upload-preview-item {
+          position: relative;
+          aspect-ratio: 4 / 3;
+          border-radius: var(--radius-subtle);
+          overflow: hidden;
+          border: 1px solid var(--color-border-strong);
+          background: var(--bg-tertiary);
+        }
+
+        .upload-preview-item img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .upload-preview-remove {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 18px;
+          height: 18px;
+          background: rgba(15, 23, 42, 0.75);
+          color: #ffffff;
+          border: none;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background var(--duration-fast);
+          padding: 0;
+          z-index: 2;
+        }
+
+        .upload-preview-remove:hover {
+          background: #ef4444;
         }
       `}</style>
     </div>
