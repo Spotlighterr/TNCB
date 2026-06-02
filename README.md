@@ -1,6 +1,6 @@
 # FindX — Tìm Nhà Cùng Bạn
 
-**FindX** (FTU Housing Bank) là nền tảng web giúp sinh viên tìm phòng trọ tại **Hà Nội** và **TP. Hồ Chí Minh**. Giao diện tối giản, tối ưu mobile, tập trung vào thông tin phòng thật — giá thật — vị trí thật.
+**FindX** (FTU Housing Bank). Repo được làm cho mục đích nghiên cứu cá nhân của tôi, có thể được deploy miễn phí. Anh nào ủng hộ bạn đi =((
 
 **Demo:** [https://findxtest.netlify.app/](https://findxtest.netlify.app/)
 
