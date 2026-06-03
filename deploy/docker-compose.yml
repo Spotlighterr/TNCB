@@ -1,0 +1,87 @@
+# ============================================
+# TNCB Rent - Production-Ready Docker Compose Stack
+# Orchestrates: Frontend, Backend, MongoDB, Redis, and Cloudflare Tunnel
+# ============================================
+
+version: '3.8'
+
+services:
+  # 1. MongoDB Database Container
+  mongodb:
+    image: mongo:6.0-jammy
+    container_name: tncb-mongodb
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - tncb-network
+    # Exposing port is NOT required as backend communicates inside the bridge network.
+    # Expose only if you need local external GUI connection (e.g. Compass) with security.
+    # ports:
+    #   - "27017:27017"
+
+  # 2. Redis Caching Layer
+  redis:
+    image: redis:7-alpine
+    container_name: tncb-redis
+    restart: always
+    expose:
+      - "6379"
+    command: redis-server --requirepass strongredispassword
+    networks:
+      - tncb-network
+
+  # 3. Node.js Express API Backend
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.backend
+    container_name: tncb-backend
+    restart: always
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/tncb
+      - JWT_SECRET=your_production_jwt_secret_key_change_me
+      - JWT_EXPIRES_IN=7d
+      - GOOGLE_CLIENT_ID=your_google_client_id_here
+    networks:
+      - tncb-network
+    depends_on:
+      - mongodb
+      - redis
+
+  # 4. Frontend Web App (Nginx Serving React SPA + API Reverse Proxy)
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.frontend
+    container_name: tncb-frontend
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - tncb-network
+    depends_on:
+      - backend
+
+  # 5. Cloudflare Tunnel Container (Secure access without open ports)
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tncb-cf-tunnel
+    restart: always
+    environment:
+      # Replace this token with your actual Cloudflare Tunnel token in production
+      - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
+    command: tunnel --no-autoupdate run
+    networks:
+      - tncb-network
+    depends_on:
+      - frontend
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  tncb-network:
+    driver: bridge

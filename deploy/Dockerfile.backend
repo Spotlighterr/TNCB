@@ -1,0 +1,25 @@
+# ============================================
+# TNCB Rent - Production Backend Dockerfile
+# ============================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package configurations and install production dependencies
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
+
+# Copy backend source files
+COPY backend/src ./src
+
+# Expose backend API port
+EXPOSE 5000
+
+# Environment defaults
+ENV PORT=5000
+ENV NODE_ENV=production
+
+# Run container as a non-root user for security compliance
+USER node
+
+CMD ["node", "src/index.js"]
