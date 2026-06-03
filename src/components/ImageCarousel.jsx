@@ -1,16 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react';
 
 export default function ImageCarousel({ images, title }) {
   const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   if (!images || images.length === 0) return null;
 
   const goTo = (idx) => {
     setCurrent((idx + images.length) % images.length);
   };
+
+  const closeLightbox = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setLightbox(false);
+      setIsClosing(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      } else if (e.key === 'ArrowLeft' && images.length > 1) {
+        goTo(current - 1);
+      } else if (e.key === 'ArrowRight' && images.length > 1) {
+        goTo(current + 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightbox, current, images.length]);
 
   return (
     <>
@@ -83,8 +107,8 @@ export default function ImageCarousel({ images, title }) {
 
       {/* Lightbox */}
       {lightbox && createPortal(
-        <div className="lightbox animate-scale-in" onClick={() => setLightbox(false)}>
-          <button className="lightbox-close" onClick={() => setLightbox(false)}>
+        <div className={`lightbox ${isClosing ? 'is-closing' : ''}`} onClick={closeLightbox}>
+          <button className="lightbox-close" onClick={closeLightbox}>
             <X size={28} weight="bold" />
           </button>
           <img
@@ -255,6 +279,11 @@ export default function ImageCarousel({ images, title }) {
           justify-content: center;
           padding: var(--space-8);
           cursor: pointer;
+          animation: lightboxFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .lightbox.is-closing {
+          animation: lightboxFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .lightbox-image {
@@ -263,6 +292,31 @@ export default function ImageCarousel({ images, title }) {
           object-fit: contain;
           border-radius: var(--radius-subtle);
           cursor: default;
+          animation: lightboxZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .lightbox.is-closing .lightbox-image {
+          animation: lightboxZoomOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes lightboxFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes lightboxFadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+
+        @keyframes lightboxZoomIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes lightboxZoomOut {
+          from { transform: scale(1); opacity: 1; }
+          to { transform: scale(0.95); opacity: 0; }
         }
 
         .lightbox-close {
