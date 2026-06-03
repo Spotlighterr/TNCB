@@ -4,6 +4,24 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 
 ---
 
+## [v2.0.0] - 2026-06-03
+### 🌐 Kết Nối Backend REST APIs, MongoDB Atlas & Tích Hợp Google SSO
+Phiên bản này đánh dấu sự chuyển đổi từ lưu trữ dữ liệu giả lập cục bộ (localStorage) sang kiến trúc client-server đồng bộ, lưu trữ dữ liệu trên đám mây MongoDB Atlas và cung cấp tính năng đăng nhập Google SSO kèm bảo mật số điện thoại độc nhất.
+
+#### 📌 Tính năng mới:
+* **Đồng bộ hóa Cơ sở dữ liệu MongoDB Atlas (Phase 4):**
+  * Thiết lập và kết nối cơ sở dữ liệu đám mây MongoDB Atlas.
+  * Toàn bộ dữ liệu Người dùng, Tin đăng, và Ticket hỗ trợ được lưu trữ và truy vấn tập trung thông qua REST API server chạy Node.js/Express.
+  * Đồng bộ hóa khôi phục phiên đăng nhập thông qua mã JWT và endpoint `/api/auth/me`.
+* **Đăng nhập Google SSO (Phase 5):**
+  * Tích hợp đăng nhập một chạm sử dụng SDK Google Identity Services.
+  * Tự động liên kết tài khoản SSO mới với tài khoản thường nếu trùng email.
+  * Biểu mẫu **Hoàn tất đăng ký** (Complete Profile) bắt buộc thu thập vai trò (Khách thuê/Chủ trọ) và **Số điện thoại độc nhất** (không cho phép trùng lặp trong cơ sở dữ liệu).
+  * Hỗ trợ cơ chế Mock Token phục vụ kiểm thử môi trường phát triển cục bộ.
+* **Script Seeding Dữ Liệu:** Bổ sung script `seedData.js` hỗ trợ tự động băm mật khẩu và tạo 10 tin trọ ban đầu trên MongoDB Atlas.
+
+---
+
 ## [v1.2.0] - 2026-06-02
 ### 🔑 Cập nhật Quyền Admin & Tối ưu hóa Tiện ích
 Phiên bản này nâng cấp toàn diện quyền hạn tài khoản Admin (`admin@tncb.vn`), bổ sung cơ chế kiểm duyệt trực quan và tinh giản các chức năng tài chính dư thừa.

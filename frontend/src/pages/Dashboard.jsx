@@ -414,58 +414,63 @@ export default function Dashboard() {
     setIsCheckingDuplicate(true);
 
     // Giả lập Background Worker kiểm duyệt bài viết chạy ngầm trong 1.2s
-    setTimeout(() => {
-      setIsCheckingDuplicate(false);
-      
-      // Admin được bỏ qua kiểm tra trùng và tự động đăng bài hoạt động ngay
-      if (isAdmin) {
-        const adminData = { ...data, status: 'active', verified: true };
-        if (editingRoomId) {
-          updateProperty(editingRoomId, adminData);
-          showToast('Admin: Cập nhật thông tin thành công!');
-          setEditingRoomId(null);
-        } else {
-          addProperty(adminData);
-          showToast('Admin: Đăng tin mới thành công và đã tự động xác thực!');
-          setIsAddingRoom(false);
-        }
-        return;
-      }
-
-      const report = checkDuplicateProperty(data);
-
-      if (report.confidenceScore >= 50) {
-        // Phát hiện trùng lặp cao hoặc trung bình (Score >= 50) -> Đăng dưới dạng chờ duyệt và gửi báo cáo cho Admin
-        const pendingData = {
-          ...data,
-          status: 'pending',
-          duplicateReport: {
-            confidenceScore: report.confidenceScore,
-            matchedPropertyId: report.matchedProperty.id,
-            reasons: report.reasons,
+    setTimeout(async () => {
+      try {
+        // Admin được bỏ qua kiểm tra trùng và tự động đăng bài hoạt động ngay
+        if (isAdmin) {
+          const adminData = { ...data, status: 'active', verified: true };
+          if (editingRoomId) {
+            await updateProperty(editingRoomId, adminData);
+            showToast('Admin: Cập nhật thông tin thành công!');
+            setEditingRoomId(null);
+          } else {
+            await addProperty(adminData);
+            showToast('Admin: Đăng tin mới thành công và đã tự động xác thực!');
+            setIsAddingRoom(false);
           }
-        };
+          setIsCheckingDuplicate(false);
+          return;
+        }
 
-        if (editingRoomId) {
-          updateProperty(editingRoomId, pendingData);
-          showToast(`Tin đăng cập nhật trùng khớp ${report.confidenceScore}%. Đã gửi lại Admin duyệt.`);
-          setEditingRoomId(null);
+        const report = checkDuplicateProperty(data);
+
+        if (report.confidenceScore >= 50) {
+          // Phát hiện trùng lặp cao hoặc trung bình (Score >= 50) -> Đăng dưới dạng chờ duyệt và gửi báo cáo cho Admin
+          const pendingData = {
+            ...data,
+            status: 'pending',
+            duplicateReport: {
+              confidenceScore: report.confidenceScore,
+              matchedPropertyId: report.matchedProperty.id,
+              reasons: report.reasons,
+            }
+          };
+
+          if (editingRoomId) {
+            await updateProperty(editingRoomId, pendingData);
+            showToast(`Tin đăng cập nhật trùng khớp ${report.confidenceScore}%. Đã gửi lại Admin duyệt.`);
+            setEditingRoomId(null);
+          } else {
+            await addProperty(pendingData);
+            showToast(`Phát hiện tin trùng lặp (${report.confidenceScore}%). Bài đăng đã được gửi tới hàng chờ Admin duyệt.`);
+            setIsAddingRoom(false);
+          }
         } else {
-          addProperty(pendingData);
-          showToast(`Phát hiện tin trùng lặp (${report.confidenceScore}%). Bài đăng đã được gửi tới hàng chờ Admin duyệt.`);
-          setIsAddingRoom(false);
+          // An toàn -> Duyệt và hiển thị ngay lập tức
+          if (editingRoomId) {
+            await updateProperty(editingRoomId, data);
+            showToast('Cập nhật thông tin thành công!');
+            setEditingRoomId(null);
+          } else {
+            await addProperty(data);
+            showToast(currentUser.role === 'tenant' ? 'Đăng tin khách thuê thành công!' : 'Thêm phòng trọ mới thành công!');
+            setIsAddingRoom(false);
+          }
         }
-      } else {
-        // An toàn -> Duyệt và hiển thị ngay lập tức
-        if (editingRoomId) {
-          updateProperty(editingRoomId, data);
-          showToast('Cập nhật thông tin thành công!');
-          setEditingRoomId(null);
-        } else {
-          addProperty(data);
-          showToast(currentUser.role === 'tenant' ? 'Đăng tin khách thuê thành công!' : 'Thêm phòng trọ mới thành công!');
-          setIsAddingRoom(false);
-        }
+      } catch (err) {
+        showToast(err.message || 'Lỗi khi gửi dữ liệu lên máy chủ.');
+      } finally {
+        setIsCheckingDuplicate(false);
       }
     }, 1200);
   };

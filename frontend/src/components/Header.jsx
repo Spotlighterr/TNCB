@@ -35,6 +35,8 @@ export default function Header() {
   const {
     currentUser,
     login,
+    loginWithGoogle,
+    completeGoogleProfile,
     registerStep1,
     verifyRegistrationOTP,
     resendOTP,
@@ -78,6 +80,11 @@ export default function Header() {
   const [forgotUserName, setForgotUserName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  // Google SSO states
+  const [tempSSOToken, setTempSSOToken] = useState('');
+  const [ssoUser, setSSOUser] = useState(null);
+  const [ssoPhone, setSsoPhone] = useState('');
+  const [ssoRole, setSsoRole] = useState('tenant');
 
   // Messages
   const [authError, setAuthError] = useState('');
@@ -102,6 +109,32 @@ export default function Header() {
     }, 1000);
     return () => clearInterval(timer);
   }, [otpCountdown]);
+
+  // --- Google Identity Services (SSO) Initialization ---
+  useEffect(() => {
+    let timer;
+    if (isAuthOpen && authMode === 'login') {
+      timer = setTimeout(() => {
+        try {
+          if (typeof window.google !== 'undefined') {
+            window.google.accounts.id.initialize({
+              client_id: '1029384756-abcdefg.apps.googleusercontent.com',
+              callback: handleGoogleLoginResponse,
+            });
+            window.google.accounts.id.renderButton(
+              document.getElementById('google-signin-btn'),
+              { theme: 'outline', size: 'large', width: '100%' }
+            );
+          }
+        } catch (err) {
+          console.error('Lỗi khởi tạo Google SSO:', err);
+        }
+      }, 300);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isAuthOpen, authMode]);
 
   // --- OTP Input Handler ---
   const handleOtpChange = useCallback((index, value) => {
@@ -150,6 +183,10 @@ export default function Header() {
     setConfirmNewPassword('');
     setAuthError('');
     setAuthSuccess('');
+    setSsoPhone('');
+    setSsoRole('tenant');
+    setTempSSOToken('');
+    setSSOUser(null);
   };
 
   const closeAuthModal = () => {
@@ -163,10 +200,10 @@ export default function Header() {
   };
 
   // --- Login Submit ---
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
-    const res = login(email, password);
+    const res = await login(email, password);
     if (res.success) {
       setAuthSuccess('Đăng nhập thành công!');
       setTimeout(() => {
@@ -179,7 +216,7 @@ export default function Header() {
   };
 
   // --- Register Step 1: Send OTP ---
-  const handleRegisterStep1 = (e) => {
+  const handleRegisterStep1 = async (e) => {
     e.preventDefault();
     setAuthError('');
 
@@ -188,7 +225,7 @@ export default function Header() {
       return;
     }
 
-    const res = registerStep1(regName, regEmail, regPhone, regPassword, regRole);
+    const res = await registerStep1(regName, regEmail, regPhone, regPassword, regRole);
     if (res.success) {
       setDemoOTP(res.otp);
       setOtpDigits(['', '', '', '', '', '']);
@@ -203,7 +240,7 @@ export default function Header() {
   };
 
   // --- Register Step 2: Verify OTP ---
-  const handleVerifyOTP = (e) => {
+  const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setAuthError('');
     const otpValue = otpDigits.join('');
@@ -213,7 +250,7 @@ export default function Header() {
       return;
     }
 
-    const res = verifyRegistrationOTP(otpValue);
+    const res = await verifyRegistrationOTP(otpValue);
     if (res.success) {
       setAuthSuccess('Xác thực thành công! Tài khoản đã được tạo.');
       setTimeout(() => {
@@ -226,10 +263,10 @@ export default function Header() {
   };
 
   // --- Resend OTP ---
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     if (otpCountdown > 0) return;
     setAuthError('');
-    const res = resendOTP();
+    const res = await resendOTP();
     if (res.success) {
       setDemoOTP(res.otp);
       setOtpDigits(['', '', '', '', '', '']);
@@ -245,7 +282,7 @@ export default function Header() {
   };
 
   // --- Forgot Password Step 1: Enter phone ---
-  const handleForgotStep1 = (e) => {
+  const handleForgotStep1 = async (e) => {
     e.preventDefault();
     setAuthError('');
 
@@ -254,7 +291,7 @@ export default function Header() {
       return;
     }
 
-    const res = forgotPasswordStep1(forgotPhone);
+    const res = await forgotPasswordStep1(forgotPhone);
     if (res.success) {
       setDemoOTP(res.otp);
       setForgotUserName(res.userName);
@@ -268,7 +305,7 @@ export default function Header() {
   };
 
   // --- Forgot Password Step 2: Verify OTP + Reset ---
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setAuthError('');
     const otpValue = otpDigits.join('');
@@ -288,13 +325,65 @@ export default function Header() {
       return;
     }
 
-    const res = resetPassword(otpValue, newPassword);
+    const res = await resetPassword(otpValue, newPassword);
     if (res.success) {
       setAuthSuccess(res.message);
       setTimeout(() => {
         resetAuthForms();
         setAuthMode('login');
       }, 2000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  // --- Google Sign-In handlers ---
+  const handleGoogleLoginResponse = async (response) => {
+    setAuthError('');
+    setAuthSuccess('');
+    const idToken = response.credential;
+    const res = await loginWithGoogle(idToken);
+    if (res.success) {
+      if (res.needsCompletion) {
+        setTempSSOToken(res.tempToken);
+        setSSOUser(res.user);
+        setSsoPhone('');
+        setSsoRole('tenant');
+        setAuthMode('complete-profile');
+      } else {
+        setAuthSuccess('Đăng nhập bằng Google thành công!');
+        setTimeout(() => {
+          closeAuthModal();
+          navigate('/dashboard');
+        }, 1000);
+      }
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleCompleteProfileSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (!ssoPhone || !ssoRole) {
+      setAuthError('Vui lòng điền đầy đủ thông tin.');
+      return;
+    }
+
+    const phoneRegex = /^(0[3|5|7|8|9])\d{8}$/;
+    if (!phoneRegex.test(ssoPhone)) {
+      setAuthError('Số điện thoại không hợp lệ. Vui lòng nhập SĐT Việt Nam.');
+      return;
+    }
+
+    const res = await completeGoogleProfile(ssoPhone, ssoRole, tempSSOToken);
+    if (res.success) {
+      setAuthSuccess('Hoàn tất đăng ký tài khoản thành công!');
+      setTimeout(() => {
+        closeAuthModal();
+        navigate('/dashboard');
+      }, 1000);
     } else {
       setAuthError(res.message);
     }
@@ -630,6 +719,27 @@ export default function Header() {
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                   Xác nhận đăng nhập
                 </button>
+
+                <div className="auth-divider" style={{ margin: 'var(--space-4) 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Hoặc đăng nhập bằng</span>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <div id="google-signin-btn" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}></div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ width: '100%', gap: 'var(--space-2)', justifyContent: 'center', height: '40px' }}
+                    onClick={() => handleGoogleLoginResponse({ credential: 'mock_token_demo_user_' + Math.floor(Math.random() * 10000) })}
+                    id="google-signin-demo-btn"
+                  >
+                    <SignIn size={18} />
+                    Đăng nhập nhanh Google (Demo)
+                  </button>
+                </div>
               </form>
             )}
 
@@ -878,6 +988,71 @@ export default function Header() {
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                   Đặt lại mật khẩu
+                </button>
+              </form>
+            )}
+
+            {/* ===================== COMPLETE SSO PROFILE FORM ===================== */}
+            {authMode === 'complete-profile' && (
+              <form onSubmit={handleCompleteProfileSubmit} className="auth-form" id="complete-profile-form">
+                <div className="otp-header">
+                  {ssoUser?.avatar && (
+                    <img
+                      src={ssoUser.avatar}
+                      alt={ssoUser.name}
+                      className="user-trigger-avatar"
+                      style={{ width: '64px', height: '64px', borderRadius: '50%', margin: '0 auto var(--space-4)', display: 'block', border: '2px solid var(--color-accent)' }}
+                    />
+                  )}
+                  <h3 className="otp-title">Hoàn tất đăng ký</h3>
+                  <p className="otp-subtitle" style={{ marginBottom: 'var(--space-4)' }}>
+                    Chào mừng <strong>{ssoUser?.name}</strong>! Vui lòng nhập số điện thoại và chọn vai trò để hoàn tất tài khoản.
+                  </p>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                  <label className="form-label">
+                    Số điện thoại <span className="required-badge">Bắt buộc</span>
+                  </label>
+                  <label className="auth-input-wrap">
+                    <PhoneIcon size={18} />
+                    <input
+                      className="auth-input"
+                      required
+                      placeholder="09XXXXXXXX"
+                      value={ssoPhone}
+                      onChange={(e) => setSsoPhone(e.target.value)}
+                    />
+                  </label>
+                  <span className="form-hint">Dùng để liên hệ trao đổi tin trọ / Zalo</span>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <label className="form-label" style={{ marginBottom: 'var(--space-2)' }}>
+                    Tôi là:
+                  </label>
+                  <div className="role-selector-row">
+                    <div
+                      className={`role-select-box ${ssoRole === 'tenant' ? 'active' : ''}`}
+                      onClick={() => setSsoRole('tenant')}
+                      style={{ cursor: 'pointer', flex: 1, padding: 'var(--space-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                    >
+                      <UserCircle size={24} />
+                      <span>Khách thuê</span>
+                    </div>
+                    <div
+                      className={`role-select-box ${ssoRole === 'landlord' ? 'active' : ''}`}
+                      onClick={() => setSsoRole('landlord')}
+                      style={{ cursor: 'pointer', flex: 1, padding: 'var(--space-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                    >
+                      <Buildings size={24} />
+                      <span>Chủ trọ cho thuê</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                  Hoàn tất và Đăng nhập
                 </button>
               </form>
             )}

@@ -13,8 +13,8 @@
 | **Trang chủ** | Hero + tìm kiếm nhanh theo thành phố/quận, phòng nổi bật, thống kê dạng Bento |
 | **Tìm phòng** (`/search`) | Lưới phòng trọ, bộ lọc theo quận, giá, loại phòng và tiện ích |
 | **Chi tiết phòng** (`/property/:id`) | Carousel ảnh, bảng giá/chi phí, tiện ích, liên hệ chủ trọ, bản đồ (Leaflet) |
-| **Quản lý** (`/dashboard`) | Dashboard khách thuê, chủ trọ & Admin: lưu phòng, quản lý bài đăng, ẩn/hiện và kiểm duyệt tin |
-| **Đăng nhập / Đăng ký** | Phân quyền **Khách thuê** và **Chủ trọ** (dữ liệu lưu local, demo) |
+| **Quản lý** (`/dashboard`) | Dashboard khách thuê, chủ trọ & Admin: lưu phòng, quản lý bài đăng, ẩn/hiện, kiểm duyệt tin và lọc tin trùng 3 lớp |
+| **Đăng nhập / Đăng ký** | Đăng nhập thường & Google SSO (xác thực JWT), hoàn thiện hồ sơ với số điện thoại duy nhất, phân quyền Khách thuê, Chủ trọ và Admin |
 | **Giao diện** | Light/Dark mode, bottom navigation trên mobile, thiết kế responsive |
 
 
@@ -22,81 +22,45 @@
 
 ## Công nghệ
 
-- [React 19](https://react.dev/) + [Vite 8](https://vite.dev/)
-- [React Router](https://reactrouter.com/) — định tuyến SPA
-- [Phosphor Icons](https://phosphoricons.com/)
-- [Leaflet](https://leafletjs.com/) / react-leaflet — bản đồ OpenStreetMap
-- CSS thuần (design tokens, glassmorphism, mobile-first)
+- **Frontend**: [React 19](https://react.dev/) + [Vite 8](https://vite.dev/), React Router, Phosphor Icons, Leaflet (bản đồ), CSS thuần.
+- **Backend**: [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/), [Mongoose/MongoDB Atlas](https://www.mongodb.com/atlas), JWT authentication, `google-auth-library` cho Google SSO.
 
 ---
 
 ## Cấu trúc thư mục
 
 ```
-TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
+TNCB/                              # Thư mục gốc dự án FindX
 │
-├── public/                        # Tài nguyên tĩnh — Vite copy nguyên vào dist/ khi build
-│   ├── _redirects                 # Rule SPA cho Netlify (/* → /index.html 200)
-│   └── icons.svg                  # Sprite / icon dùng chung
+├── backend/                       # Máy chủ API Node.js/Express
+│   ├── src/
+│   │   ├── config/                # Cấu hình db.js kết nối MongoDB Atlas
+│   │   ├── controllers/           # Bộ điều khiển API (auth, property, ticket)
+│   │   ├── middleware/            # Middleware xác thực JWT auth.js
+│   │   ├── models/                # Schema Mongoose (User, Property, Ticket)
+│   │   ├── routes/                # Định tuyến APIs
+│   │   ├── utils/                 # Tiện ích lọc trùng tin deduplication.js
+│   │   └── index.js               # Entry point chạy server (Port 5000)
+│   ├── .env                       # Biến môi trường backend
+│   ├── src/seedData.js            # Script seeding khởi tạo dữ liệu
+│   └── package.json
 │
-├── src/                           # Mã nguồn React
-│   ├── main.jsx                   # Entry: BrowserRouter, AppProvider, import CSS global
-│   ├── App.jsx                    # Layout chính + định tuyến (Routes) + FloatingContact
-│   ├── App.css                    # Style legacy (template Vite, ít dùng)
-│   ├── index.css                  # Style bổ sung cấp app
-│   │
-│   ├── assets/                    # Hình ảnh và logo tĩnh
-│   │   ├── hero.png               # Ảnh minh họa Hero tối giản
-│   │   ├── react.svg              # Logo React
-│   │   └── vite.svg               # Logo Vite
-│   │
-│   ├── components/                # UI tái sử dụng
-│   │   ├── Header.jsx             # Navbar, đăng nhập/đăng ký, theme toggle, menu mobile, ProfileModal
-│   │   ├── Footer.jsx             # Footer desktop + bottom nav mobile
-│   │   ├── PropertyCard.jsx       # Thẻ phòng trên lưới tìm kiếm / trang chủ
-│   │   ├── PropertyMap.jsx        # Bản đồ Leaflet (trang chi tiết phòng)
-│   │   ├── ImageCarousel.jsx      # Carousel ảnh + lightbox
-│   │   ├── FloatingContact.jsx    # Nút liên hệ nhanh (Zalo/Hotline) trôi nổi
-│   │   ├── ProfileModal.jsx       # Modal cập nhật thông tin cá nhân người dùng
-│   │   └── SearchableSelect.jsx   # Ô chọn tìm kiếm quận/phường có hỗ trợ lọc text
-│   │
-│   ├── pages/                     # Trang theo route
-│   │   ├── Home.jsx               # / — Hero, tìm kiếm, phòng nổi bật, Bento stats
-│   │   ├── Search.jsx             # /search — Lưới phòng + bộ lọc sử dụng SearchableSelect
-│   │   ├── PropertyDetail.jsx     # /property/:id — Chi tiết, giá, liên hệ, bản đồ
-│   │   └── Dashboard.jsx          # /dashboard — Panel khách thuê / chủ trọ
-│   │
-│   ├── context/
-│   │   └── AppContext.jsx         # State toàn cục: user, theme, saved, mock data helpers, OTP auth flow
-│   │
-│   ├── data/                      # Dữ liệu mẫu (chưa có API)
-│   │   ├── mockProperties.js      # Danh sách phòng, quận, tiện ích (10 phòng trọ HN & HCM)
-│   │   └── mockContracts.js       # Hợp đồng, hóa đơn & yêu cầu hỗ trợ mẫu
-│   │
-│   └── styles/                    # Design system CSS
-│       ├── variables.css          # Design tokens (màu, spacing, radius, theme dark/light)
-│       ├── global.css             # Reset, typography, buttons, cards, responsive base, SearchableSelect styles
-│       └── mobile.css             # Tinh chỉnh mobile (iPhone 17 Pro Max, safe area)
+├── frontend/                      # Ứng dụng client React (Vite)
+│   ├── public/                    # Tài nguyên tĩnh (sprites, redirects)
+│   ├── src/
+│   │   ├── assets/                # Hình ảnh minh họa
+│   │   ├── components/            # Giao diện dùng chung (Header, Footer, ProfileModal...)
+│   │   ├── context/               # AppContext.jsx xử lý state và gọi APIs
+│   │   ├── pages/                 # Trang Route (Home, Search, PropertyDetail, Dashboard)
+│   │   ├── styles/                # CSS variables, global, mobile styles
+│   │   └── main.jsx / App.jsx     # Điểm bắt đầu React client (Port 5173)
+│   ├── index.html                 # Chứa SDK Google Identity Services
+│   └── package.json
 │
-├── deploy/                        # Triển khai production (Docker)
-│   ├── Dockerfile                 # Multi-stage: build Vite → phục vụ bằng NGINX
-│   ├── docker-compose.yml         # Frontend + mock API + Redis + Cloudflare Tunnel
-│   ├── nginx.conf                 # NGINX: gzip, security headers, SPA try_files
-│   └── README_DEPLOY.md           # Hướng dẫn vận hành & Cloudflare Tunnel
-│
-├── index.html                     # HTML gốc, meta SEO, font, mount #root
-├── vite.config.js                 # Cấu hình Vite + plugin React
-├── eslint.config.js               # Quy tắc ESLint
-├── package.json                   # Dependencies & scripts npm
-│
-├── chucnang.md                    # Đặc tả chức năng nghiệp vụ
-├── thietke.md                     # Kế hoạch thiết kế UI/UX
-├── project_architecture.md        # Sơ đồ khối kiến trúc hệ thống
-├── project_algorithms.md          # Sơ đồ thuật toán khối các luồng xử lý
-├── implementation_plan.md         # Kế hoạch triển khai kỹ thuật
-├── RELEASES.md                    # Nhật ký phát hành & cập nhật tính năng
-├── taikhoantest.md                # Danh sách tài khoản thử nghiệm
-└── README.md                      # Tài liệu dự án (file này)
+├── deploy/                        # Tập lệnh Docker để deploy production
+├── task.md                        # Lộ trình & Việc cần làm ở môi trường thực tế (SSO/MFA/Deploy)
+├── README.md                      # Tài liệu hướng dẫn (File này)
+└── [Các file tài liệu thiết kế & thuật toán khác] (.md)
 ```
 
 
@@ -143,25 +107,30 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 
 ## Chạy trên máy local
 
+### 1. Cấu hình Backend
 ```bash
-# Clone repository
-git clone https://github.com/Spotlighterr/TNCB.git
-cd TNCB
-
-# Cài dependency
+cd TNCB/backend
 npm install
 
-# Chạy dev server (mặc định http://localhost:5173)
+# Tạo file .env và điền các cấu hình cần thiết (ví dụ: MONGODB_URI, JWT_SECRET, GOOGLE_CLIENT_ID)
+cp .env.example .env
+
+# Chạy seed dữ liệu mẫu lên database (nếu cần thiết)
+node src/seedData.js
+
+# Khởi chạy server API (mặc định chạy ở cổng http://localhost:5000)
 npm run dev
 ```
 
-### Các lệnh khác
+### 2. Cấu hình Frontend
+Mở một terminal mới:
+```bash
+cd TNCB/frontend
+npm install
 
-| Lệnh | Mô tả |
-|------|--------|
-| `npm run build` | Build production → thư mục `dist/` |
-| `npm run preview` | Xem bản build local |
-| `npm run lint` | Kiểm tra ESLint |
+# Khởi chạy dev server (mặc định chạy ở cổng http://localhost:5173)
+npm run dev
+```
 
 ---
 

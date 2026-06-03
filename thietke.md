@@ -182,45 +182,30 @@ export const mockProperties = [
 
 ## 📂 Tổ Chức Dự Án (Folder Directory Layout)
 
-Dự án được xây dựng gọn gàng theo mô hình Single Page Application (SPA) hiện đại:
+Dự án được tách biệt rõ ràng giữa ứng dụng Client (Frontend) và Máy chủ (Backend):
 
 ```
 d:\TNCB
-├── index.html
-├── package.json
-├── vite.config.js
-└── src
-    ├── main.jsx
-    ├── App.jsx
-    ├── App.css
-    ├── index.css
-    ├── assets
-    │   ├── hero.png
-    │   ├── react.svg
-    │   └── vite.svg
-    ├── styles
-    │   ├── global.css
-    │   ├── mobile.css
-    │   └── variables.css      <-- Nơi chứa toàn bộ Token, Glassmorphism, Theme Variables
-    ├── context
-    │   └── AppContext.jsx     <-- Quản lý State chung (Phòng yêu thích, Trạng thái đăng nhập)
-    ├── data
-    │   ├── mockProperties.js  <-- Bộ dữ liệu xác thực chất lượng cao kèm tọa độ GPS chính xác
-    │   └── mockContracts.js   <-- Hợp đồng & hóa đơn mẫu
-    ├── components
-    │   ├── Header.jsx         <-- Sticky glass header, chiều cao <= 72px
-    │   ├── Footer.jsx
-    │   ├── PropertyMap.jsx    <-- Tích hợp bản đồ chỉ đường chân trang Leaflet.js
-    │   ├── PropertyCard.jsx   <-- Thẻ hiển thị phòng trọ có micro-interactions tactile
-    │   ├── ImageCarousel.jsx  <-- Carousel ảnh + Lightbox phóng to
-    │   ├── FloatingContact.jsx<-- Nút liên hệ nhanh (Zalo/Hotline) trôi nổi
-    │   ├── ProfileModal.jsx   <-- Modal cập nhật thông tin cá nhân người dùng
-    │   └── SearchableSelect.jsx<-- Ô chọn tìm kiếm quận/phường có hỗ trợ lọc text
-    └── pages
-        ├── Home.jsx           <-- Trang chủ phong cách tối giản cao cấp
-        ├── Search.jsx         <-- Danh bạ phòng trọ tối giản và bộ lọc thông minh
-        ├── PropertyDetail.jsx <-- Chi tiết phòng trọ, album ảnh trượt, bản đồ dẫn đường chân trang
-        └── Dashboard.jsx      <-- Hệ điều hành quản trị dành cho Chủ trọ & Khách thuê (có bảng liên hệ chủ trọ)
+├── backend/                       # Máy chủ REST API Node.js/Express
+│   ├── src/
+│   │   ├── controllers/           # Xử lý các logic API (Auth, Property, Ticket)
+│   │   ├── models/                # Schema Mongoose đại diện dữ liệu MongoDB Atlas
+│   │   ├── routes/                # Định nghĩa các endpoints định tuyến
+│   │   └── utils/                 # Thuật toán lọc trùng tin đăng (deduplication)
+│   ├── src/seedData.js            # Dữ liệu seeding khởi tạo
+│   └── package.json
+│
+├── frontend/                      # Client React (Vite SPA)
+│   ├── src/
+│   │   ├── assets/                # Hình ảnh và logo tĩnh
+│   │   ├── styles/                # global.css, mobile.css, và variables.css (tokens)
+│   │   ├── context/               # AppContext.jsx (giao tiếp API và quản lý state toàn cục)
+│   │   ├── components/            # UI Components tái sử dụng (Header, PropertyCard...)
+│   │   └── pages/                 # Các trang hiển thị (Home, Search, PropertyDetail, Dashboard)
+│   ├── index.html                 # Mount root + SDK Google Identity Services
+│   └── package.json
+│
+└── deploy/                        # Kế hoạch cấu hình Docker chạy Production
 ```
 
 ---

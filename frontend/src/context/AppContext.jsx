@@ -15,41 +15,20 @@ function loadFromStorage(key, fallback) {
 
 export function AppProvider({ children }) {
   // Core State
-  const [properties, setProperties] = useState(() => {
-    const raw = loadFromStorage('TNCB_PROPERTIES', mockProperties);
-    return raw.map(prop => {
-      let type = prop.type;
-      if (type === 'Studio') type = 'Chung cư mini';
-      else if (type === 'Duplex') type = 'Nhà ở cải tạo thành nhà trọ (không chung chủ)';
-      else if (type === 'Phòng trọ') type = 'Nhà trọ không chung chủ';
-      return {
-        ...prop,
-        type,
-        createdAt: prop.createdAt || new Date().toISOString(),
-      };
-    });
-  });
+  // Core State
+  const [properties, setProperties] = useState([]);
   const [contracts, setContracts] = useState(() =>
     loadFromStorage('TNCB_CONTRACTS', mockContracts)
   );
-  const [tickets, setTickets] = useState(() =>
-    loadFromStorage('TNCB_TICKETS', mockTickets)
-  );
+  const [tickets, setTickets] = useState([]);
   const [savedProperties, setSavedProperties] = useState(() =>
     loadFromStorage('TNCB_SAVED', [])
   );
   const [userRole, setUserRole] = useState(() =>
     loadFromStorage('TNCB_ROLE', 'tenant')
   );
-  const [users, setUsers] = useState(() =>
-    loadFromStorage('TNCB_USERS', [
-      { id: 'user-admin', email: 'admin@tncb.vn', name: 'Quản Trị Viên TNCB', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-admin/100/100', phone: '0869333366', password: 'admin' },
-      { id: 'user-tenant', email: 'tenant@tncb.vn', name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' },
-      { id: 'user-landlord', email: 'landlord@tncb.vn', name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' },
-      { id: 'user-test-landlord', email: 'testlandlord@tncb.vn', name: 'Chủ Trọ Thử Nghiệm', role: 'landlord', avatar: 'https://picsum.photos/seed/test-landlord/100/100', phone: '0901234567', password: '123' },
-      { id: 'user-test-tenant', email: 'testtenant@tncb.vn', name: 'Khách Thuê Thử Nghiệm', role: 'tenant', avatar: 'https://picsum.photos/seed/test-tenant/100/100', phone: '0907654321', password: '123' }
-    ])
-  );
+  // Keep users array structure empty to prevent breaking any unused references
+  const [users] = useState([]);
   const [currentUser, setCurrentUser] = useState(() =>
     loadFromStorage('TNCB_CURRENT_USER', null)
   );
@@ -75,16 +54,8 @@ export function AppProvider({ children }) {
 
   // Sync to localStorage
   useEffect(() => {
-    localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(properties));
-  }, [properties]);
-
-  useEffect(() => {
     localStorage.setItem('TNCB_CONTRACTS', JSON.stringify(contracts));
   }, [contracts]);
-
-  useEffect(() => {
-    localStorage.setItem('TNCB_TICKETS', JSON.stringify(tickets));
-  }, [tickets]);
 
   useEffect(() => {
     localStorage.setItem('TNCB_SAVED', JSON.stringify(savedProperties));
@@ -95,261 +66,379 @@ export function AppProvider({ children }) {
   }, [userRole]);
 
   useEffect(() => {
-    localStorage.setItem('TNCB_USERS', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
     localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(currentUser));
     if (currentUser) {
       setUserRole(currentUser.role);
     }
   }, [currentUser]);
 
+  // Helper to map backend format to frontend expectation
+  const transformProperty = useCallback((p) => {
+    return {
+      ...p,
+      id: p._id || p.id,
+      owner: p.postedBy && typeof p.postedBy === 'object' ? {
+        name: p.postedBy.name,
+        phone: p.postedBy.phone,
+        avatar: p.postedBy.avatar,
+        zalo: p.postedBy.zalo || p.postedBy.phone
+      } : {
+        name: 'Chủ nhà',
+        phone: '',
+        avatar: '',
+        zalo: ''
+      }
+    };
+  }, []);
+
+  // API Fetch actions
+  const fetchProperties = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/properties');
+      const data = await res.json();
+      if (data.success) {
+        let list = data.properties.map(transformProperty);
+        
+        // If logged in, fetch personal properties and merge
+        const token = localStorage.getItem('TNCB_TOKEN');
+        if (token) {
+          const myRes = await fetch('http://localhost:5000/api/properties/my-properties', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const myData = await myRes.json();
+          if (myData.success) {
+            const myProps = myData.properties.map(transformProperty);
+            const merged = [...list];
+            myProps.forEach(p => {
+              const idx = merged.findIndex(x => x.id === p.id);
+              if (idx === -1) {
+                merged.push(p);
+              } else {
+                merged[idx] = p;
+              }
+            });
+            list = merged;
+          }
+
+          // If admin, also fetch review queue
+          const currentUserData = JSON.parse(localStorage.getItem('TNCB_CURRENT_USER') || 'null');
+          const isAdminUser = currentUserData && (currentUserData.email === 'admin@tncb.vn' || currentUserData.role === 'admin');
+          if (isAdminUser) {
+            const qRes = await fetch('http://localhost:5000/api/properties/admin/review-queue', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const qData = await qRes.json();
+            if (qData.success) {
+              const qProps = qData.queue.map(transformProperty);
+              const merged = [...list];
+              qProps.forEach(p => {
+                const idx = merged.findIndex(x => x.id === p.id);
+                if (idx === -1) {
+                  merged.push(p);
+                } else {
+                  merged[idx] = p;
+                }
+              });
+              list = merged;
+            }
+          }
+        }
+        setProperties(list);
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách phòng trọ:', err);
+    }
+  }, [transformProperty]);
+
+  const fetchTickets = useCallback(async () => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) {
+      setTickets([]);
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:5000/api/tickets', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const list = data.tickets.map(t => ({
+          ...t,
+          id: t._id,
+          createdAt: t.createdAt ? new Date(t.createdAt).toISOString().split('T')[0] : t.createdAt,
+          updatedAt: t.updatedAt ? new Date(t.updatedAt).toISOString().split('T')[0] : t.updatedAt
+        }));
+        setTickets(list);
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách yêu cầu hỗ trợ:', err);
+    }
+  }, []);
+
+  // Restore session on mount
   useEffect(() => {
-    const adminEmail = 'admin@tncb.vn';
-    const landlordEmail = 'landlord@tncb.vn';
-    const tenantEmail = 'tenant@tncb.vn';
-    const testLandlordEmail = 'testlandlord@tncb.vn';
-    const testTenantEmail = 'testtenant@tncb.vn';
-
-    setUsers((prev) => {
-      let updated = [...prev];
-      
-      if (!updated.some((u) => u.email === adminEmail)) {
-        updated.push({ id: 'user-admin', email: adminEmail, name: 'Quản Trị Viên TNCB', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-admin/100/100', phone: '0869333366', password: 'admin' });
+    const restoreSession = async () => {
+      const token = localStorage.getItem('TNCB_TOKEN');
+      if (token) {
+        try {
+          const res = await fetch('http://localhost:5000/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            const user = { ...data.user, id: data.user.id || data.user._id };
+            setCurrentUser(user);
+            setUserRole(user.role);
+          } else {
+            localStorage.removeItem('TNCB_TOKEN');
+            localStorage.removeItem('TNCB_CURRENT_USER');
+            setCurrentUser(null);
+            setUserRole('tenant');
+          }
+        } catch (err) {
+          console.error('Khôi phục phiên đăng nhập thất bại:', err);
+        }
       }
-      if (!updated.some((u) => u.email === landlordEmail)) {
-        updated.push({ id: 'user-landlord', email: landlordEmail, name: 'Nguyễn Văn Đạt', role: 'landlord', avatar: 'https://picsum.photos/seed/owner-dat/100/100', phone: '0869333366', password: '123' });
-      }
-      if (!updated.some((u) => u.email === tenantEmail)) {
-        updated.push({ id: 'user-tenant', email: tenantEmail, name: 'Nguyễn Minh Anh', role: 'tenant', avatar: 'https://picsum.photos/seed/owner-1/100/100', phone: '0987654321', password: '123' });
-      }
-      if (!updated.some((u) => u.email === testLandlordEmail)) {
-        updated.push({ id: 'user-test-landlord', email: testLandlordEmail, name: 'Chủ Trọ Thử Nghiệm', role: 'landlord', avatar: 'https://picsum.photos/seed/test-landlord/100/100', phone: '0901234567', password: '123' });
-      }
-      if (!updated.some((u) => u.email === testTenantEmail)) {
-        updated.push({ id: 'user-test-tenant', email: testTenantEmail, name: 'Khách Thuê Thử Nghiệm', role: 'tenant', avatar: 'https://picsum.photos/seed/test-tenant/100/100', phone: '0907654321', password: '123' });
-      }
-
-      return updated;
-    });
+    };
+    restoreSession();
   }, []);
 
-  // ============================
-  // OTP Helper
-  // ============================
-  const generateOTP = useCallback(() => {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setCurrentOTP(otp);
-    setOtpExpiry(Date.now() + 5 * 60 * 1000); // 5 phút
-    return otp;
-  }, []);
+  // Load properties/tickets when auth state changes
+  useEffect(() => {
+    fetchProperties();
+    fetchTickets();
+  }, [currentUser, fetchProperties, fetchTickets]);
 
   // ============================
-  // Auth Actions
+  // Auth Actions (REST APIs)
   // ============================
-  const login = useCallback((email, password) => {
-    const user = users.find((u) => u.email === email && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      return { success: true, user };
+  const login = useCallback(async (email, password) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_TOKEN', data.token);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message || 'Đăng nhập thất bại.' };
+    } catch (err) {
+      return { success: false, message: 'Không thể kết nối tới máy chủ.' };
     }
-    return { success: false, message: 'Email hoặc mật khẩu không chính xác.' };
-  }, [users]);
+  }, []);
 
-  // --- Register Step 1: Validate info + generate OTP ---
-  const registerStep1 = useCallback((name, email, phone, password, role) => {
-    // Validate phone format (Vietnamese mobile)
+  const loginWithGoogle = useCallback(async (idToken) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.needsCompletion) {
+          return { success: true, needsCompletion: true, tempToken: data.tempToken, user: data.user };
+        } else {
+          const user = { ...data.user, id: data.user.id || data.user._id };
+          localStorage.setItem('TNCB_TOKEN', data.token);
+          localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+          setCurrentUser(user);
+          return { success: true, user };
+        }
+      }
+      return { success: false, message: data.message || 'Đăng nhập Google thất bại.' };
+    } catch (err) {
+      return { success: false, message: 'Không thể kết nối tới máy chủ.' };
+    }
+  }, []);
+
+  const completeGoogleProfile = useCallback(async (phone, role, tempToken) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/google/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, role, tempToken })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_TOKEN', data.token);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message || 'Hoàn tất thông tin thất bại.' };
+    } catch (err) {
+      return { success: false, message: 'Không thể kết nối tới máy chủ.' };
+    }
+  }, []);
+
+  const registerStep1 = useCallback(async (name, email, phone, password, role) => {
     const phoneRegex = /^(0[3|5|7|8|9])\d{8}$/;
     if (!phoneRegex.test(phone)) {
-      return { success: false, message: 'Số điện thoại không hợp lệ. Vui lòng nhập SĐT Việt Nam (VD: 09xx, 03xx, 08xx...).' };
+      return { success: false, message: 'Số điện thoại không hợp lệ. Vui lòng nhập SĐT Việt Nam.' };
     }
 
-    if (password.length < 6) {
-      return { success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự.' };
+    if (password.length < 5) {
+      return { success: false, message: 'Mật khẩu phải có ít nhất 5 ký tự.' };
     }
 
-    // Check duplicate email
-    if (users.some((u) => u.email === email)) {
-      return { success: false, message: 'Email này đã được sử dụng.' };
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register-step1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, password, role })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingRegistration({ name, email, phone, password, role });
+        setCurrentOTP(data.otp);
+        setOtpExpiry(Date.now() + 5 * 60 * 1000);
+        return {
+          success: true,
+          otp: data.otp,
+          message: `Mã OTP đã được gửi đến số ${phone} (mô phỏng: ${data.otp}).`
+        };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
+  }, []);
 
-    // Check duplicate phone - UNIQUE constraint
-    if (users.some((u) => u.phone === phone)) {
-      return { success: false, message: 'Số điện thoại này đã được đăng ký. Mỗi SĐT chỉ được liên kết với 1 tài khoản.' };
-    }
-
-    // Store pending registration
-    setPendingRegistration({ name, email, phone, password, role });
-
-    // Generate OTP
-    const otp = generateOTP();
-
-    return {
-      success: true,
-      otp, // In simulation mode, we return the OTP for display
-      message: `Mã OTP đã được gửi đến số ${phone} qua Zalo.`,
-    };
-  }, [users, generateOTP]);
-
-  // --- Register Step 2: Verify OTP ---
-  const verifyRegistrationOTP = useCallback((inputOTP) => {
-    if (!pendingRegistration || !currentOTP) {
-      return { success: false, message: 'Phiên đăng ký đã hết hạn. Vui lòng thử lại.' };
-    }
-
-    if (Date.now() > otpExpiry) {
-      return { success: false, message: 'Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.' };
-    }
-
-    if (inputOTP !== currentOTP) {
-      return { success: false, message: 'Mã OTP không chính xác. Vui lòng kiểm tra lại.' };
-    }
-
-    // Create user
-    const { name, email, phone, password, role } = pendingRegistration;
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      phone,
-      password,
-      role,
-      avatar: `https://picsum.photos/seed/user-${Date.now()}/100/100`,
-    };
-    setUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-
-    // Clear pending
-    setPendingRegistration(null);
-    setCurrentOTP(null);
-    setOtpExpiry(null);
-
-    return { success: true, user: newUser };
-  }, [pendingRegistration, currentOTP, otpExpiry]);
-
-  // --- Resend OTP ---
-  const resendOTP = useCallback(() => {
+  const verifyRegistrationOTP = useCallback(async (inputOTP) => {
     if (!pendingRegistration) {
-      return { success: false, message: 'Không có phiên đăng ký đang chờ.' };
+      return { success: false, message: 'Phiên đăng ký đã hết hạn.' };
     }
-    const otp = generateOTP();
-    return { success: true, otp, message: 'Đã gửi lại mã OTP mới.' };
-  }, [pendingRegistration, generateOTP]);
-
-  // --- Forgot Password Step 1: Find by phone + send OTP ---
-  const forgotPasswordStep1 = useCallback((phone) => {
-    const phoneRegex = /^(0[3|5|7|8|9])\d{8}$/;
-    if (!phoneRegex.test(phone)) {
-      return { success: false, message: 'Số điện thoại không hợp lệ.' };
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register-step2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...pendingRegistration,
+          otp: inputOTP
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_TOKEN', data.token);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        setPendingRegistration(null);
+        setCurrentOTP(null);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
+  }, [pendingRegistration]);
 
-    const user = users.find((u) => u.phone === phone);
-    if (!user) {
-      return { success: false, message: 'Không tìm thấy tài khoản nào với số điện thoại này.' };
+  const resendOTP = useCallback(async () => {
+    if (!pendingRegistration) {
+      return { success: false, message: 'Không tìm thấy phiên đăng ký.' };
     }
-
-    setPendingRegistration({ ...user, _resetMode: true });
-    const otp = generateOTP();
-
-    return {
-      success: true,
-      otp,
-      userName: user.name,
-      message: `Mã OTP đã được gửi đến số ${phone}.`,
-    };
-  }, [users, generateOTP]);
-
-  // --- Forgot Password Step 2: Verify OTP + reset password ---
-  const resetPassword = useCallback((inputOTP, newPassword) => {
-    if (!pendingRegistration || !pendingRegistration._resetMode) {
-      return { success: false, message: 'Phiên khôi phục mật khẩu đã hết hạn.' };
-    }
-
-    if (Date.now() > otpExpiry) {
-      return { success: false, message: 'Mã OTP đã hết hạn.' };
-    }
-
-    if (inputOTP !== currentOTP) {
-      return { success: false, message: 'Mã OTP không chính xác.' };
-    }
-
-    if (newPassword.length < 6) {
-      return { success: false, message: 'Mật khẩu mới phải có ít nhất 6 ký tự.' };
-    }
-
-    // Update password in users list
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === pendingRegistration.id ? { ...u, password: newPassword } : u
-      )
+    return registerStep1(
+      pendingRegistration.name,
+      pendingRegistration.email,
+      pendingRegistration.phone,
+      pendingRegistration.password,
+      pendingRegistration.role
     );
+  }, [pendingRegistration, registerStep1]);
 
-    // Clear
-    setPendingRegistration(null);
-    setCurrentOTP(null);
-    setOtpExpiry(null);
-
-    return { success: true, message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.' };
-  }, [pendingRegistration, currentOTP, otpExpiry]);
-
-  // Legacy register (kept for compatibility, but unused in new flow)
-  const register = useCallback((name, email, phone, password, role) => {
-    if (users.some((u) => u.email === email)) {
-      return { success: false, message: 'Email này đã được sử dụng.' };
+  const forgotPasswordStep1 = useCallback(async (phone) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/forgot-password-step1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingRegistration({ phone, _resetMode: true });
+        setCurrentOTP(data.otp);
+        setOtpExpiry(Date.now() + 5 * 60 * 1000);
+        return {
+          success: true,
+          otp: data.otp,
+          message: `Mã OTP khôi phục đã được gửi đến số ${phone} (mô phỏng: ${data.otp}).`
+        };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-    if (users.some((u) => u.phone === phone)) {
-      return { success: false, message: 'Số điện thoại này đã được đăng ký.' };
+  }, []);
+
+  const resetPassword = useCallback(async (inputOTP, newPassword) => {
+    if (!pendingRegistration || !pendingRegistration._resetMode) {
+      return { success: false, message: 'Phiên khôi phục mật khẩu hết hạn.' };
     }
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      phone,
-      password,
-      role,
-      avatar: `https://picsum.photos/seed/user-${Date.now()}/100/100`,
-    };
-    setUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    return { success: true, user: newUser };
-  }, [users]);
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/forgot-password-step2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: pendingRegistration.phone,
+          otp: inputOTP,
+          newPassword
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingRegistration(null);
+        setCurrentOTP(null);
+        return { success: true, message: 'Đặt lại mật khẩu thành công! Hãy đăng nhập lại.' };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, [pendingRegistration]);
+
+  const register = useCallback(() => {
+    return { success: false, message: 'Tính năng này không khả dụng.' };
+  }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem('TNCB_TOKEN');
+    localStorage.removeItem('TNCB_CURRENT_USER');
     setCurrentUser(null);
     setUserRole('tenant');
   }, []);
 
-  // ============================
-  // Update Profile (name, email, phone, avatar)
-  // ============================
-  const updateProfile = useCallback((updates) => {
-    if (!currentUser) return { success: false, message: 'Chưa đăng nhập.' };
-
-    // If changing phone, check uniqueness
-    if (updates.phone && updates.phone !== currentUser.phone) {
-      const phoneRegex = /^(0[3|5|7|8|9])\d{8}$/;
-      if (!phoneRegex.test(updates.phone)) {
-        return { success: false, message: 'Số điện thoại không hợp lệ.' };
+  const updateProfile = useCallback(async (updates) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) return { success: false, message: 'Chưa đăng nhập.' };
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
       }
-      if (users.some((u) => u.id !== currentUser.id && u.phone === updates.phone)) {
-        return { success: false, message: 'Số điện thoại này đã được sử dụng bởi tài khoản khác.' };
-      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-
-    // If changing email, check uniqueness
-    if (updates.email && updates.email !== currentUser.email) {
-      if (users.some((u) => u.id !== currentUser.id && u.email === updates.email)) {
-        return { success: false, message: 'Email này đã được sử dụng bởi tài khoản khác.' };
-      }
-    }
-
-    const updatedUser = { ...currentUser, ...updates };
-    setCurrentUser(updatedUser);
-    setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? updatedUser : u)));
-
-    return { success: true, user: updatedUser };
-  }, [currentUser, users]);
+  }, []);
 
   // --- Property Actions ---
   const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
@@ -463,30 +552,30 @@ export function AppProvider({ children }) {
     };
   }, [currentUser, properties, calculateDistance, getJaccardSimilarity]);
 
-  const addProperty = useCallback((property) => {
-    const isUserAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
-    const newProp = {
-      ...property,
-      id: `prop-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      verified: isUserAdmin ? true : false,
-      postType: currentUser ? (currentUser.role === 'tenant' ? 'find_roommate' : 'find_tenant') : 'find_tenant',
-      postedBy: currentUser ? currentUser.id : 'user-landlord',
-      owner: currentUser ? {
-        name: currentUser.name,
-        phone: currentUser.phone,
-        avatar: currentUser.avatar,
-        zalo: currentUser.phone,
-      } : {
-        name: 'Nguyễn Văn Đạt',
-        phone: '0869333366',
-        avatar: 'https://picsum.photos/seed/owner-dat/100/100',
-        zalo: '0869333366',
+  const addProperty = useCallback(async (property) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch('http://localhost:5000/api/properties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(property)
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformProperty(data.property);
+        setProperties((prev) => [transformed, ...prev]);
+        return transformed;
+      } else {
+        throw new Error(data.message || 'Lỗi đăng tin.');
       }
-    };
-    setProperties((prev) => [...prev, newProp]);
-    return newProp;
-  }, [currentUser]);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }, [transformProperty]);
 
   const calculatePropertyRating = useCallback((p) => {
     let score = 0;
@@ -498,39 +587,108 @@ export function AppProvider({ children }) {
     return Math.max(1, score);
   }, []);
 
-  const updateProperty = useCallback((id, updates) => {
-    setProperties((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
+  const updateProperty = useCallback(async (id, updates) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/properties/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformProperty(data.property);
+        setProperties((prev) => prev.map((p) => p.id === id ? transformed : p));
+        return transformed;
+      } else {
+        throw new Error(data.message || 'Lỗi cập nhật.');
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }, [transformProperty]);
+
+  const deleteProperty = useCallback(async (id) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/properties/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProperties((prev) => prev.filter((p) => p.id !== id));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
   }, []);
 
-  const deleteProperty = useCallback((id) => {
-    setProperties((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const togglePropertyStatus = useCallback(async (id) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-rented`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformProperty(data.property);
+        setProperties((prev) => prev.map((p) => p.id === id ? transformed : p));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [transformProperty]);
 
-  const togglePropertyStatus = useCallback((id) => {
-    setProperties((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, isRented: !p.isRented } : p
-      )
-    );
-  }, []);
+  const toggleUnlistProperty = useCallback(async (id) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-unlist`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformProperty(data.property);
+        setProperties((prev) => prev.map((p) => p.id === id ? transformed : p));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [transformProperty]);
 
-  const toggleUnlistProperty = useCallback((id) => {
-    setProperties((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, isUnlisted: !p.isUnlisted } : p
-      )
-    );
-  }, []);
-
-  const toggleVerifyProperty = useCallback((id) => {
-    setProperties((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, verified: !p.verified } : p
-      )
-    );
-  }, []);
+  const toggleVerifyProperty = useCallback(async (id) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-verify`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformProperty(data.property);
+        setProperties((prev) => prev.map((p) => p.id === id ? transformed : p));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [transformProperty]);
 
   // --- Saved Properties ---
   const toggleSaveProperty = useCallback((propertyId) => {
@@ -593,26 +751,51 @@ export function AppProvider({ children }) {
   }, []);
 
   // --- Ticket Actions ---
-  const createTicket = useCallback((ticket) => {
-    const newTicket = {
-      ...ticket,
-      id: `ticket-${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-    };
-    setTickets((prev) => [...prev, newTicket]);
-    return newTicket;
+  const createTicket = useCallback(async (ticket) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch('http://localhost:5000/api/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          propertyId: ticket.propertyId,
+          title: ticket.title,
+          description: ticket.description
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const newTicket = { ...data.ticket, id: data.ticket._id };
+        setTickets((prev) => [newTicket, ...prev]);
+        return newTicket;
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
 
-  const updateTicketStatus = useCallback((ticketId, status) => {
-    setTickets((prev) =>
-      prev.map((t) =>
-        t.id === ticketId
-          ? { ...t, status, updatedAt: new Date().toISOString().split('T')[0] }
-          : t
-      )
-    );
+  const updateTicketStatus = useCallback(async (ticketId, status) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`http://localhost:5000/api/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const updatedTicket = { ...data.ticket, id: data.ticket._id };
+        setTickets((prev) => prev.map((t) => t.id === ticketId ? updatedTicket : t));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
 
   // --- Helpers ---
@@ -684,6 +867,8 @@ export function AppProvider({ children }) {
     updateTicketStatus,
     // Auth (new OTP flow)
     login,
+    loginWithGoogle,
+    completeGoogleProfile,
     register,
     registerStep1,
     verifyRegistrationOTP,

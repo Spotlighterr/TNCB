@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
+import authRoutes from './routes/authRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
+import ticketRoutes from './routes/ticketRoutes.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -23,6 +27,11 @@ mongoose.connect(mongoURI)
     console.error('❌ Failed to connect to MongoDB:', err.message);
   });
 
+// Mount Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/tickets', ticketRoutes);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -31,6 +40,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date()
   });
 });
+
 
 // Start Server
 app.listen(PORT, () => {
