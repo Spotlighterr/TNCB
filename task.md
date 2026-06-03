@@ -90,3 +90,28 @@ Dự án hiện đã được tái cấu trúc sang mô hình **Modular Monolith
 - [ ] **Giao tiếp bất đồng bộ qua Message Broker (Event-Driven)**:
   - Tích hợp RabbitMQ hoặc Apache Kafka để đồng bộ các sự kiện liên dịch vụ (ví dụ: khi xóa tài khoản ở Auth Service, phát sự kiện để Property Service tự động xóa tin đăng tương ứng).
 
+---
+
+## 💬 5. Tích hợp nút Chat Live Messenger trực tiếp trên Website
+
+Triển khai nút nhắn tin Messenger nổi ở góc màn hình, cho phép khách truy cập chat trực tiếp với đội ngũ hỗ trợ của FindX ngay trên giao diện web mà không cần rời trang.
+
+### Giải pháp đề xuất:
+1. **Sử dụng Facebook Chat Plugin (SDK chính thức)**:
+   - Đăng ký tên miền `findx.id.vn` vào danh sách trắng (Whitelist Domains) trong phần thiết lập Fanpage Facebook (Trang hỗ trợ của FindX).
+   - Tích hợp mã JavaScript SDK của Facebook Customer Chat vào `frontend/index.html`.
+   - Sử dụng thẻ `<div class="fb-customerchat" page_id="<PAGE_ID>"></div>` để Facebook tự động render khung chat bong bóng nổi ở góc dưới bên phải.
+   - Khách thuê có thể chọn chat dưới danh nghĩa "Khách" (Guest Mode - không cần đăng nhập Facebook) hoặc bằng tài khoản Facebook cá nhân.
+2. **Giải pháp thay thế (Custom Floating Bubble + Messenger Redirect)**:
+   - Nếu Facebook giới hạn hoặc ngừng hỗ trợ Chat Plugin SDK cho một số loại Fanpage mới: Thiết kế một nút bong bóng tròn Messenger tùy biến bằng React + CSS thuần (sử dụng hiệu ứng Glassmorphism và màu gradient hồng-xanh đặc trưng của Messenger).
+   - Khi người dùng click, kích hoạt cửa sổ Popup nhỏ (`window.open`) chuyển hướng tới link rút gọn `https://m.me/<PAGE_ID>` để người dùng chat nhanh trên cả điện thoại (mở app Messenger) và máy tính.
+
+### Các bước thực hiện:
+- [ ] **Bước 1**: Tạo Fanpage Facebook chính thức cho FindX (nếu chưa có).
+- [ ] **Bước 2**: Lấy `Page ID` từ phần giới thiệu của Fanpage và Whitelist tên miền `https://findx.id.vn` trong mục Nhắn tin nâng cao của trang.
+- [ ] **Bước 3**: Tạo component `<MessengerChat />` trong React:
+  - Tải động script SDK Facebook Chat Plugin khi component mount.
+  - Render thẻ div cấu hình chat plugin với `page_id` và các tuỳ chọn màu sắc (`theme_color`), câu chào mừng (`logged_in_greeting`, `logged_out_greeting`).
+- [ ] **Bước 4**: Tích hợp component `<MessengerChat />` vào file bố cục chung `frontend/src/App.jsx` hoặc `frontend/src/components/FloatingContact.jsx`.
+- [ ] **Bước 5**: Kiểm thử hiển thị responsive trên thiết bị di động, đảm bảo không che khuất các nút điều hướng quan trọng ở thanh Bottom Navigation.
+
