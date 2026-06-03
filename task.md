@@ -115,3 +115,25 @@ Triển khai nút nhắn tin Messenger nổi ở góc màn hình, cho phép khá
 - [ ] **Bước 4**: Tích hợp component `<MessengerChat />` vào file bố cục chung `frontend/src/App.jsx` hoặc `frontend/src/components/FloatingContact.jsx`.
 - [ ] **Bước 5**: Kiểm thử hiển thị responsive trên thiết bị di động, đảm bảo không che khuất các nút điều hướng quan trọng ở thanh Bottom Navigation.
 
+---
+
+## 💬 6. Tích hợp Zalo API & Zalo Chat Widget
+
+Tích hợp cổng hỗ trợ qua Zalo Official Account (OA) hoặc Zalo Chat Widget để hỗ trợ khách thuê nhắn tin trực tiếp qua nền tảng Zalo phổ biến tại Việt Nam.
+
+### Giải pháp đề xuất:
+1. **Sử dụng Zalo Chat Widget (Nhúng trực tiếp)**:
+   - Đăng ký tài khoản Zalo Official Account doanh nghiệp/cá nhân.
+   - Nhúng đoạn mã Zalo Chat Widget SDK do Zalo Developer portal cung cấp vào `frontend/index.html`.
+   - Hiển thị khung chat nổi tương tự như Messenger Chat.
+2. **Sử dụng Zalo Share / Send Message API**:
+   - Tích hợp nút "Chia sẻ tin trọ qua Zalo" hoặc gửi thông tin trực tiếp về tin đăng cho bạn bè qua Zalo Share SDK.
+   - Khi chủ trọ đăng tin mới, có thể cấu hình gửi thông báo tự động (Zalo ZNS - Zalo Notification Service) về điện thoại của khách thuê đã đăng ký quan tâm.
+
+### Các bước thực hiện:
+- [ ] **Bước 1**: Khởi tạo ứng dụng trên [Zalo Developers Portal](https://developers.zalo.me/).
+- [ ] **Bước 2**: Đăng ký Zalo Official Account (OA) và lấy Widget ID.
+- [ ] **Bước 3**: Nhúng mã script Zalo SDK vào phần thẻ `<head>` của `frontend/index.html`.
+- [ ] **Bước 4**: Tạo component `<ZaloChatWidget />` trong React và khai báo vùng chứa `<div class="zalo-chat-widget" data-oaid="<OA_ID>" data-welcome-message="Rất vui được hỗ trợ bạn!" data-autopopup="0" data-width="350" data-height="420"></div>`.
+- [ ] **Bước 5**: Tích hợp component vào Layout chính và kiểm tra tính tương thích giao diện di động.
+
