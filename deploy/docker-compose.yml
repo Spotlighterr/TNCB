@@ -59,6 +59,8 @@ services:
     restart: always
     ports:
       - "80:80"
+    volumes:
+      - ./power_report.html:/usr/share/nginx/html/power-report.html:ro
     networks:
       - tncb-network
     depends_on:

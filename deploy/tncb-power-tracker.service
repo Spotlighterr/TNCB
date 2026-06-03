@@ -1,0 +1,14 @@
+[Unit]
+Description=TNCB Server Power Tracker Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/spotlighter/tncb/deploy
+ExecStart=/usr/bin/python3 /home/spotlighter/tncb/deploy/power_tracker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
