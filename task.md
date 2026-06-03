@@ -74,3 +74,19 @@ Chuẩn bị sẵn sàng ứng dụng để vận hành trực tiếp trên máy
   - [ ] Viết tệp hướng dẫn từng bước (Step-by-step) cài đặt Docker, Docker Compose trên máy chủ (Ubuntu/Windows Server).
   - [ ] Hướng dẫn lệnh khởi chạy duy nhất: `docker-compose up -d` để chạy toàn bộ hệ thống.
   - [ ] Hướng dẫn thiết lập sao lưu cơ sở dữ liệu tự động (`mongodump` định kỳ).
+
+---
+
+## 🌐 4. Lộ trình chuyển đổi sang Microservices (Định hướng tương lai)
+
+Dự án hiện đã được tái cấu trúc sang mô hình **Modular Monolith** (tách biệt các module `auth`, `property`, `ticket` độc lập trong code backend). Khi quy mô người dùng tăng lớn, thực hiện các bước sau để chuyển giao sang Microservices:
+
+- [ ] **Tách biệt Cơ sở dữ liệu (Database per Service)**:
+  - Chia nhỏ MongoDB Atlas hoặc triển khai các instance DB riêng cho mỗi Service: `auth-db`, `property-db`, `ticket-db`.
+- [ ] **Tách biệt Mã nguồn (Repository per Service)**:
+  - Copy thư mục `backend/src/modules/auth` sang một repository riêng và cấu hình file `package.json` độc lập. Thực hiện tương tự cho `property` và `ticket`.
+- [ ] **Xây dựng API Gateway**:
+  - Triển khai một Gateway (sử dụng Express-Gateway hoặc Kong API Gateway) để tiếp nhận tất cả các yêu cầu từ Client và định tuyến đến đúng Microservice bên trong.
+- [ ] **Giao tiếp bất đồng bộ qua Message Broker (Event-Driven)**:
+  - Tích hợp RabbitMQ hoặc Apache Kafka để đồng bộ các sự kiện liên dịch vụ (ví dụ: khi xóa tài khoản ở Auth Service, phát sự kiện để Property Service tự động xóa tin đăng tương ứng).
+

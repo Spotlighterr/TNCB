@@ -186,12 +186,15 @@ Dự án được tách biệt rõ ràng giữa ứng dụng Client (Frontend) v
 
 ```
 d:\TNCB
-├── backend/                       # Máy chủ REST API Node.js/Express
+├── backend/                       # Máy chủ REST API Node.js/Express (Modular Monolith)
 │   ├── src/
-│   │   ├── controllers/           # Xử lý các logic API (Auth, Property, Ticket)
-│   │   ├── models/                # Schema Mongoose đại diện dữ liệu MongoDB Atlas
-│   │   ├── routes/                # Định nghĩa các endpoints định tuyến
-│   │   └── utils/                 # Thuật toán lọc trùng tin đăng (deduplication)
+│   │   ├── config/                # Cấu hình db.js kết nối MongoDB Atlas
+│   │   ├── middleware/            # Middleware dùng chung (auth.js)
+│   │   ├── modules/               # Các mô-đun nghiệp vụ độc lập (cho Microservices)
+│   │   │   ├── auth/              # Mô-đun Xác thực (User, authController, authRoutes)
+│   │   │   ├── property/          # Mô-đun Tin đăng (Property, propertyController, propertyRoutes, deduplication)
+│   │   │   └── ticket/            # Mô-đun Hỗ trợ (Ticket, ticketController, ticketRoutes)
+│   │   └── index.js               # Entry point chạy server (Port 5000)
 │   ├── src/seedData.js            # Dữ liệu seeding khởi tạo
 │   └── package.json
 │

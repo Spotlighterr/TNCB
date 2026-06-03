@@ -32,14 +32,14 @@
 ```
 TNCB/                              # Thư mục gốc dự án FindX
 │
-├── backend/                       # Máy chủ API Node.js/Express
+├── backend/                       # Máy chủ API Node.js/Express (Modular Monolith)
 │   ├── src/
 │   │   ├── config/                # Cấu hình db.js kết nối MongoDB Atlas
-│   │   ├── controllers/           # Bộ điều khiển API (auth, property, ticket)
-│   │   ├── middleware/            # Middleware xác thực JWT auth.js
-│   │   ├── models/                # Schema Mongoose (User, Property, Ticket)
-│   │   ├── routes/                # Định tuyến APIs
-│   │   ├── utils/                 # Tiện ích lọc trùng tin deduplication.js
+│   │   ├── middleware/            # Middleware dùng chung (auth.js)
+│   │   ├── modules/               # Các mô-đun nghiệp vụ độc lập (chuẩn bị cho Microservices)
+│   │   │   ├── auth/              # Mô-đun Xác thực (User, authController, authRoutes)
+│   │   │   ├── property/          # Mô-đun Tin đăng (Property, propertyController, propertyRoutes, deduplication)
+│   │   │   └── ticket/            # Mô-đun Hỗ trợ (Ticket, ticketController, ticketRoutes)
 │   │   └── index.js               # Entry point chạy server (Port 5000)
 │   ├── .env                       # Biến môi trường backend
 │   ├── src/seedData.js            # Script seeding khởi tạo dữ liệu
@@ -58,7 +58,7 @@ TNCB/                              # Thư mục gốc dự án FindX
 │   └── package.json
 │
 ├── deploy/                        # Tập lệnh Docker để deploy production
-├── task.md                        # Lộ trình & Việc cần làm ở môi trường thực tế (SSO/MFA/Deploy)
+├── task.md                        # Lộ trình & Việc cần làm ở môi trường thực tế (SSO/MFA/Deploy/Microservices)
 ├── README.md                      # Tài liệu hướng dẫn (File này)
 └── [Các file tài liệu thiết kế & thuật toán khác] (.md)
 ```
