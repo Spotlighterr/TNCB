@@ -137,3 +137,26 @@ Tích hợp cổng hỗ trợ qua Zalo Official Account (OA) hoặc Zalo Chat Wi
 - [ ] **Bước 4**: Tạo component `<ZaloChatWidget />` trong React và khai báo vùng chứa `<div class="zalo-chat-widget" data-oaid="<OA_ID>" data-welcome-message="Rất vui được hỗ trợ bạn!" data-autopopup="0" data-width="350" data-height="420"></div>`.
 - [ ] **Bước 5**: Tích hợp component vào Layout chính và kiểm tra tính tương thích giao diện di động.
 
+---
+
+## 🛡️ 7. Bộ lọc Nội dung Nhạy cảm (Ngôn từ & Hình ảnh NSFW)
+
+Xây dựng lớp bảo vệ kép cho cổng đăng tin FindX để tự động chặn các nội dung văn bản chứa ngôn từ tục tĩu/nhạy cảm và các hình ảnh không lành mạnh (NSFW - Not Safe For Work) do người dùng đăng tải.
+
+### Giải pháp đề xuất:
+
+1. **Bộ lọc ngôn từ nhạy cảm (Text Moderation)**:
+   - **Giải pháp cục bộ (Local Filter)**: Xây dựng một thư viện regex kết hợp từ điển từ cấm tiếng Việt (khoảng 300-500 từ tục tĩu phổ biến). Khi có tin đăng mới, quét qua các trường `title`, `description` và `address`. Nếu phát hiện từ nhạy cảm, chặn phản hồi `400 Bad Request` kèm theo thông báo hướng dẫn sửa từ ngữ, hoặc tự động thay thế bằng ký tự `***`.
+   - **Giải pháp Cloud (Perspective API)**: Sử dụng Perspective API của Google (hoàn toàn miễn phí, hỗ trợ tiếng Việt rất tốt). API này trả về điểm số độ độc hại (Toxicity Score) của đoạn văn bản. Nếu điểm số quá 0.7, tin đăng sẽ bị đẩy vào hàng chờ duyệt của Admin hoặc từ chối trực tiếp.
+
+2. **Bộ lọc hình ảnh nhạy cảm (Image Moderation)**:
+   - **Giải pháp cục bộ (NSFWJS)**: Tích hợp thư viện `@tensorflow/tfjs-node` và `nsfwjs` chạy trực tiếp trong container backend Node.js. Khi ảnh được gửi lên bộ nhớ đệm RAM qua Multer, mô hình Deep Learning của NSFWJS sẽ phân tích hình ảnh và trả về xác suất của 5 danh mục (`Porn`, `Sexy`, `Hentai`, `Neutral`, `Drawing`). Nếu xác suất ảnh nhạy cảm (`Porn` hoặc `Sexy`) lớn hơn 70%, ảnh sẽ bị từ chối lưu và báo lỗi trực tiếp cho người dùng.
+   - **Giải pháp Cloud (Google Vision SafeSearch)**: Gửi luồng ảnh qua Google Cloud Vision API để kiểm tra tính an toàn thông qua bộ SafeSearch (chỉ số `adult`, `medical`, `spoof`, `violence`, `racy`). Giải pháp này có độ chính xác tuyệt đối nhưng cần tài khoản Cloud có liên kết thanh toán.
+
+### Các bước thực hiện:
+- [ ] **Bước 1**: Thiết lập tệp từ điển từ ngữ nhạy cảm tiếng Việt hoặc đăng ký Google Perspective API Key.
+- [ ] **Bước 2**: Viết middleware `textModeration.js` ở Backend để quét văn bản đầu vào của Route Đăng tin/Sửa tin.
+- [ ] **Bước 3**: Cài đặt thử nghiệm thư viện `nsfwjs` cục bộ ở Backend hoặc tích hợp hàm gọi Google Cloud Vision API trong `upload.js`.
+- [ ] **Bước 4**: Viết middleware `imageModeration.js` chặn xử lý nén Sharp nếu ảnh bị đánh giá là nhạy cảm/NSFW.
+- [ ] **Bước 5**: Cập nhật thông báo lỗi thân thiện trên Frontend Dashboard khi bài viết hoặc hình ảnh bị bộ lọc từ chối.
+
