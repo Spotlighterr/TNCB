@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { CITIES, DISTRICTS, ROOM_TYPES, AMENITY_MAP } from '../data/mockProperties';
+import { CITIES, DISTRICTS, WARDS, ROOM_TYPES, AMENITY_MAP } from '../data/mockProperties';
 import {
   House,
   ChartBar,
@@ -138,6 +138,7 @@ export default function Dashboard() {
     area: '',
     city: 'Hà Nội',
     district: '',
+    ward: '',
     address: '',
     coords: [21.0285, 105.7823],
     images: [],
@@ -308,13 +309,16 @@ export default function Dashboard() {
   };
 
   const handleAddRoomClick = () => {
+    const defaultDistrict = DISTRICTS['Hà Nội'][0];
+    const defaultWard = WARDS[defaultDistrict]?.[0] || '';
     setRoomForm({
       title: '',
       type: 'Chung cư mini',
       price: '',
       area: '',
       city: 'Hà Nội',
-      district: DISTRICTS['Hà Nội'][0],
+      district: defaultDistrict,
+      ward: defaultWard,
       address: '',
       coords: [21.0285, 105.7823],
       images: [],
@@ -336,6 +340,7 @@ export default function Dashboard() {
       area: room.area,
       city: room.city,
       district: room.district,
+      ward: room.ward || '',
       address: room.address,
       coords: room.coords,
       images: [...room.images],
@@ -353,6 +358,7 @@ export default function Dashboard() {
   const handleRoomCityChange = (cityVal) => {
     const districts = DISTRICTS[cityVal] || [];
     const defaultDistrict = districts[0] || '';
+    const defaultWard = WARDS[defaultDistrict]?.[0] || '';
     const defaultCoords =
       cityVal === 'Hà Nội' ? [21.0285, 105.7823] : [10.8016, 106.7118];
 
@@ -360,7 +366,19 @@ export default function Dashboard() {
       ...prev,
       city: cityVal,
       district: defaultDistrict,
+      ward: defaultWard,
       coords: defaultCoords,
+    }));
+  };
+
+  // Auto update ward list when district changes in roomForm
+  const handleRoomDistrictChange = (districtVal) => {
+    const wards = WARDS[districtVal] || [];
+    const defaultWard = wards[0] || '';
+    setRoomForm((prev) => ({
+      ...prev,
+      district: districtVal,
+      ward: defaultWard,
     }));
   };
 
@@ -819,10 +837,23 @@ export default function Dashboard() {
                     <select
                       className="select"
                       value={roomForm.district}
-                      onChange={(e) => setRoomForm({ ...roomForm, district: e.target.value })}
+                      onChange={(e) => handleRoomDistrictChange(e.target.value)}
                     >
                       {DISTRICTS[roomForm.city]?.map((d) => (
                         <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Phường / Xã</label>
+                    <select
+                      className="select"
+                      value={roomForm.ward}
+                      onChange={(e) => setRoomForm({ ...roomForm, ward: e.target.value })}
+                    >
+                      {WARDS[roomForm.district]?.map((w) => (
+                        <option key={w} value={w}>{w}</option>
                       ))}
                     </select>
                   </div>
