@@ -759,7 +759,7 @@ export default function Dashboard() {
                     </label>
                     <input
                       type="text"
-                      className="input text-mono"
+                      className="input"
                       required
                       placeholder="Ví dụ: 4.500.000"
                       value={formatNumberWithDots(roomForm.price)}
@@ -871,7 +871,7 @@ export default function Dashboard() {
                     <label className="form-label">Đơn giá điện (VND/kWh) *</label>
                     <input
                       type="text"
-                      className="input text-mono"
+                      className="input"
                       required
                       placeholder="Ví dụ: 3.500"
                       value={formatNumberWithDots(roomForm.electricity)}
@@ -886,7 +886,7 @@ export default function Dashboard() {
                     <label className="form-label">Đơn giá nước (VND/người) *</label>
                     <input
                       type="text"
-                      className="input text-mono"
+                      className="input"
                       required
                       placeholder="Ví dụ: 100.000"
                       value={formatNumberWithDots(roomForm.water)}
@@ -901,7 +901,7 @@ export default function Dashboard() {
                     <label className="form-label">Phí dịch vụ cố định (VND/phòng) *</label>
                     <input
                       type="text"
-                      className="input text-mono"
+                      className="input"
                       required
                       placeholder="Ví dụ: 150.000"
                       value={formatNumberWithDots(roomForm.service)}
@@ -1038,7 +1038,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td>{p.district}</td>
-                        <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
+                        <td><span className="price">{formatPriceShort(p.price)}</span></td>
                         <td><span className="text-mono">{p.area} m&sup2;</span></td>
                         <td>
                           <span className="text-caption" style={{ whiteSpace: 'nowrap' }}>
@@ -1222,7 +1222,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td>{p.district}</td>
-                        <td><span className="text-mono price">{formatPriceShort(p.price)}</span></td>
+                        <td><span className="price">{formatPriceShort(p.price)}</span></td>
                         <td><span className="text-mono">{p.area} m&sup2;</span></td>
                         <td>
                           <span className={`badge ${p.isUnlisted ? 'badge-rented' : (p.isRented ? 'badge-rented' : 'badge-available')}`}>
@@ -1517,7 +1517,7 @@ export default function Dashboard() {
                         <img src={duplicateReport.pendingProperty.images?.[0]} alt="new room" />
                         <div className="comp-info">
                           <span className="comp-title">{duplicateReport.pendingProperty.title}</span>
-                          <span className="comp-meta text-mono">{duplicateReport.pendingProperty.type} • {duplicateReport.pendingProperty.area}m² • {formatPrice(duplicateReport.pendingProperty.price)}</span>
+                          <span className="comp-meta text-mono">{duplicateReport.pendingProperty.type} • {duplicateReport.pendingProperty.area}m² • <span className="price">{formatPrice(duplicateReport.pendingProperty.price)}</span></span>
                           <span className="comp-address">{duplicateReport.pendingProperty.address}</span>
                         </div>
                       </div>
@@ -1532,7 +1532,7 @@ export default function Dashboard() {
                       <img src={duplicateReport.matchedProperty.images?.[0]} alt="old room" />
                       <div className="comp-info">
                         <span className="comp-title">{duplicateReport.matchedProperty.title}</span>
-                        <span className="comp-meta text-mono">{duplicateReport.matchedProperty.type} • {duplicateReport.matchedProperty.area}m² • {formatPrice(duplicateReport.matchedProperty.price)}</span>
+                        <span className="comp-meta text-mono">{duplicateReport.matchedProperty.type} • {duplicateReport.matchedProperty.area}m² • <span className="price">{formatPrice(duplicateReport.matchedProperty.price)}</span></span>
                         <span className="comp-address">{duplicateReport.matchedProperty.address}</span>
                       </div>
                     </div>

@@ -713,7 +713,7 @@ main {
 }
 
 .price {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-weight: var(--weight-bold);
   color: var(--color-text-main);
   transition: all var(--duration-fast) var(--ease-smooth);

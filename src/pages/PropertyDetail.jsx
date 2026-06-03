@@ -228,20 +228,20 @@ export default function PropertyDetail() {
                   <span className="cost-label">Tiền phòng</span>
                   <span className="cost-value price price-large">{formatPrice(property.price)}</span>
                 </div>
-                <div className="cost-card">
+                <div className="cost-card animate-fade-in-up stagger-1">
                   <Lightning size={20} color="var(--color-warning)" />
                   <span className="cost-label">Điện</span>
-                  <span className="cost-value text-mono">{property.electricity.toLocaleString()} VND/kwh</span>
+                  <span className="cost-value price">{property.electricity.toLocaleString()} VND/kwh</span>
                 </div>
-                <div className="cost-card">
+                <div className="cost-card animate-fade-in-up stagger-2">
                   <Drop size={20} color="var(--color-info)" />
                   <span className="cost-label">Nước</span>
-                  <span className="cost-value text-mono">{property.water.toLocaleString()} VND/người</span>
+                  <span className="cost-value price">{property.water.toLocaleString()} VND/người</span>
                 </div>
-                <div className="cost-card">
+                <div className="cost-card animate-fade-in-up stagger-3">
                   <Wrench size={20} color="var(--color-text-muted)" />
                   <span className="cost-label">Dịch vụ</span>
-                  <span className="cost-value text-mono">{property.service.toLocaleString()} VND/phòng</span>
+                  <span className="cost-value price">{property.service.toLocaleString()} VND/phòng</span>
                 </div>
               </div>
             </div>
