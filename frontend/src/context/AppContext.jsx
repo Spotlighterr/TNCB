@@ -4,6 +4,8 @@ import { mockContracts, mockTickets } from '../data/mockContracts';
 
 const AppContext = createContext(null);
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 function loadFromStorage(key, fallback) {
   try {
     const saved = localStorage.getItem(key);
@@ -94,7 +96,7 @@ export function AppProvider({ children }) {
   // API Fetch actions
   const fetchProperties = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/properties');
+      const res = await fetch(API_BASE_URL + '/api/properties');
       const data = await res.json();
       if (data.success) {
         let list = data.properties.map(transformProperty);
@@ -102,7 +104,7 @@ export function AppProvider({ children }) {
         // If logged in, fetch personal properties and merge
         const token = localStorage.getItem('TNCB_TOKEN');
         if (token) {
-          const myRes = await fetch('http://localhost:5000/api/properties/my-properties', {
+          const myRes = await fetch(API_BASE_URL + '/api/properties/my-properties', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const myData = await myRes.json();
@@ -124,7 +126,7 @@ export function AppProvider({ children }) {
           const currentUserData = JSON.parse(localStorage.getItem('TNCB_CURRENT_USER') || 'null');
           const isAdminUser = currentUserData && (currentUserData.email === 'admin@tncb.vn' || currentUserData.role === 'admin');
           if (isAdminUser) {
-            const qRes = await fetch('http://localhost:5000/api/properties/admin/review-queue', {
+            const qRes = await fetch(API_BASE_URL + '/api/properties/admin/review-queue', {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             const qData = await qRes.json();
@@ -157,7 +159,7 @@ export function AppProvider({ children }) {
       return;
     }
     try {
-      const res = await fetch('http://localhost:5000/api/tickets', {
+      const res = await fetch(API_BASE_URL + '/api/tickets', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -181,7 +183,7 @@ export function AppProvider({ children }) {
       const token = localStorage.getItem('TNCB_TOKEN');
       if (token) {
         try {
-          const res = await fetch('http://localhost:5000/api/auth/me', {
+          const res = await fetch(API_BASE_URL + '/api/auth/me', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -214,7 +216,7 @@ export function AppProvider({ children }) {
   // ============================
   const login = useCallback(async (email, password) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(API_BASE_URL + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -235,7 +237,7 @@ export function AppProvider({ children }) {
 
   const loginWithGoogle = useCallback(async (idToken) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/google', {
+      const res = await fetch(API_BASE_URL + '/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken })
@@ -260,7 +262,7 @@ export function AppProvider({ children }) {
 
   const completeGoogleProfile = useCallback(async (phone, role, tempToken) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/google/complete', {
+      const res = await fetch(API_BASE_URL + '/api/auth/google/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, role, tempToken })
@@ -290,7 +292,7 @@ export function AppProvider({ children }) {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register-step1', {
+      const res = await fetch(API_BASE_URL + '/api/auth/register-step1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, phone, password, role })
@@ -317,7 +319,7 @@ export function AppProvider({ children }) {
       return { success: false, message: 'Phiên đăng ký đã hết hạn.' };
     }
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register-step2', {
+      const res = await fetch(API_BASE_URL + '/api/auth/register-step2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -356,7 +358,7 @@ export function AppProvider({ children }) {
 
   const forgotPasswordStep1 = useCallback(async (phone) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/forgot-password-step1', {
+      const res = await fetch(API_BASE_URL + '/api/auth/forgot-password-step1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone })
@@ -383,7 +385,7 @@ export function AppProvider({ children }) {
       return { success: false, message: 'Phiên khôi phục mật khẩu hết hạn.' };
     }
     try {
-      const res = await fetch('http://localhost:5000/api/auth/forgot-password-step2', {
+      const res = await fetch(API_BASE_URL + '/api/auth/forgot-password-step2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -419,7 +421,7 @@ export function AppProvider({ children }) {
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
-      const res = await fetch('http://localhost:5000/api/auth/profile', {
+      const res = await fetch(API_BASE_URL + '/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -555,7 +557,7 @@ export function AppProvider({ children }) {
   const addProperty = useCallback(async (property) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch('http://localhost:5000/api/properties', {
+      const res = await fetch(API_BASE_URL + '/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -590,7 +592,7 @@ export function AppProvider({ children }) {
   const updateProperty = useCallback(async (id, updates) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/properties/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -615,7 +617,7 @@ export function AppProvider({ children }) {
   const deleteProperty = useCallback(async (id) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/properties/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -636,7 +638,7 @@ export function AppProvider({ children }) {
   const togglePropertyStatus = useCallback(async (id) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-rented`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-rented`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -655,7 +657,7 @@ export function AppProvider({ children }) {
   const toggleUnlistProperty = useCallback(async (id) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-unlist`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-unlist`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -674,7 +676,7 @@ export function AppProvider({ children }) {
   const toggleVerifyProperty = useCallback(async (id) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/properties/${id}/toggle-verify`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-verify`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -754,7 +756,7 @@ export function AppProvider({ children }) {
   const createTicket = useCallback(async (ticket) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch('http://localhost:5000/api/tickets', {
+      const res = await fetch(API_BASE_URL + '/api/tickets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -780,7 +782,7 @@ export function AppProvider({ children }) {
   const updateTicketStatus = useCallback(async (ticketId, status) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`http://localhost:5000/api/tickets/${ticketId}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
