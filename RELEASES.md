@@ -4,6 +4,26 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 
 ---
 
+## [v2.3.0] - 2026-06-04
+### 📸 Tải Ảnh WebP Cục Bộ, Tự Động Dọn Dẹp Ảnh Cũ & Đồng Bộ Persistent Volume
+Phiên bản này tối ưu hóa dung lượng lưu trữ hình ảnh tin đăng trọ, tăng tốc độ tải trang bằng định dạng WebP chất lượng cao và giải phóng ổ đĩa máy chủ qua cơ chế dọn dẹp ảnh mồ côi tự động.
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Tải file và nén chuyển đổi WebP trực tiếp trên server:**
+  - Thay thế cơ chế lưu ảnh Base64 thô nặng nề trong cơ sở dữ liệu MongoDB bằng việc tải luồng nhị phân thông qua middleware `multer` và `sharp`.
+  - Tự động nén chất lượng ở mức **`85%`**, thay đổi kích thước tối đa về độ phân giải **`1600px`** (HD sắc nét) và chuyển đổi sang định dạng **`.webp`** siêu nhẹ trước khi ghi tệp tin lên đĩa cứng.
+* **Cơ chế Garbage Collection tự động dọn rác ổ cứng:**
+  - Khi chủ trọ chỉnh sửa bài viết và thay đổi/xóa ảnh: Backend tự động so khớp và gọi `fs.promises.unlink()` để xóa vật lý các file ảnh cũ bị loại bỏ.
+  - Khi xóa tin đăng: Tự động xóa sạch toàn bộ các file ảnh đính kèm của bài viết đó trên đĩa cứng máy chủ.
+* **Đồng bộ persistent lưu trữ an toàn (Docker Volume & Nginx Proxy):**
+  - Cấu hình volume `tncb_uploads` ánh xạ vào `/app/uploads` bên trong container backend để bảo toàn dữ liệu hình ảnh của chủ trọ khi restart hoặc rebuild hệ thống.
+  - Bổ sung định tuyến `/uploads` trên Nginx Reverse Proxy để phục vụ truy cập trực tiếp file ảnh tĩnh.
+  - Sửa lỗi phân quyền `Permission denied` bên trong môi trường Docker bằng việc gán quyền sở hữu thư mục cho user `node` ngay khi khởi tạo container.
+* **Sửa lỗi Phường/Xã khi đăng tin:**
+  - Tích hợp ô chọn Phường/Xã cascading liên kết động theo Thành phố/Quận huyện trên giao diện Dashboard, ngăn chặn triệt để lỗi thiếu trường thông tin bắt buộc từ Mongoose Schema.
+
+---
+
 ## [v2.2.0] - 2026-06-04
 ### 🔒 Nâng cấp Bảo mật, Giám sát Phần cứng Docker & Tối ưu hóa Bloom Filter chống Cache Penetration
 Phiên bản này mang lại các cải tiến cốt lõi về bảo mật truy cập từ xa, giám sát phần cứng vật lý chuyên sâu và tối ưu hóa hiệu năng tầng cơ sở dữ liệu.

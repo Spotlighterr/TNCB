@@ -105,7 +105,11 @@ TNCB/                              # Thư mục gốc dự án FindX
    - **Log Rotation**: Thiết lập giới hạn tối đa logs cho mỗi container (30MB) tránh đầy ổ SSD.
    - **Netdata & Basic Auth**: Trang giám sát `monitor.findx.id.vn` bảo mật tài khoản tĩnh qua Basic Auth của Nginx.
    - **Power Tracker**: Dịch vụ nền Python theo dõi điện năng CPU Intel RAPL, xuất giao diện dashboard `/power-report.html` theo dõi tiền điện và công suất tiêu thụ của server.
-8. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
+8. **Tối ưu hóa hình ảnh & Dọn dẹp ổ đĩa tự động (WebP uploads & GC)**:
+   - Sử dụng middleware `multer` và `sharp` chuyển đổi toàn bộ ảnh tải lên thành định dạng `.webp` nén ở mức `85%`, kích thước tối đa `1600px` trực tiếp trên server thay vì lưu Base64 thô.
+   - Tích hợp bộ dọn dẹp (Garbage Collector) chạy ngầm tự động gọi `fs.promises.unlink` xóa tệp tin ảnh cũ khỏi ổ đĩa khi tin đăng bị thay đổi ảnh hoặc xóa bài viết.
+   - Lưu trữ dữ liệu ảnh tĩnh an toàn qua Docker Named Volume `tncb_uploads` và Nginx Proxy `/uploads`.
+9. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
 
 ---
 
