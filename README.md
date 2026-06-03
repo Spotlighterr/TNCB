@@ -23,7 +23,8 @@
 ## Công nghệ
 
 - **Frontend**: [React 19](https://react.dev/) + [Vite 8](https://vite.dev/), React Router, Phosphor Icons, Leaflet (bản đồ), CSS thuần.
-- **Backend**: [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/), [Mongoose/MongoDB Atlas](https://www.mongodb.com/atlas), JWT authentication, `google-auth-library` cho Google SSO.
+- **Backend**: [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/), [Mongoose/MongoDB](https://www.mongodb.com/), JWT authentication, `google-auth-library` cho Google SSO.
+- **DevOps & Giám sát**: [Docker & Docker Compose](https://www.docker.com/), [Nginx](https://www.nginx.com/) (Reverse Proxy, Basic Auth), [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/), [Netdata](https://www.netdata.cloud/) (giám sát phần cứng), Custom python power tracker daemon.
 
 ---
 
@@ -34,11 +35,11 @@ TNCB/                              # Thư mục gốc dự án FindX
 │
 ├── backend/                       # Máy chủ API Node.js/Express (Modular Monolith)
 │   ├── src/
-│   │   ├── config/                # Cấu hình db.js kết nối MongoDB Atlas
-│   │   ├── middleware/            # Middleware dùng chung (auth.js)
+│   │   ├── config/                # Cấu hình db.js kết nối MongoDB
+│   │   ├── middleware/            # Middleware dùng chung (auth.js, rateLimiter.js)
 │   │   ├── modules/               # Các mô-đun nghiệp vụ độc lập (chuẩn bị cho Microservices)
 │   │   │   ├── auth/              # Mô-đun Xác thực (User, authController, authRoutes)
-│   │   │   ├── property/          # Mô-đun Tin đăng (Property, propertyController, propertyRoutes, deduplication)
+│   │   │   ├── property/          # Mô-đun Tin đăng (Property, propertyController, propertyRoutes, propertyBloomFilter, deduplication)
 │   │   │   └── ticket/            # Mô-đun Hỗ trợ (Ticket, ticketController, ticketRoutes)
 │   │   └── index.js               # Entry point chạy server (Port 5000)
 │   ├── .env                       # Biến môi trường backend
@@ -58,6 +59,11 @@ TNCB/                              # Thư mục gốc dự án FindX
 │   └── package.json
 │
 ├── deploy/                        # Tập lệnh Docker để deploy production
+│   ├── nginx.conf                 # Cấu hình Nginx reverse proxy & Basic Authentication
+│   ├── .htpasswd                  # Lưu trữ thông tin xác thực trang giám sát đã mã hóa
+│   ├── power_tracker.py           # Daemon Python theo dõi điện năng tiêu thụ thực tế
+│   └── tncb-power-tracker.service # Service systemd khởi chạy cùng hệ điều hành
+│
 ├── task.md                        # Lộ trình & Việc cần làm ở môi trường thực tế (SSO/MFA/Deploy/Microservices)
 ├── README.md                      # Tài liệu hướng dẫn (File này)
 └── [Các file tài liệu thiết kế & thuật toán khác] (.md)
@@ -93,8 +99,13 @@ TNCB/                              # Thư mục gốc dự án FindX
    - Kiểm tra khoảng cách GPS (công thức Haversine < 15m).
    - Kiểm tra tổ hợp đặc tính phòng (loại phòng, diện tích, giá).
    - Tính độ tương đồng văn bản Jaccard ($\ge 80\%$ chặn spam; $50\% \to 79\%$ chuyển trạng thái `pending` sang hàng chờ duyệt thủ công của Admin hiển thị giao diện đối chiếu song song).
-5. **Lịch sử xem tin (View History):** Quản lý lịch sử xem các bài đăng trong vòng 7 ngày gần nhất lưu ở Local Storage của trình duyệt và tự động dọn dẹp để tránh làm phình dữ liệu.
-6. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
+5. **Tối ưu hóa Bloom Filter chống Cache Penetration:** Bộ lọc Bloom Filter tự phát triển bằng mã JS (thuật toán FNV-1a) chạy dưới dạng middleware, kiểm tra format ID và lọc chặn 100% request truy cập tin trọ ảo trước khi chúng chạm vào Database để chống quá tải MongoDB.
+6. **Lịch sử xem tin (View History):** Quản lý lịch sử xem các bài đăng trong vòng 7 ngày gần nhất lưu ở Local Storage của trình duyệt và tự động dọn dẹp để tránh làm phình dữ liệu.
+7. **Bảo mật, giám sát phần cứng & điện năng tiêu thụ:**
+   - **Log Rotation**: Thiết lập giới hạn tối đa logs cho mỗi container (30MB) tránh đầy ổ SSD.
+   - **Netdata & Basic Auth**: Trang giám sát `monitor.findx.id.vn` bảo mật tài khoản tĩnh qua Basic Auth của Nginx.
+   - **Power Tracker**: Dịch vụ nền Python theo dõi điện năng CPU Intel RAPL, xuất giao diện dashboard `/power-report.html` theo dõi tiền điện và công suất tiêu thụ của server.
+8. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
 
 ---
 

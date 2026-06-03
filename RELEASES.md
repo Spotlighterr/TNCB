@@ -4,6 +4,27 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 
 ---
 
+## [v2.2.0] - 2026-06-04
+### 🔒 Nâng cấp Bảo mật, Giám sát Phần cứng Docker & Tối ưu hóa Bloom Filter chống Cache Penetration
+Phiên bản này mang lại các cải tiến cốt lõi về bảo mật truy cập từ xa, giám sát phần cứng vật lý chuyên sâu và tối ưu hóa hiệu năng tầng cơ sở dữ liệu.
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Tối ưu hóa Bloom Filter chống Cache Penetration:**
+  * Tích hợp bộ lọc Bloom Filter tự phát triển bằng mã JavaScript thuần (sử dụng thuật toán băm FNV-1a siêu tốc độ) chạy tại lớp Middleware.
+  * Tự động đồng bộ nạp toàn bộ danh sách ID tin đăng có trong MongoDB khi server khởi chạy và thêm ID mới khi chủ trọ tạo tin trọ.
+  * Tự động kiểm tra định dạng và so khớp ID tức thì, chặn đứng 100% các request truy cập tin đăng ảo/không tồn tại, ngăn chặn hoàn toàn việc quá tải cơ sở dữ liệu MongoDB.
+* **Bảo mật truy cập trang giám sát (Nginx Basic Auth):**
+  * Tái cấu trúc file cấu hình Nginx trong Docker phục vụ reverse proxy cho Netdata qua tên miền phụ `monitor.findx.id.vn`.
+  * Thiết lập bảo mật Basic Authentication cố định với tài khoản và mật khẩu được mã hóa an toàn bằng thuật toán APR1-MD5 trong file `.htpasswd`.
+* **Giám sát năng lượng máy chủ tự động (tncb-power-tracker):**
+  * Viết dịch vụ nền Python `power_tracker.py` chạy trực tiếp dưới dạng Systemd service trên host để thu thập dữ liệu tiêu thụ điện từ CPU Intel RAPL.
+  * Tự động cộng thêm mức tiêu thụ điện tĩnh (baseline 5W) của laptop khi gập nắp màn hình để đảm bảo đo đạc chính xác nhất.
+  * Tạo bảng thống kê đẹp mắt `power-report.html` tích hợp vào Nginx và được bảo mật đăng nhập tại địa chỉ `https://monitor.findx.id.vn/power-report.html`.
+* **Docker Log Rotation chống quá tải ổ cứng:**
+  * Thiết lập chính sách quay vòng file log cho toàn bộ 6 container trong tệp `docker-compose.yml` (tối đa 3 file log, 10MB mỗi file), khống chế dung lượng logs tối đa dưới 180MB để ngăn ngừa tràn SSD.
+
+---
+
 ## [v2.1.0] - 2026-06-03
 ### 🛠️ Tái cấu trúc Modular Monolith & Tối ưu hóa Trải nghiệm Cổng thông tin kết nối
 Phiên bản này tối ưu hóa kiến trúc mã nguồn chuẩn bị cho định hướng Microservices tương lai, đồng thời tinh giản các tính năng sau thuê để định vị FindX như một mạng xã hội kết nối phòng trọ và roommate.
