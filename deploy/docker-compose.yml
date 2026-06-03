@@ -5,26 +5,32 @@
 
 version: '3.8'
 
+# Global log rotation to prevent disk space exhaustion
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   # 1. MongoDB Database Container
   mongodb:
     image: mongo:6.0-jammy
     container_name: tncb-mongodb
     restart: always
+    <<: *default-logging
     volumes:
       - mongodb_data:/data/db
     networks:
       - tncb-network
-    # Exposing port is NOT required as backend communicates inside the bridge network.
-    # Expose only if you need local external GUI connection (e.g. Compass) with security.
-    # ports:
-    #   - "27017:27017"
 
   # 2. Redis Caching Layer
   redis:
     image: redis:7-alpine
     container_name: tncb-redis
     restart: always
+    <<: *default-logging
     expose:
       - "6379"
     command: redis-server --requirepass strongredispassword
@@ -38,6 +44,7 @@ services:
       dockerfile: deploy/Dockerfile.backend
     container_name: tncb-backend
     restart: always
+    <<: *default-logging
     environment:
       - PORT=5000
       - MONGODB_URI=mongodb://mongodb:27017/tncb
@@ -57,6 +64,7 @@ services:
       dockerfile: deploy/Dockerfile.frontend
     container_name: tncb-frontend
     restart: always
+    <<: *default-logging
     ports:
       - "80:80"
     volumes:
@@ -71,6 +79,7 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: tncb-cf-tunnel
     restart: always
+    <<: *default-logging
     environment:
       # Replace this token with your actual Cloudflare Tunnel token in production
       - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
@@ -80,12 +89,14 @@ services:
     depends_on:
       - frontend
 
+  # 6. Netdata System Monitoring Container
   netdata:
     image: netdata/netdata:stable
     container_name: tncb-netdata
     user: "root"
     hostname: tncb-server
     restart: always
+    <<: *default-logging
     ports:
       - "19999:19999"
     cap_add:
