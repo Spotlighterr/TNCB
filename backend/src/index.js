@@ -7,6 +7,7 @@ import authRoutes from './modules/auth/authRoutes.js';
 import propertyRoutes from './modules/property/propertyRoutes.js';
 import ticketRoutes from './modules/ticket/ticketRoutes.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { initPropertyBloomFilter } from './modules/property/propertyBloomFilter.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,8 +22,9 @@ app.use(express.json());
 // Database Connection
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tncb';
 mongoose.connect(mongoURI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ Connected to MongoDB successfully.');
+    await initPropertyBloomFilter();
   })
   .catch((err) => {
     console.error('❌ Failed to connect to MongoDB:', err.message);

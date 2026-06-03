@@ -1,5 +1,6 @@
 import Property from './Property.js';
 import { checkDuplicateProperty } from './deduplication.js';
+import { propertyBloomFilter } from './propertyBloomFilter.js';
 
 export const getProperties = async (req, res) => {
   try {
@@ -210,6 +211,9 @@ export const createProperty = async (req, res) => {
     });
 
     await property.save();
+
+    // Register the new property ID in Bloom Filter
+    propertyBloomFilter.add(property._id.toString());
 
     return res.status(201).json({
       success: true,
