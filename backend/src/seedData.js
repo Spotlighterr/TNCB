@@ -253,6 +253,42 @@ const seedUsers = [
     role: 'admin',
     avatar: 'https://picsum.photos/seed/owner-admin/100/100',
   },
+  // Default Landlord
+  {
+    name: 'Nguyễn Văn Đạt',
+    email: 'landlord@tncb.vn',
+    phone: '0900000001',
+    password: '123',
+    role: 'landlord',
+    avatar: 'https://picsum.photos/seed/owner-dat/100/100',
+  },
+  // Test Landlord
+  {
+    name: 'Chủ Trọ Thử Nghiệm',
+    email: 'testlandlord@tncb.vn',
+    phone: '0900000002',
+    password: '123',
+    role: 'landlord',
+    avatar: 'https://picsum.photos/seed/owner-testlandlord/100/100',
+  },
+  // Default Tenant
+  {
+    name: 'Nguyễn Minh Anh',
+    email: 'tenant@tncb.vn',
+    phone: '0900000003',
+    password: '123',
+    role: 'tenant',
+    avatar: 'https://picsum.photos/seed/user-minhanh/100/100',
+  },
+  // Test Tenant
+  {
+    name: 'Khách Thuê Thử Nghiệm',
+    email: 'testtenant@tncb.vn',
+    phone: '0900000004',
+    password: '123',
+    role: 'tenant',
+    avatar: 'https://picsum.photos/seed/user-testtenant/100/100',
+  },
   // Tenant
   {
     name: 'Trần Đức An',
