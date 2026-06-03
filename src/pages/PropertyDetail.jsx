@@ -294,10 +294,7 @@ export default function PropertyDetail() {
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="contact-price">
-                <span className="price price-large">{formatPrice(property.price)}</span>
-              </div>
+
 
               {/* Actions */}
               <div className="contact-actions">
@@ -602,12 +599,7 @@ export default function PropertyDetail() {
           font-weight: var(--weight-semibold);
         }
 
-        .contact-price {
-          padding: var(--space-4);
-          background: var(--color-accent-subtle);
-          border-radius: var(--radius-subtle);
-          text-align: center;
-        }
+
 
         .contact-actions {
           display: flex;
