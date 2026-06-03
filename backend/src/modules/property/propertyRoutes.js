@@ -15,6 +15,7 @@ import {
 } from './propertyController.js';
 import { auth, checkRole } from '../../middleware/auth.js';
 import { checkPropertyBloomFilter } from './propertyBloomFilter.js';
+import upload from '../../middleware/upload.js';
 
 const router = express.Router();
 
@@ -24,8 +25,8 @@ router.get('/detail/:id', checkPropertyBloomFilter, getPropertyDetail);
 
 // Private routes for Landlords & Admins
 router.get('/my-properties', auth, checkRole(['landlord', 'admin']), getMyProperties);
-router.post('/', auth, checkRole(['landlord', 'admin']), createProperty);
-router.put('/:id', auth, checkRole(['landlord', 'admin']), checkPropertyBloomFilter, updateProperty);
+router.post('/', auth, checkRole(['landlord', 'admin']), upload.array('images', 10), createProperty);
+router.put('/:id', auth, checkRole(['landlord', 'admin']), checkPropertyBloomFilter, upload.array('images', 10), updateProperty);
 router.delete('/:id', auth, checkRole(['landlord', 'admin']), checkPropertyBloomFilter, deleteProperty);
 router.patch('/:id/toggle-rented', auth, checkRole(['landlord', 'admin']), checkPropertyBloomFilter, toggleRentedStatus);
 router.patch('/:id/toggle-unlist', auth, checkRole(['landlord', 'admin']), checkPropertyBloomFilter, toggleUnlistedStatus);

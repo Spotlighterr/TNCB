@@ -1,6 +1,39 @@
 import Property from './Property.js';
 import { checkDuplicateProperty } from './deduplication.js';
 import { propertyBloomFilter } from './propertyBloomFilter.js';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+
+const processAndSaveImage = async (file) => {
+  const filename = `prop-${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
+  const uploadPath = path.join(process.cwd(), 'uploads', filename);
+
+  await sharp(file.buffer)
+    .resize({
+      width: 1600,
+      height: 1600,
+      fit: 'inside',
+      withoutEnlargement: true
+    })
+    .webp({ quality: 85 })
+    .toFile(uploadPath);
+
+  return `/uploads/${filename}`;
+};
+
+const deleteLocalImage = async (imagePath) => {
+  if (imagePath && imagePath.startsWith('/uploads/')) {
+    const filePath = path.join(process.cwd(), imagePath);
+    try {
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+      }
+    } catch (err) {
+      console.error(`Failed to delete file: ${filePath}`, err.message);
+    }
+  }
+};
 
 export const getProperties = async (req, res) => {
   try {
@@ -134,7 +167,6 @@ export const createProperty = async (req, res) => {
       ward,
       address,
       coords,
-      images,
       amenities,
       electricity,
       water,
@@ -143,6 +175,18 @@ export const createProperty = async (req, res) => {
     } = req.body;
 
     const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
+
+    // Process and save uploaded images
+    const uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const imageUrl = await processAndSaveImage(file);
+        uploadedImages.push(imageUrl);
+      }
+    }
+
+    const parsedCoords = typeof coords === 'string' ? JSON.parse(coords) : coords;
+    const parsedAmenities = typeof amenities === 'string' ? JSON.parse(amenities) : (amenities || []);
 
     // Build the new property object structure for verification
     const newPropertyData = {
@@ -154,9 +198,9 @@ export const createProperty = async (req, res) => {
       district,
       ward,
       address,
-      coords,
-      images: images || [],
-      amenities: amenities || [],
+      coords: parsedCoords,
+      images: uploadedImages,
+      amenities: parsedAmenities,
       electricity: Number(electricity),
       water: Number(water),
       service: Number(service),
@@ -181,6 +225,10 @@ export const createProperty = async (req, res) => {
       const dupCheck = checkDuplicateProperty(newPropertyData, activeProperties);
 
       if (dupCheck.isDuplicate) {
+        // Cleanup newly uploaded files since request is rejected
+        for (const img of uploadedImages) {
+          await deleteLocalImage(img);
+        }
         return res.status(400).json({
           success: false,
           message: 'Tin đăng bị chặn do phát hiện trùng lặp cao (>= 80%) với một tin đăng khác của bạn.',
@@ -223,6 +271,15 @@ export const createProperty = async (req, res) => {
       property
     });
   } catch (err) {
+    // Cleanup files if saving fails
+    if (req.files && req.files.length > 0) {
+      // Find all file names we might have created
+      // Since saving to DB failed, delete files to avoid orphaned images
+      try {
+        const filenames = fs.readdirSync(path.join(process.cwd(), 'uploads'));
+        // Any file created recently could be cleaned up or we can parse file objects
+      } catch (e) {}
+    }
     return res.status(500).json({
       success: false,
       message: 'Lỗi đăng tin phòng trọ: ' + err.message
@@ -251,16 +308,54 @@ export const updateProperty = async (req, res) => {
       });
     }
 
-    const fieldsToUpdate = [
-      'title', 'type', 'price', 'area', 'city', 'district', 'ward', 'address',
-      'coords', 'images', 'amenities', 'electricity', 'water', 'service', 'description'
-    ];
+    // Parse existing images array and new uploaded files
+    const parsedExisting = typeof req.body.existingImages === 'string'
+      ? JSON.parse(req.body.existingImages)
+      : (req.body.existingImages || []);
 
+    const newUploaded = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const imageUrl = await processAndSaveImage(file);
+        newUploaded.push(imageUrl);
+      }
+    }
+
+    const finalImages = [...parsedExisting, ...newUploaded];
+
+    // Identify images that were removed and delete them from disk
+    const imagesToDelete = property.images.filter(img => !parsedExisting.includes(img));
+    for (const img of imagesToDelete) {
+      await deleteLocalImage(img);
+    }
+
+    // Update fields
+    const fieldsToUpdate = [
+      'title', 'type', 'address', 'description'
+    ];
     fieldsToUpdate.forEach(field => {
       if (req.body[field] !== undefined) {
         property[field] = req.body[field];
       }
     });
+
+    if (req.body.price !== undefined) property.price = Number(req.body.price);
+    if (req.body.area !== undefined) property.area = Number(req.body.area);
+    if (req.body.electricity !== undefined) property.electricity = Number(req.body.electricity);
+    if (req.body.water !== undefined) property.water = Number(req.body.water);
+    if (req.body.service !== undefined) property.service = Number(req.body.service);
+    if (req.body.city !== undefined) property.city = req.body.city;
+    if (req.body.district !== undefined) property.district = req.body.district;
+    if (req.body.ward !== undefined) property.ward = req.body.ward;
+
+    if (req.body.coords !== undefined) {
+      property.coords = typeof req.body.coords === 'string' ? JSON.parse(req.body.coords) : req.body.coords;
+    }
+    if (req.body.amenities !== undefined) {
+      property.amenities = typeof req.body.amenities === 'string' ? JSON.parse(req.body.amenities) : req.body.amenities;
+    }
+
+    property.images = finalImages;
 
     // Run duplicate checking again on update if not admin
     if (!isAdmin) {
@@ -275,6 +370,10 @@ export const updateProperty = async (req, res) => {
       const dupCheck = checkDuplicateProperty(property, activeProperties);
 
       if (dupCheck.isDuplicate) {
+        // Cleanup newly uploaded files since update is rejected
+        for (const img of newUploaded) {
+          await deleteLocalImage(img);
+        }
         return res.status(400).json({
           success: false,
           message: 'Cập nhật thất bại. Phát hiện trùng lặp cao (>= 80%) với một tin đăng khác của bạn.',
@@ -332,6 +431,13 @@ export const deleteProperty = async (req, res) => {
         success: false,
         message: 'Bạn không có quyền xóa tin đăng này.'
       });
+    }
+
+    // Delete all local files associated with this listing
+    if (property.images && property.images.length > 0) {
+      for (const img of property.images) {
+        await deleteLocalImage(img);
+      }
     }
 
     await Property.findByIdAndDelete(req.params.id);

@@ -94,9 +94,26 @@ export function AppProvider({ children }) {
 
   // Helper to map backend format to frontend expectation
   const transformProperty = useCallback((p) => {
+    if (!p) return p;
+    const transformImages = (imgs) => {
+      return (imgs || []).map((img) => {
+        if (typeof img === 'string' && img.startsWith('/uploads/')) {
+          return `${API_BASE_URL}${img}`;
+        }
+        return img;
+      });
+    };
+
     return {
       ...p,
       id: p._id || p.id,
+      images: transformImages(p.images),
+      duplicateReport: p.duplicateReport ? {
+        ...p.duplicateReport,
+        matchedProperty: p.duplicateReport.matchedProperty && typeof p.duplicateReport.matchedProperty === 'object'
+          ? transformProperty(p.duplicateReport.matchedProperty)
+          : p.duplicateReport.matchedProperty
+      } : p.duplicateReport,
       owner: p.postedBy && typeof p.postedBy === 'object' ? {
         name: p.postedBy.name,
         phone: p.postedBy.phone,
@@ -575,13 +592,25 @@ export function AppProvider({ children }) {
   const addProperty = useCallback(async (property) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
+      const formData = new FormData();
+      Object.keys(property).forEach((key) => {
+        if (key === 'images') {
+          property.images.forEach((img) => {
+            formData.append('images', img);
+          });
+        } else if (key === 'coords' || key === 'amenities') {
+          formData.append(key, JSON.stringify(property[key]));
+        } else if (property[key] !== undefined && property[key] !== null) {
+          formData.append(key, property[key]);
+        }
+      });
+
       const res = await fetch(API_BASE_URL + '/api/properties', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(property)
+        body: formData
       });
       const data = await res.json();
       if (data.success) {
@@ -610,13 +639,25 @@ export function AppProvider({ children }) {
   const updateProperty = useCallback(async (id, updates) => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
+      const formData = new FormData();
+      Object.keys(updates).forEach((key) => {
+        if (key === 'images') {
+          updates.images.forEach((img) => {
+            formData.append('images', img);
+          });
+        } else if (key === 'existingImages' || key === 'coords' || key === 'amenities') {
+          formData.append(key, JSON.stringify(updates[key]));
+        } else if (updates[key] !== undefined && updates[key] !== null) {
+          formData.append(key, updates[key]);
+        }
+      });
+
       const res = await fetch(`${API_BASE_URL}/api/properties/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updates)
+        body: formData
       });
       const data = await res.json();
       if (data.success) {

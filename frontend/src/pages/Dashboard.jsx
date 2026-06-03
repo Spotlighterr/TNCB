@@ -226,46 +226,7 @@ export default function Dashboard() {
   };
 
   // Room Form triggers
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          // Max dimension 1000px
-          const MAX_DIM = 1000;
-          if (width > MAX_DIM || height > MAX_DIM) {
-            if (width > height) {
-              height = Math.round((height * MAX_DIM) / width);
-              width = MAX_DIM;
-            } else {
-              width = Math.round((width * MAX_DIM) / height);
-              height = MAX_DIM;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Export as JPEG with 0.7 quality to keep file size small
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(compressedBase64);
-        };
-        img.onerror = (err) => reject(err);
-      };
-      reader.onerror = (err) => reject(err);
-    });
-  };
-
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (!files || files.length === 0) return;
 
@@ -281,17 +242,7 @@ export default function Dashboard() {
         showToast('Vui lòng chỉ chọn tệp hình ảnh.');
         continue;
       }
-
-      try {
-        if (file.size > 2 * 1024 * 1024) {
-          showToast(`Ảnh "${file.name}" vượt quá 2MB. Đang nén...`);
-        }
-        const compressed = await compressImage(file);
-        newImages.push(compressed);
-      } catch (err) {
-        console.error(err);
-        showToast(`Lỗi xử lý ảnh "${file.name}".`);
-      }
+      newImages.push(file);
     }
 
     setRoomForm((prev) => ({
@@ -426,6 +377,19 @@ export default function Dashboard() {
       ];
     }
 
+    const cleanImageUrl = (url) => {
+      if (typeof url === 'string' && url.includes('/uploads/')) {
+        const index = url.indexOf('/uploads/');
+        return url.substring(index);
+      }
+      return url;
+    };
+
+    const existingImages = roomForm.images
+      .filter((img) => typeof img === 'string')
+      .map(cleanImageUrl);
+    const newImages = roomForm.images.filter((img) => typeof img !== 'string');
+
     const data = {
       ...roomForm,
       id: editingRoomId || undefined,
@@ -434,7 +398,8 @@ export default function Dashboard() {
       electricity: Number(roomForm.electricity),
       water: Number(roomForm.water),
       service: Number(roomForm.service),
-      images: roomForm.images,
+      existingImages,
+      images: newImages,
       coords: finalCoords,
     };
 
@@ -902,7 +867,10 @@ export default function Dashboard() {
                       <div className="upload-preview-grid">
                         {roomForm.images.map((img, index) => (
                           <div key={index} className="upload-preview-item">
-                            <img src={img} alt={`Preview ${index}`} />
+                            <img
+                              src={typeof img === 'string' ? img : URL.createObjectURL(img)}
+                              alt={`Preview ${index}`}
+                            />
                             <button
                               type="button"
                               className="upload-preview-remove"

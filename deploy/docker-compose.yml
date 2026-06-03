@@ -53,6 +53,8 @@ services:
       - GOOGLE_CLIENT_ID=your_google_client_id_here
     networks:
       - tncb-network
+    volumes:
+      - tncb_uploads:/app/uploads
     depends_on:
       - mongodb
       - redis
@@ -123,6 +125,7 @@ volumes:
   netdataconfig:
   netdatalib:
   netdatacache:
+  tncb_uploads:
 
 networks:
   tncb-network:
