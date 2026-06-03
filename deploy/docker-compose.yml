@@ -78,10 +78,10 @@ services:
     depends_on:
       - frontend
 
-  # 6. Netdata System Monitoring Container
   netdata:
     image: netdata/netdata:stable
     container_name: tncb-netdata
+    user: "root"
     hostname: tncb-server
     restart: always
     ports:
