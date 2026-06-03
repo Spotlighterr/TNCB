@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react';
 
 export default function ImageCarousel({ images, title }) {
@@ -81,7 +82,7 @@ export default function ImageCarousel({ images, title }) {
       </div>
 
       {/* Lightbox */}
-      {lightbox && (
+      {lightbox && createPortal(
         <div className="lightbox animate-scale-in" onClick={() => setLightbox(false)}>
           <button className="lightbox-close" onClick={() => setLightbox(false)}>
             <X size={28} weight="bold" />
@@ -108,7 +109,8 @@ export default function ImageCarousel({ images, title }) {
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`

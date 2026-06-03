@@ -41,33 +41,41 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 │
 ├── src/                           # Mã nguồn React
 │   ├── main.jsx                   # Entry: BrowserRouter, AppProvider, import CSS global
-│   ├── App.jsx                    # Layout chính + định tuyến (Routes)
+│   ├── App.jsx                    # Layout chính + định tuyến (Routes) + FloatingContact
 │   ├── App.css                    # Style legacy (template Vite, ít dùng)
 │   ├── index.css                  # Style bổ sung cấp app
 │   │
+│   ├── assets/                    # Hình ảnh và logo tĩnh
+│   │   ├── hero.png               # Ảnh minh họa Hero tối giản
+│   │   ├── react.svg              # Logo React
+│   │   └── vite.svg               # Logo Vite
+│   │
 │   ├── components/                # UI tái sử dụng
-│   │   ├── Header.jsx             # Navbar, đăng nhập/đăng ký, theme toggle, menu mobile
+│   │   ├── Header.jsx             # Navbar, đăng nhập/đăng ký, theme toggle, menu mobile, ProfileModal
 │   │   ├── Footer.jsx             # Footer desktop + bottom nav mobile
 │   │   ├── PropertyCard.jsx       # Thẻ phòng trên lưới tìm kiếm / trang chủ
 │   │   ├── PropertyMap.jsx        # Bản đồ Leaflet (trang chi tiết phòng)
-│   │   └── ImageCarousel.jsx      # Carousel ảnh + lightbox
+│   │   ├── ImageCarousel.jsx      # Carousel ảnh + lightbox
+│   │   ├── FloatingContact.jsx    # Nút liên hệ nhanh (Zalo/Hotline) trôi nổi
+│   │   ├── ProfileModal.jsx       # Modal cập nhật thông tin cá nhân người dùng
+│   │   └── SearchableSelect.jsx   # Ô chọn tìm kiếm quận/phường có hỗ trợ lọc text
 │   │
 │   ├── pages/                     # Trang theo route
 │   │   ├── Home.jsx               # / — Hero, tìm kiếm, phòng nổi bật, Bento stats
-│   │   ├── Search.jsx             # /search — Lưới phòng + bộ lọc
+│   │   ├── Search.jsx             # /search — Lưới phòng + bộ lọc sử dụng SearchableSelect
 │   │   ├── PropertyDetail.jsx     # /property/:id — Chi tiết, giá, liên hệ, bản đồ
 │   │   └── Dashboard.jsx          # /dashboard — Panel khách thuê / chủ trọ
 │   │
 │   ├── context/
-│   │   └── AppContext.jsx         # State toàn cục: user, theme, saved, mock data helpers
+│   │   └── AppContext.jsx         # State toàn cục: user, theme, saved, mock data helpers, OTP auth flow
 │   │
 │   ├── data/                      # Dữ liệu mẫu (chưa có API)
-│   │   ├── mockProperties.js      # Danh sách phòng, quận, tiện ích
-│   │   └── mockContracts.js       # Hợp đồng & hóa đơn mẫu
+│   │   ├── mockProperties.js      # Danh sách phòng, quận, tiện ích (10 phòng trọ HN & HCM)
+│   │   └── mockContracts.js       # Hợp đồng, hóa đơn & yêu cầu hỗ trợ mẫu
 │   │
 │   └── styles/                    # Design system CSS
 │       ├── variables.css          # Design tokens (màu, spacing, radius, theme dark/light)
-│       ├── global.css             # Reset, typography, buttons, cards, responsive base
+│       ├── global.css             # Reset, typography, buttons, cards, responsive base, SearchableSelect styles
 │       └── mobile.css             # Tinh chỉnh mobile (iPhone 17 Pro Max, safe area)
 │
 ├── deploy/                        # Triển khai production (Docker)
@@ -90,6 +98,7 @@ TNCB/                              # Repository gốc (FindX / FTU Housing Bank)
 ├── taikhoantest.md                # Danh sách tài khoản thử nghiệm
 └── README.md                      # Tài liệu dự án (file này)
 ```
+
 
 ### Thư mục sinh ra khi build (không commit)
 

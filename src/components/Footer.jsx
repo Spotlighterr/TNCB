@@ -244,10 +244,10 @@ export default function Footer() {
           height: 4px;
           background: var(--color-accent);
           border-radius: 50%;
-          animation: scaleInBounce var(--duration-spring) var(--ease-spring) both;
+          animation: scaleInBounceCenter var(--duration-spring) var(--ease-spring) both;
         }
 
-        @keyframes scaleInBounce {
+        @keyframes scaleInBounceCenter {
           0% { opacity: 0; transform: translateX(-50%) scale(0); }
           60% { transform: translateX(-50%) scale(1.3); }
           100% { opacity: 1; transform: translateX(-50%) scale(1); }

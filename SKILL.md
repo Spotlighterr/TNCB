@@ -3,9 +3,9 @@ name: tncb-design-persistence
 description: Hướng dẫn duy trì ngữ cảnh và đồng bộ hóa các quyết định thiết kế (thietke.md), chức năng nghiệp vụ (chucnang.md), sơ đồ khối kiến trúc (project_architecture.md) & thuật toán xử lý (project_algorithms.md) nhằm phục vụ liên thông giữa các session làm việc khác nhau của AI Agent.
 ---
 
-# 🛡️ Quy Tắc Duy Trì Dự Án TNCB Rent (Design, Function & Logic Persistence)
+# 🛡️ Quy Tắc Duy Trì Dự Án TNCB Rent (Design, Function, Logic & Doc Persistence)
 
-Tệp chỉ dẫn này thiết lập quy trình bắt buộc dành cho **mọi AI Coding Agent** khi làm việc trong workspace `d:\FTUhousingbank\TNCB`. Mục tiêu là đảm bảo tính nhất quán về thẩm mỹ (Taste Skill) và duy trì đầy đủ ngữ cảnh tính năng, kiến trúc, thuật toán nghiệp vụ khi người dùng mở phiên làm việc (session) mới.
+Tệp chỉ dẫn này thiết lập quy trình bắt buộc dành cho **mọi AI Coding Agent** khi làm việc trong workspace `d:\TNCB`. Mục tiêu là đảm bảo tính nhất quán về thẩm mỹ (Taste Skill) và duy trì đầy đủ ngữ cảnh tính năng, kiến trúc, thuật toán nghiệp vụ khi người dùng mở phiên làm việc (session) mới.
 
 ---
 
@@ -26,7 +26,7 @@ Mỗi khi bắt đầu một phiên làm việc mới hoặc tiếp nhận một
 
 ---
 
-## 💾 2. ĐỒNG BỘ CẬP NHẬT (Double-Sync Protocol)
+## 💾 2. ĐỒNG BỘ CẬP NHẬT (Triple-Sync Protocol)
 
 > [!IMPORTANT]
 > **Single Sources of Truth:** 
@@ -35,13 +35,15 @@ Mỗi khi bắt đầu một phiên làm việc mới hoặc tiếp nhận một
 > - Tệp `project_architecture.md` là nguồn dữ liệu chính xác duy nhất của sơ đồ khối kiến trúc hệ thống.
 > - Tệp `project_algorithms.md` là nguồn dữ liệu chính xác duy nhất của sơ đồ thuật toán khối.
 > - Tệp `RELEASES.md` là nhật ký ghi nhận lịch sử nâng cấp các tính năng lớn.
+> - Tệp `README.md` là tài liệu mô tả cấu trúc thư mục & thông tin chung của dự án.
 
-Sau **bất kỳ thay đổi, nâng cấp hay sửa đổi nào** liên quan đến giao diện, nghiệp vụ, kiến trúc hoặc thuật toán hệ thống:
+Sau **bất kỳ thay đổi, nâng cấp hay sửa đổi nào** liên quan đến giao diện, nghiệp vụ, kiến trúc, thuật toán hoặc cấu trúc tệp tin của hệ thống:
 - **Cập nhật Thiết kế**: Ghi nhận ngay các thay đổi (bảng màu, font, bo góc, layout) vào tệp [thietke.md](file:///d:/TNCB/thietke.md).
 - **Cập nhật Chức năng**: Ghi nhận ngay các thay đổi (luồng nghiệp vụ, cấu trúc dữ liệu Mock Data, logic React State, cơ chế lưu trữ) vào tệp [chucnang.md](file:///d:/TNCB/chucnang.md).
 - **Cập nhật Kiến trúc**: Ghi nhận ngay các thay đổi về sơ đồ khối, phân cấp component vào tệp [project_architecture.md](file:///d:/TNCB/project_architecture.md).
 - **Cập nhật Thuật toán**: Ghi nhận ngay các thay đổi về luồng xử lý logic, tính toán vào tệp [project_algorithms.md](file:///d:/TNCB/project_algorithms.md).
 - **Cập nhật Nhật ký phát hành (Releases)**: Khi hoàn thành một tính năng hoặc nâng cấp lớn, ghi nhận chi tiết nội dung và phiên bản cập nhật vào tệp [RELEASES.md](file:///d:/TNCB/RELEASES.md).
+- **Cập nhật README**: Cập nhật sơ đồ "Cấu trúc thư mục" và mô tả các tệp tin trong [README.md](file:///d:/TNCB/README.md) nếu có thêm, xóa hoặc đổi tên file/thư mục.
 - Trình bày chi tiết lý do và cấu trúc mã nguồn mới của sự thay đổi đó trong các tệp tương ứng để Agent ở các session tiếp theo luôn hiểu đúng 100% hiện trạng dự án.
 
 ---

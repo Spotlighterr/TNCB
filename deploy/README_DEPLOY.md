@@ -32,7 +32,7 @@ Chúng ta đã thiết lập các tệp cấu hình cần thiết nằm trong th
 Đảm bảo máy tính của bạn đã cài đặt **Docker Desktop** (Tải về từ: [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)).
 
 ### Bước 2: Khởi chạy cụm dịch vụ
-Mở Terminal tại thư mục gốc của dự án (`d:\FTUhousingbank\TNCB`) và chạy lệnh sau để tự động xây dựng hình ảnh (build image) và khởi chạy cụm container:
+Mở Terminal tại thư mục gốc của dự án (`d:\TNCB`) và chạy lệnh sau để tự động xây dựng hình ảnh (build image) và khởi chạy cụm container:
 
 ```bash
 docker-compose -f deploy/docker-compose.yml up --build -d
