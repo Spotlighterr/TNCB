@@ -3,9 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-import authRoutes from './routes/authRoutes.js';
-import propertyRoutes from './routes/propertyRoutes.js';
-import ticketRoutes from './routes/ticketRoutes.js';
+import authRoutes from './modules/auth/authRoutes.js';
+import propertyRoutes from './modules/property/propertyRoutes.js';
+import ticketRoutes from './modules/ticket/ticketRoutes.js';
 
 // Load environment variables
 dotenv.config();

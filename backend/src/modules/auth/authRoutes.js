@@ -9,8 +9,8 @@ import {
   updateProfile,
   googleLogin,
   completeGoogleProfile
-} from '../controllers/authController.js';
-import { auth } from '../middleware/auth.js';
+} from './authController.js';
+import { auth } from '../../middleware/auth.js';
 
 const router = express.Router();
 

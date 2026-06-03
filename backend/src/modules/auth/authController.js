@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from './User.js';
 import { OAuth2Client } from 'google-auth-library';
 
 // RAM storage for simulation OTPs

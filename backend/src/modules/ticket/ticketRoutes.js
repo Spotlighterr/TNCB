@@ -3,8 +3,8 @@ import {
   createTicket,
   getTickets,
   updateTicketStatus
-} from '../controllers/ticketController.js';
-import { auth } from '../middleware/auth.js';
+} from './ticketController.js';
+import { auth } from '../../middleware/auth.js';
 
 const router = express.Router();
 

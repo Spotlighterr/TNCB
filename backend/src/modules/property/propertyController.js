@@ -1,5 +1,5 @@
-import Property from '../models/Property.js';
-import { checkDuplicateProperty } from '../utils/deduplication.js';
+import Property from './Property.js';
+import { checkDuplicateProperty } from './deduplication.js';
 
 export const getProperties = async (req, res) => {
   try {

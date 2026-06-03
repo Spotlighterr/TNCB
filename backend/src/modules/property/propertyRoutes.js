@@ -12,8 +12,8 @@ import {
   getAdminReviewQueue,
   approveProperty,
   rejectProperty
-} from '../controllers/propertyController.js';
-import { auth, checkRole } from '../middleware/auth.js';
+} from './propertyController.js';
+import { auth, checkRole } from '../../middleware/auth.js';
 
 const router = express.Router();
 

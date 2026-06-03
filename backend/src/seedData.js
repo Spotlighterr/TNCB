@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from './models/User.js';
-import Property from './models/Property.js';
-import Ticket from './models/Ticket.js';
+import User from './modules/auth/User.js';
+import Property from './modules/property/Property.js';
+import Ticket from './modules/ticket/Ticket.js';
 
 dotenv.config();
 
