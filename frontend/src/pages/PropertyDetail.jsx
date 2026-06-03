@@ -10,7 +10,6 @@ import {
   SealCheck,
   Phone,
   ChatCircleText,
-  Heart,
   ArrowLeft,
   Lightning,
   Drop,
@@ -34,7 +33,7 @@ const ICON_MAP = {
 
 export default function PropertyDetail() {
   const { id } = useParams();
-  const { getPropertyById, toggleSaveProperty, isPropertySaved, formatPrice, calculatePropertyRating } = useApp();
+  const { getPropertyById, addViewToHistory, formatPrice, calculatePropertyRating } = useApp();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +45,12 @@ export default function PropertyDetail() {
   }, [id]);
 
   const property = getPropertyById(id);
+
+  useEffect(() => {
+    if (property?.id) {
+      addViewToHistory(property.id);
+    }
+  }, [property?.id, addViewToHistory]);
 
   if (isLoading) {
     return (
@@ -101,7 +106,6 @@ export default function PropertyDetail() {
     );
   }
 
-  const saved = isPropertySaved(property.id);
   const rating = calculatePropertyRating(property);
 
   const formatTimeAgo = (dateStr) => {
@@ -193,7 +197,7 @@ export default function PropertyDetail() {
               <div className="detail-rating-box glass">
                 <div className="detail-rating-stars">{renderStars(rating)}</div>
                 <div className="detail-rating-info">
-                  <span className="detail-rating-score text-mono">{rating}/5 sao độ tin cậy</span>
+                  <span className="detail-rating-score text-mono">{rating}/5 sao</span>
                   <p className="detail-rating-desc">
                     Điểm số dựa trên mức độ hoàn thiện thông tin: có giá thuê rõ ràng, chi tiết tiền điện nước, hình ảnh thực tế sinh động, có nhiều tiện ích phong phú, và nhãn xác minh thực tế.
                   </p>
@@ -318,15 +322,6 @@ export default function PropertyDetail() {
                   <ChatCircleText size={20} />
                   Nhắn Zalo
                 </a>
-                <button
-                  className={`btn ${saved ? 'btn-primary' : 'btn-ghost'} btn-lg`}
-                  style={{ width: '100%', border: saved ? 'none' : '1px solid var(--color-border-strong)' }}
-                  onClick={() => toggleSaveProperty(property.id)}
-                  id="save-detail-btn"
-                >
-                  <Heart size={20} weight={saved ? 'fill' : 'regular'} />
-                  {saved ? 'Đã lưu' : 'Lưu yêu thích'}
-                </button>
               </div>
 
               {/* Schedule Form */}

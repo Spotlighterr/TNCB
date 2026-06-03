@@ -29,7 +29,7 @@ Tài khoản dùng để đăng tin phòng trọ mới, ẩn/hiện tin đăng (
 ---
 
 ## 👥 3. Tài Khoản Khách Thuê (Tenants)
-Tài khoản dùng để tìm kiếm phòng trọ, lọc tin, xem bản đồ dẫn đường, lưu phòng trọ yêu thích, quản lý phòng đang thuê và gửi yêu cầu hỗ trợ (Support Ticket).
+Tài khoản dùng để tìm kiếm phòng trọ, lọc tin, xem bản đồ dẫn đường, xem lịch sử xem tin và quản lý các tin tìm người ở ghép của cá nhân.
 
 ### A. Tài khoản mặc định (Default Tenant)
 * **Email:** `tenant@tncb.vn`

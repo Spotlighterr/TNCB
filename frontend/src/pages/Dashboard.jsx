@@ -7,7 +7,6 @@ import {
   ChartBar,
   FileText,
   Receipt,
-  Heart,
   Wrench,
   Phone,
   CurrencyDollar,
@@ -62,11 +61,8 @@ const ADMIN_TABS = [
 ];
 
 const TENANT_TABS = [
-  { id: 'saved', label: 'Phòng đã lưu', icon: Heart },
-  { id: 'rental', label: 'Phòng đang thuê', icon: House },
-  { id: 'my-listings', label: 'Tin khách thuê của tôi', icon: FileText },
-  { id: 'tickets', label: 'Yêu cầu hỗ trợ', icon: Wrench },
-  { id: 'contacts', label: 'Liên hệ chủ trọ', icon: Phone },
+  { id: 'history', label: 'Lịch sử xem tin', icon: Clock },
+  { id: 'my-listings', label: 'Tin ở ghép của tôi', icon: FileText },
 ];
 
 export default function Dashboard() {
@@ -74,9 +70,11 @@ export default function Dashboard() {
     properties,
     contracts,
     tickets,
-    savedProperties,
+    viewHistory,
     userRole,
     currentUser,
+    setIsAuthOpen,
+    setAuthMode,
     togglePropertyStatus,
     formatPrice,
     formatPriceShort,
@@ -184,11 +182,22 @@ export default function Dashboard() {
         <div className="glass-strong" style={{ padding: 'var(--space-10) var(--space-6)', borderRadius: 'var(--radius-main)', maxWidth: '480px', margin: '0 auto', border: '1px solid var(--color-border)' }}>
           <UserCircle size={64} weight="duotone" color="var(--color-accent)" style={{ marginBottom: 'var(--space-4)' }} />
           <h3 style={{ marginBottom: 'var(--space-2)' }}>Yêu cầu đăng nhập</h3>
-          <p className="text-caption" style={{ marginBottom: 'var(--space-6)' }}>
+          <p className="text-caption" style={{ marginBottom: 'var(--space-4)' }}>
             Vui lòng đăng nhập tài khoản của bạn để truy cập trang điều hành hệ thống.
           </p>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setIsAuthOpen(true);
+              setAuthMode('login');
+            }}
+            style={{ width: '100%', marginBottom: 'var(--space-6)', justifyContent: 'center' }}
+            id="dashboard-login-btn"
+          >
+            Đăng nhập ngay
+          </button>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-subtle)', background: 'var(--bg-secondary)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)' }}>
-            Gợi ý: Bạn có thể nhấn nút <strong>"Đăng nhập"</strong> ở thanh menu phía trên và chọn tài khoản test nhanh để trải nghiệm ngay lập tức.
+            Gợi ý: Bạn có thể nhấn nút Đăng nhập nhanh bằng tài khoản test để trải nghiệm ngay lập tức.
           </p>
         </div>
       </div>
@@ -634,7 +643,12 @@ export default function Dashboard() {
   const activeListings = landlordProperties.filter((p) => p.status !== 'pending' && !p.isUnlisted && !p.isRented).length;
 
   // --- Tenant Computations ---
-  const savedProps = properties.filter((p) => savedProperties.includes(p.id));
+  const historyProps = (viewHistory || [])
+    .map(item => {
+      const prop = properties.find((p) => p.id === item?.id);
+      return prop ? { ...prop, viewedAt: item.viewedAt } : null;
+    })
+    .filter(Boolean);
 
   return (
     <div className="dashboard-page" id="dashboard-page">
@@ -1130,65 +1144,43 @@ export default function Dashboard() {
 
         {/* ===================== TENANT ONLY VIEWS ===================== */}
 
-        {/* 1. Saved Properties */}
-        {userRole === 'tenant' && activeTab === 'saved' && (
+        {/* 1. View History */}
+        {userRole === 'tenant' && activeTab === 'history' && (
           <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Phòng trọ đã lưu yêu thích ({savedProps.length})</h2>
-            {savedProps.length > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              <h2 className="dashboard-page-title" style={{ margin: 0 }}>Lịch sử tin đăng đã xem ({historyProps.length})</h2>
+              <span className="text-caption" style={{ background: 'var(--bg-secondary)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-pill)', fontSize: 'var(--text-xs)' }}>
+                Tự động lưu trữ trong 7 ngày gần nhất
+              </span>
+            </div>
+            {historyProps.length > 0 ? (
               <div className="saved-grid">
-                {savedProps.map((prop) => (
+                {historyProps.map((prop) => (
                   <div key={prop.id} className="saved-item card-elevated animate-fade-in-up">
                     <img src={prop.images[0]} alt="" className="saved-img" />
                     <div className="saved-info">
                       <Link to={`/property/${prop.id}`} className="saved-title">{prop.title}</Link>
                       <p className="text-caption">{prop.district}, {prop.city}</p>
-                      <span className="price">{formatPrice(prop.price)}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-2)' }}>
+                        <span className="price">{formatPrice(prop.price)}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--color-text-subtle)' }}>
+                          Xem lúc: {new Date(prop.viewedAt).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="dashboard-empty">
-                <Heart size={48} color="var(--color-text-subtle)" />
-                <p>Chưa có phòng nào được lưu yêu thích</p>
-                <Link to="/search" className="btn btn-primary">Tìm phòng trọ ngay</Link>
+                <Clock size={48} color="var(--color-text-subtle)" />
+                <p>Bạn chưa xem tin đăng nào trong vòng 7 ngày qua</p>
+                <Link to="/search" className="btn btn-primary">Khám phá tin đăng ngay</Link>
               </div>
             )}
           </div>
         )}
 
-        {/* 2. My Rental */}
-        {userRole === 'tenant' && activeTab === 'rental' && (
-          <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Thông tin phòng đang thuê</h2>
-            {contracts.filter((c) => c.status === 'active').length > 0 ? (
-              contracts.filter((c) => c.status === 'active').map((c) => {
-                const prop = getPropertyById(c.propertyId);
-                return (
-                  <div key={c.id} className="rental-card card-elevated animate-scale-in">
-                    <div className="rental-header">
-                      <img src={prop?.images[0]} alt="" className="rental-img" />
-                      <div>
-                        <h3>{prop?.title}</h3>
-                        <p className="text-caption">{prop?.address}</p>
-                        <span className="badge badge-available">Đang thuê</span>
-                      </div>
-                    </div>
-                    <div className="rental-details">
-                      <span>Hợp đồng: {c.startDate} - {c.endDate}</span>
-                      <span>Giá thuê: <strong className="price">{formatPrice(c.monthlyRent)}</strong></span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="dashboard-empty">
-                <House size={48} color="var(--color-text-subtle)" />
-                <p>Chưa có thông tin phòng đang thuê hiện tại</p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* 3. Tenant's My Listings Tab */}
         {userRole === 'tenant' && activeTab === 'my-listings' && !isAddingRoom && !editingRoomId && (
@@ -1283,193 +1275,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 4. Support Tickets (Tenant view) */}
-        {userRole === 'tenant' && activeTab === 'tickets' && !isCreatingTicket && (
-          <div className="animate-fade-in">
-            <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Yêu cầu hỗ trợ kỹ thuật</h2>
-              <button className="btn btn-primary" onClick={handleAddTicketClick}>
-                <Plus size={18} />
-                Gửi yêu cầu mới
-              </button>
-            </div>
-
-            <div className="tickets-list">
-              {tickets.map((t) => {
-                const prop = getPropertyById(t.propertyId);
-                return (
-                  <div key={t.id} className="ticket-card card-elevated animate-fade-in-up">
-                    <div className="ticket-header">
-                      <h4>{t.title}</h4>
-                      <span
-                        className={`badge ${
-                          t.status === 'resolved'
-                            ? 'badge-available'
-                            : t.status === 'processing'
-                            ? 'badge-rented'
-                            : 'badge-status'
-                        }`}
-                      >
-                        {t.status === 'resolved'
-                          ? 'Đã xử lý'
-                          : t.status === 'processing'
-                          ? 'Đang xử lý'
-                          : 'Chờ xử lý'}
-                      </span>
-                    </div>
-                    <p className="text-caption">{t.description}</p>
-                    <p className="text-caption" style={{ fontSize: '11px' }}>
-                      Phòng: {prop?.title} | Ngày tạo: {t.createdAt}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {userRole === 'tenant' && activeTab === 'tickets' && isCreatingTicket && (
-          <div className="form-container animate-fade-in">
-            <div className="form-header">
-              <h3 className="form-title">Gửi yêu cầu hỗ trợ kỹ thuật</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setIsCreatingTicket(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleTicketSubmit} id="ticket-form">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label className="form-label">Chọn Hợp đồng / Phòng cần hỗ trợ *</label>
-                  <select
-                    className="select"
-                    required
-                    value={ticketForm.contractId}
-                    onChange={(e) => setTicketForm({ ...ticketForm, contractId: e.target.value })}
-                  >
-                    {contracts.filter((c) => c.status === 'active').map((c) => {
-                      const prop = getPropertyById(c.propertyId);
-                      return (
-                        <option key={c.id} value={c.id}>
-                          {prop?.title || 'Phòng thuê'}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div className="form-group full-width">
-                  <label className="form-label">Tiêu đề sự cố *</label>
-                  <input
-                    className="input"
-                    required
-                    placeholder="Ví dụ: Điều hòa không lạnh, Rò rỉ nước nhà tắm..."
-                    value={ticketForm.title}
-                    onChange={(e) => setTicketForm({ ...ticketForm, title: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group full-width">
-                  <label className="form-label">Mô tả sự cố chi tiết *</label>
-                  <textarea
-                    className="input"
-                    required
-                    rows={4}
-                    placeholder="Vui lòng mô tả chi tiết sự cố kỹ thuật để chủ trọ nắm thông tin..."
-                    value={ticketForm.description}
-                    onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
-                    style={{ resize: 'vertical' }}
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions-row">
-                <button type="button" className="btn btn-ghost" onClick={() => setIsCreatingTicket(false)}>
-                  Hủy bỏ
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Gửi yêu cầu
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* 5. Landlord Contacts */}
-        {userRole === 'tenant' && activeTab === 'contacts' && (
-          <div className="animate-fade-in">
-            <h2 className="dashboard-page-title">Danh bạ liên hệ chủ trọ</h2>
-            <div className="contacts-table-wrap animate-scale-in">
-              <table className="rooms-table">
-                <thead>
-                  <tr>
-                    <th>Chủ trọ</th>
-                    <th>Phòng</th>
-                    <th>Hotline</th>
-                    <th>Liên hệ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...new Map(properties.map((p) => [p.owner.phone, p])).values()].map((p) => (
-                    <tr key={p.owner.phone}>
-                      <td>
-                        <div className="room-cell">
-                          <img src={p.owner.avatar} alt="" className="room-cell-img" style={{ borderRadius: '50%' }} />
-                          <strong>{p.owner.name}</strong>
-                        </div>
-                      </td>
-                      <td className="text-caption">{p.title}</td>
-                      <td><span className="text-mono">{p.owner.phone}</span></td>
-                      <td>
-                        <div className="room-actions">
-                          <a href={`tel:${p.owner.phone}`} className="btn btn-primary btn-sm">
-                            <Phone size={14} />
-                          </a>
-                          <a
-                            href={`https://zalo.me/${p.owner.zalo || p.owner.phone}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-secondary btn-sm"
-                          >
-                            <ChatCircleText size={14} />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Emergency Hotline */}
-            <div className="dashboard-section" style={{ marginTop: 'var(--space-8)' }}>
-              <h3 className="dashboard-section-title">Thông tin liên hệ liên lạc hỗ trợ</h3>
-              <div className="hotline-grid">
-                <div className="hotline-card">
-                  <Phone size={20} color="var(--color-accent)" />
-                  <div>
-                    <strong>Hotline Tìm Nhà Cùng Bạn</strong>
-                    <p className="text-mono">034 629 7668</p>
-                  </div>
-                </div>
-                <div className="hotline-card">
-                  <EnvelopeSimple size={20} color="var(--color-info)" />
-                  <div>
-                    <strong>Email hỗ trợ</strong>
-                    <p className="text-mono">tncb.findx@gmail.com</p>
-                  </div>
-                </div>
-                <div className="hotline-card">
-                  <FacebookLogo size={20} color="#1877f2" />
-                  <div>
-                    <strong>Facebook Page</strong>
-                    <a href="https://www.facebook.com/timnhacungban.findx" target="_blank" rel="noreferrer" className="text-mono" style={{ color: 'var(--color-accent)', textDecoration: 'underline', fontWeight: '500' }}>FindX - Tìm Nhà Cùng Bạn</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
       {/* Loading Overlay for Duplicate Check */}
       {isCheckingDuplicate && (

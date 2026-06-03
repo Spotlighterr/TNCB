@@ -4,6 +4,19 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 
 ---
 
+## [v2.1.0] - 2026-06-03
+### 🛠️ Tái cấu trúc Modular Monolith & Tối ưu hóa Trải nghiệm Cổng thông tin kết nối
+Phiên bản này tối ưu hóa kiến trúc mã nguồn chuẩn bị cho định hướng Microservices tương lai, đồng thời tinh giản các tính năng sau thuê để định vị FindX như một mạng xã hội kết nối phòng trọ và roommate.
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Tái cấu trúc Modular Monolith:** Phân bổ toàn bộ controllers, models và routes backend vào các module nghiệp vụ biệt lập (`modules/auth`, `modules/property`, `modules/ticket`), sẵn sàng cho việc tách database/dịch vụ sau này.
+* **Lịch sử xem tin tự động dọn dẹp:** Loại bỏ nút "Yêu thích" (Favorites). Thay vào đó là tính năng tự động ghi nhận các phòng trọ người dùng đã xem trong 7 ngày gần nhất, tự động xóa bản ghi quá hạn để tránh phình dữ liệu.
+* **Tối giản hóa Dashboard Tenant:** Loại bỏ các tab quản lý sau thuê bao gồm "Phòng đang thuê", "Yêu cầu hỗ trợ", và "Danh bạ liên hệ", chỉ giữ lại tab Lịch sử xem tin và Tin ở ghép của tôi.
+* **Tự động cuộn trang lên đầu:** Cấu hình tự động đặt lại vị trí cuộn lên `(0, 0)` khi người dùng chuyển trang, nhấn Back hoặc reload trang.
+* **Tích hợp nút Sáng/Tối vào menu nổi:** Gỡ nút đổi giao diện ở Header, đưa vào danh mục hiển thị khi click nút Liên hệ nổi dưới góc phải màn hình kèm hiệu ứng gradient động.
+
+---
+
 ## [v2.0.0] - 2026-06-03
 ### 🌐 Kết Nối Backend REST APIs, MongoDB Atlas & Tích Hợp Google SSO
 Phiên bản này đánh dấu sự chuyển đổi từ lưu trữ dữ liệu giả lập cục bộ (localStorage) sang kiến trúc client-server đồng bộ, lưu trữ dữ liệu trên đám mây MongoDB Atlas và cung cấp tính năng đăng nhập Google SSO kèm bảo mật số điện thoại độc nhất.

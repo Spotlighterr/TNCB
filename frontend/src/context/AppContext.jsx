@@ -15,17 +15,35 @@ function loadFromStorage(key, fallback) {
   }
 }
 
+function loadHistoryFromStorage() {
+  try {
+    const saved = localStorage.getItem('TNCB_VIEW_HISTORY');
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    const limit = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return parsed.filter(item => item && item.id && item.viewedAt > limit);
+  } catch {
+    return [];
+  }
+}
+
 export function AppProvider({ children }) {
-  // Core State
   // Core State
   const [properties, setProperties] = useState([]);
   const [contracts, setContracts] = useState(() =>
     loadFromStorage('TNCB_CONTRACTS', mockContracts)
   );
   const [tickets, setTickets] = useState([]);
-  const [savedProperties, setSavedProperties] = useState(() =>
-    loadFromStorage('TNCB_SAVED', [])
+
+  // Auth Modal State (Global)
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+
+  // View History State (7 days retention)
+  const [viewHistory, setViewHistory] = useState(() =>
+    loadHistoryFromStorage()
   );
+
   const [userRole, setUserRole] = useState(() =>
     loadFromStorage('TNCB_ROLE', 'tenant')
   );
@@ -60,8 +78,8 @@ export function AppProvider({ children }) {
   }, [contracts]);
 
   useEffect(() => {
-    localStorage.setItem('TNCB_SAVED', JSON.stringify(savedProperties));
-  }, [savedProperties]);
+    localStorage.setItem('TNCB_VIEW_HISTORY', JSON.stringify(viewHistory));
+  }, [viewHistory]);
 
   useEffect(() => {
     localStorage.setItem('TNCB_ROLE', JSON.stringify(userRole));
@@ -692,19 +710,15 @@ export function AppProvider({ children }) {
     }
   }, [transformProperty]);
 
-  // --- Saved Properties ---
-  const toggleSaveProperty = useCallback((propertyId) => {
-    setSavedProperties((prev) =>
-      prev.includes(propertyId)
-        ? prev.filter((id) => id !== propertyId)
-        : [...prev, propertyId]
-    );
+  // --- View History ---
+  const addViewToHistory = useCallback((propertyId) => {
+    setViewHistory((prev) => {
+      const now = Date.now();
+      const limit = now - 7 * 24 * 60 * 60 * 1000;
+      const cleaned = prev.filter(item => item && item.id !== propertyId && item.viewedAt > limit);
+      return [{ id: propertyId, viewedAt: now }, ...cleaned];
+    });
   }, []);
-
-  const isPropertySaved = useCallback(
-    (propertyId) => savedProperties.includes(propertyId),
-    [savedProperties]
-  );
 
   // --- Contract Actions ---
   const createContract = useCallback((contract) => {
@@ -837,12 +851,17 @@ export function AppProvider({ children }) {
     properties,
     contracts,
     tickets,
-    savedProperties,
+    viewHistory,
     userRole,
     users,
     currentUser,
     theme,
     toggleTheme,
+    // Auth Modal (Global)
+    isAuthOpen,
+    setIsAuthOpen,
+    authMode,
+    setAuthMode,
     // OTP state (for UI display)
     pendingRegistration,
     currentOTP,
@@ -857,9 +876,8 @@ export function AppProvider({ children }) {
     togglePropertyStatus,
     toggleUnlistProperty,
     toggleVerifyProperty,
-    // Saved
-    toggleSaveProperty,
-    isPropertySaved,
+    // View History
+    addViewToHistory,
     // Contracts
     createContract,
     addBill,
@@ -869,6 +887,7 @@ export function AppProvider({ children }) {
     updateTicketStatus,
     // Auth (new OTP flow)
     login,
+    // Auth
     loginWithGoogle,
     completeGoogleProfile,
     register,

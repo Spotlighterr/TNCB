@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import {
-  Heart,
   MapPin,
   SealCheck,
   ArrowsOutSimple,
@@ -9,8 +8,7 @@ import {
 } from '@phosphor-icons/react';
 
 export default function PropertyCard({ property, index = 0 }) {
-  const { toggleSaveProperty, isPropertySaved, formatPrice, calculatePropertyRating } = useApp();
-  const saved = isPropertySaved(property.id);
+  const { formatPrice, calculatePropertyRating } = useApp();
 
   const rating = calculatePropertyRating(property);
 
@@ -64,19 +62,6 @@ export default function PropertyCard({ property, index = 0 }) {
             loading="lazy"
           />
         </Link>
-
-        {/* Save Button */}
-        <button
-          className={`property-card-save ${saved ? 'saved' : ''}`}
-          onClick={(e) => {
-            e.preventDefault();
-            toggleSaveProperty(property.id);
-          }}
-          aria-label={saved ? 'Bỏ lưu' : 'Lưu yêu thích'}
-          id={`save-${property.id}`}
-        >
-          <Heart size={20} weight={saved ? 'fill' : 'regular'} />
-        </button>
       </div>
 
       {/* Content */}
@@ -98,7 +83,7 @@ export default function PropertyCard({ property, index = 0 }) {
         {/* Trust Rating Stars */}
         <div className="property-card-rating">
           <div className="stars-row">{renderStars(rating)}</div>
-          <span className="rating-label text-mono">{rating}/5 sao tin cậy</span>
+          <span className="rating-label text-mono">{rating}/5 sao</span>
         </div>
 
         <div className="property-card-meta">

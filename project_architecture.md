@@ -184,7 +184,7 @@ graph TD
 Cơ chế cập nhật dữ liệu tự động giữa client-side state và LocalStorage được cấu trúc để đảm bảo tính liên tục của dữ liệu mà không cần server database phức tạp:
 
 1. **Khởi tạo (App Load):**
-   - Trình duyệt đọc dữ liệu từ `localStorage` thông qua các key `TNCB_PROPERTIES`, `TNCB_CONTRACTS`, `TNCB_SAVED`, và `TNCB_USER`.
+   - Trình duyệt đọc dữ liệu từ `localStorage` thông qua các key `TNCB_PROPERTIES`, `TNCB_CONTRACTS`, `TNCB_VIEW_HISTORY`, và `TNCB_USER`.
    - Nếu `localStorage` trống, hệ thống sẽ nạp dữ liệu mặc định từ `mockProperties.js` và `mockContracts.js`, sau đó lưu ngược lại vào `localStorage`.
 
 2. **Cập nhật & Lọc trùng (User Action & Deduplication Flow):**
@@ -193,4 +193,4 @@ Cơ chế cập nhật dữ liệu tự động giữa client-side state và Loc
      - Nếu không trùng lặp (hoặc do Admin đăng), bài viết được đặt là `status: 'active'`.
    - Khi Chủ trọ/Admin thay đổi trạng thái thuê phòng (Trống $\leftrightarrow$ Đang thuê) hoặc gỡ bài đăng (Unlist $\leftrightarrow$ Publish) $\rightarrow$ React State `properties` cập nhật $\rightarrow$ kích hoạt `useEffect` ghi đè xuống `TNCB_PROPERTIES` trong `localStorage`.
      - Bài đăng ở trạng thái `isUnlisted === true` hoặc `status === 'pending'` sẽ lập tức được ẩn khỏi danh sách tìm kiếm công khai và bản đồ Leaflet.
-   - Khi Khách thuê lưu phòng yêu thích $\rightarrow$ React State `savedProperties` cập nhật $\rightarrow$ ghi đè xuống `TNCB_SAVED` trong `localStorage`.
+   - Khi Khách thuê truy cập chi tiết phòng trọ $\rightarrow$ React State lịch sử xem tin tự động ghi nhận lượt xem mới, lọc bỏ các bản ghi đã quá 7 ngày $\rightarrow$ ghi đè xuống `TNCB_VIEW_HISTORY` trong `localStorage`.

@@ -4,7 +4,10 @@ import {
   EnvelopeSimple,
   ChatCircle,
   X,
+  Sun,
+  Moon,
 } from '@phosphor-icons/react';
+import { useApp } from '../context/AppContext';
 
 const CONTACT_INFO = {
   phone: '0346297668',
@@ -14,12 +17,26 @@ const CONTACT_INFO = {
 
 export default function FloatingContact() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { theme, toggleTheme } = useApp();
 
   return (
     <>
       <div className={`floating-contact ${isExpanded ? 'expanded' : ''}`} id="floating-contact">
         {/* Expanded buttons */}
         <div className={`floating-items ${isExpanded ? 'show' : ''}`}>
+          {/* Theme Toggle button */}
+          <button
+            onClick={toggleTheme}
+            className={`floating-item ${theme === 'light' ? 'floating-theme-light' : 'floating-theme-dark'}`}
+            title={theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
+            id="floating-theme-btn"
+          >
+            {theme === 'light' ? <Moon size={22} weight="bold" /> : <Sun size={22} weight="bold" />}
+            <span className="floating-tooltip">
+              {theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
+            </span>
+          </button>
+
           {/* Email button */}
           <a
             href={`mailto:${CONTACT_INFO.email}`}
@@ -46,7 +63,6 @@ export default function FloatingContact() {
             </span>
           </a>
         </div>
-
         {/* Main toggle button */}
         <button
           className="floating-main-btn"
@@ -182,6 +198,27 @@ export default function FloatingContact() {
 
         .floating-phone:hover {
           box-shadow: 0 6px 24px rgba(59, 130, 246, 0.45);
+        }
+
+        /* Theme Toggle classes */
+        .floating-theme-light {
+          background: linear-gradient(135deg, #1e1b4b, #312e81);
+          box-shadow: 0 3px 14px rgba(30, 27, 75, 0.35);
+          border: none;
+        }
+
+        .floating-theme-light:hover {
+          box-shadow: 0 6px 24px rgba(30, 27, 75, 0.45);
+        }
+
+        .floating-theme-dark {
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          box-shadow: 0 3px 14px rgba(245, 158, 11, 0.35);
+          border: none;
+        }
+
+        .floating-theme-dark:hover {
+          box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45);
         }
 
         /* Tooltip */

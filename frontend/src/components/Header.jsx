@@ -46,15 +46,16 @@ export default function Header() {
     theme,
     toggleTheme,
     currentOTP,
+    isAuthOpen,
+    setIsAuthOpen,
+    authMode,
+    setAuthMode,
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  // Auth modes: 'login' | 'register' | 'otp-verify' | 'forgot' | 'forgot-otp' | 'reset-password'
-  const [authMode, setAuthMode] = useState('login');
   const [profileOpen, setProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -448,16 +449,6 @@ export default function Header() {
 
         {/* Right Section */}
         <div className="header-actions">
-          {/* Theme Toggle Button */}
-          <button
-            className="theme-toggle-btn"
-            onClick={toggleTheme}
-            aria-label="Chuyển đổi giao diện"
-            title={theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
-            id="theme-toggle-btn"
-          >
-            {theme === 'light' ? <Moon size={18} weight="bold" /> : <Sun size={18} weight="bold" />}
-          </button>
           {currentUser ? (
             /* User Panel (Logged In) */
             <div className="user-profile-wrapper">

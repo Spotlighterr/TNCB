@@ -137,9 +137,9 @@ flowchart TD
 
 ---
 
-## 4. Thuật Toán Lưu Phòng Yêu Thích (Saved Properties Engine)
+## 4. Thuật Toán Lịch Sử Xem Tin (View History Engine)
 
-Cho phép Khách thuê lưu trữ các phòng trọ quan tâm để so sánh hoặc liên hệ sau.
+Tự động ghi nhận lượt xem phòng trọ của Khách thuê, lưu trữ cục bộ tại LocalStorage dưới khóa `TNCB_VIEW_HISTORY` và tự động làm sạch các bản ghi có thời hạn vượt quá 7 ngày khi khởi chạy/tải lại ứng dụng.
 
 ```mermaid
 flowchart TD
@@ -149,24 +149,26 @@ flowchart TD
     classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px;
 
     %% Nodes
-    Start([Click Icon Tim trên PropertyCard]):::startEnd
-    GetSaved[Đọc danh sách savedProperties hiện tại từ Context]:::process
-    CheckSaved{ID phòng đã tồn tại <br> trong savedProperties?}:::decision
+    Start([Khách truy cập PropertyDetail]):::startEnd
+    ReadHistory[Đọc danh sách viewHistory hiện tại từ localStorage]:::process
+    FilterOld[Lọc bỏ các bản ghi đã xem cách đây > 7 ngày]:::process
+    CheckExists{ID phòng đã có <br> trong lịch sử?}:::decision
     
-    RemoveSaved[Xóa ID phòng khỏi mảng savedProperties <br> Đổi màu tim thành viền xám]:::process
-    AddSaved[Thêm ID phòng vào mảng savedProperties <br> Đổi màu tim thành Emerald đầy]:::process
+    RemoveOld[Xóa lượt xem cũ của ID này]:::process
+    AddNew[Thêm bản ghi { id, viewedAt: Date.now } lên đầu mảng]:::process
     
-    SyncStorage[Ghi mảng savedProperties mới xuống LocalStorage TNCB_SAVED]:::process
-    UpdateUI[Cập nhật số lượng hiển thị trên Badge Saved ở Header]:::process
-    End([Hoàn thành thao tác lưu]):::startEnd
+    SyncStorage[Ghi mảng viewHistory mới xuống LocalStorage TNCB_VIEW_HISTORY]:::process
+    UpdateUI[Cập nhật hiển thị tại tab Lịch sử xem tin ở Dashboard]:::process
+    End([Hoàn thành ghi nhận]):::startEnd
 
     %% Connections
-    Start --> GetSaved
-    GetSaved --> CheckSaved
-    CheckSaved -->|Đã tồn tại| RemoveSaved
-    CheckSaved -->|Chưa tồn tại| AddSaved
-    RemoveSaved --> SyncStorage
-    AddSaved --> SyncStorage
+    Start --> ReadHistory
+    ReadHistory --> FilterOld
+    FilterOld --> CheckExists
+    CheckExists -->|Đã tồn tại| RemoveOld
+    CheckExists -->|Chưa tồn tại| AddNew
+    RemoveOld --> AddNew
+    AddNew --> SyncStorage
     SyncStorage --> UpdateUI
     UpdateUI --> End
 ```

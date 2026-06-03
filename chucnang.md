@@ -27,11 +27,8 @@ Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tươ
    - **Bản Đồ Chỉ Đường ở Chân Trang (Targeted Map Integration)**: Tích hợp bản đồ tương tác hiển thị vị trí chính xác của phòng trọ đó ở dưới cùng trang chi tiết. Bản đồ sử dụng **Google Maps Embed API** miễn phí hoặc **Leaflet.js kết hợp OpenStreetMap Việt Nam** (hoặc Goong Maps của Việt Nam), cho phép dẫn đường từ các địa điểm lân cận giúp khách thuê dễ dàng hình dung lộ trình di chuyển đến phòng trọ.
 
 4. **Trang Cá Nhân Khách Thuê (Tenant Dashboard)**
-   - **Saved Properties**: Danh sách các phòng trọ đã lưu yêu thích để so sánh.
-   - **My Rental**: Thông tin phòng trọ đang thuê hiện tại.
-   - **Yêu Cầu Hỗ Trợ & Danh Bạ Chủ Trọ (Support Ticket & Direct Contact)**: 
-     - Gửi phản hồi kỹ thuật trực tiếp tới chủ trọ (VD: điều hòa hỏng, rò rỉ nước) và theo dõi trạng thái xử lý của ticket.
-     - **Bảng Danh Bạ Hotline Liên Hệ**: Bổ sung một bảng thông tin liên hệ trực tiếp của chủ trọ và đội ngũ kỹ thuật sửa chữa (Hotline, số Zalo kỹ thuật, email hỗ trợ) bên cạnh form gửi ticket để khách thuê nhanh chóng liên lạc trực tiếp trong các trường hợp sự cố khẩn cấp.
+    - **Lịch Sử Xem Tin (View History)**: Tự động lưu vết các tin đăng khách thuê đã xem trong vòng 7 ngày gần nhất sử dụng bộ nhớ local của trình duyệt (localStorage), hỗ trợ làm sạch tự động để tránh làm phình dữ liệu.
+    - **Tin Ở Ghép Của Tôi (My Listings)**: Hỗ trợ quản lý và chỉnh sửa bài đăng tìm người ở ghép của cá nhân.
 
 ---
 
@@ -108,7 +105,7 @@ export const AppProvider = ({ children }) => {
 Nhờ cơ chế này, hệ thống **không cần cài đặt database cồng kềnh** nhưng vẫn đảm bảo:
 - Thêm phòng trọ mới từ Dashboard sẽ lập tức hiển thị trên Bản đồ tìm kiếm ở trang ngoài.
 - Bật/tắt trạng thái thuê phòng sẽ cập nhật marker tương ứng thời gian thực.
-- Khách thuê lưu phòng yêu thích sẽ được ghi nhớ vĩnh viễn khi tải lại trang.
+- Lịch sử xem tin của khách thuê được lưu trữ trong vòng 7 ngày và tự động dọn dẹp khi tải lại trang.
 
 ### C. Tactile Physics & Spring Motion (Micro-interactions)
 Toàn bộ các chuyển dịch giao diện (như mở popup trên bản đồ, thẻ hover phóng to, chuyển trang) sẽ sử dụng CSS Transition định nghĩa ở `global.css`:

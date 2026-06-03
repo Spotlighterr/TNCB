@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import FloatingContact from './components/FloatingContact';
@@ -8,6 +9,12 @@ import PropertyDetail from './pages/PropertyDetail';
 import Dashboard from './pages/Dashboard';
 
 export default function App() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
   return (
     <div className="app" id="app-root">
       <Header />

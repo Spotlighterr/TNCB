@@ -93,7 +93,7 @@ TNCB/                              # Thư mục gốc dự án FindX
    - Kiểm tra khoảng cách GPS (công thức Haversine < 15m).
    - Kiểm tra tổ hợp đặc tính phòng (loại phòng, diện tích, giá).
    - Tính độ tương đồng văn bản Jaccard ($\ge 80\%$ chặn spam; $50\% \to 79\%$ chuyển trạng thái `pending` sang hàng chờ duyệt thủ công của Admin hiển thị giao diện đối chiếu song song).
-5. **Lưu tin yêu thích (Saved properties):** Quản lý mảng danh sách phòng yêu thích lưu local và cập nhật badge số lượng trên thanh tiêu đề.
+5. **Lịch sử xem tin (View History):** Quản lý lịch sử xem các bài đăng trong vòng 7 ngày gần nhất lưu ở Local Storage của trình duyệt và tự động dọn dẹp để tránh làm phình dữ liệu.
 6. Chi tiết sơ đồ thuật toán xem tại [project_algorithms.md](project_algorithms.md).
 
 ---
