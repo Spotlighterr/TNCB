@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import authRoutes from './modules/auth/authRoutes.js';
 import propertyRoutes from './modules/property/propertyRoutes.js';
 import ticketRoutes from './modules/ticket/ticketRoutes.js';
+import { apiLimiter, authLimiter } from './middleware/rateLimiter.js';
 
 // Load environment variables
 dotenv.config();
@@ -28,9 +29,9 @@ mongoose.connect(mongoURI)
   });
 
 // Mount Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/properties', propertyRoutes);
-app.use('/api/tickets', ticketRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/properties', apiLimiter, propertyRoutes);
+app.use('/api/tickets', apiLimiter, ticketRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
