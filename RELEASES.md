@@ -2,6 +2,22 @@
 
 Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của hệ thống **TNCB Rent (FindX)**, chi tiết hóa các thay đổi và tính năng được cập nhật.
 
+> 🔔 **Quy trình tạo GitHub Release tự động:**
+> Mỗi khi phát hành phiên bản mới, bạn chỉ cần:
+> 1. Cập nhật file `RELEASES.md` này với format:
+>    ```markdown
+>    ## [vX.Y.Z] - YYYY-MM-DD
+>    ### Tiêu đề release
+>    Chi tiết thay đổi...
+>    ```
+> 2. Commit và push file lên GitHub.
+> 3. Tạo tag và push tag:
+>    ```bash
+>    git tag vX.Y.Z
+>    git push origin vX.Y.Z
+>    ```
+> GitHub Actions sẽ tự động đọc phần nội dung tương ứng dưới tiêu đề `## [vX.Y.Z]` trong file này và tạo GitHub Release mới tương ứng.
+
 ---
 
 ## [v2.4.0] - 2026-06-04
