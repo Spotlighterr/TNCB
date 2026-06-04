@@ -154,9 +154,9 @@ Xây dựng lớp bảo vệ kép cho cổng đăng tin FindX để tự động
    - **Giải pháp Cloud (Google Vision SafeSearch)**: Gửi luồng ảnh qua Google Cloud Vision API để kiểm tra tính an toàn thông qua bộ SafeSearch (chỉ số `adult`, `medical`, `spoof`, `violence`, `racy`). Giải pháp này có độ chính xác tuyệt đối nhưng cần tài khoản Cloud có liên kết thanh toán.
 
 ### Các bước thực hiện:
-- [ ] **Bước 1**: Thiết lập tệp từ điển từ ngữ nhạy cảm tiếng Việt hoặc đăng ký Google Perspective API Key.
-- [ ] **Bước 2**: Viết middleware `textModeration.js` ở Backend để quét văn bản đầu vào của Route Đăng tin/Sửa tin.
-- [ ] **Bước 3**: Cài đặt thử nghiệm thư viện `nsfwjs` cục bộ ở Backend hoặc tích hợp hàm gọi Google Cloud Vision API trong `upload.js`.
-- [ ] **Bước 4**: Viết middleware `imageModeration.js` chặn xử lý nén Sharp nếu ảnh bị đánh giá là nhạy cảm/NSFW.
-- [ ] **Bước 5**: Cập nhật thông báo lỗi thân thiện trên Frontend Dashboard khi bài viết hoặc hình ảnh bị bộ lọc từ chối.
+- [x] **Bước 1**: Thiết lập tệp từ điển từ ngữ nhạy cảm tiếng Việt hoặc đăng ký Google Perspective API Key.
+- [x] **Bước 2**: Viết middleware `textModeration.js` ở Backend để quét văn bản đầu vào của Route Đăng tin/Sửa tin.
+- [x] **Bước 3**: Cài đặt thử nghiệm thư viện `nsfwjs` cục bộ ở Backend hoặc tích hợp hàm gọi Google Cloud Vision API trong `upload.js`.
+- [x] **Bước 4**: Viết middleware `imageModeration.js` chặn xử lý nén Sharp nếu ảnh bị đánh giá là nhạy cảm/NSFW.
+- [x] **Bước 5**: Cập nhật thông báo lỗi thân thiện trên Frontend Dashboard khi bài viết hoặc hình ảnh bị bộ lọc từ chối.
 
