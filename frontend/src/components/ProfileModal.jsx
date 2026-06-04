@@ -120,7 +120,7 @@ export default function ProfileModal({ isOpen, onClose }) {
         updates.avatar = avatarPreview; // Already base64 from FileReader
       }
 
-      const res = updateProfile(updates);
+      const res = await updateProfile(updates);
       if (res.success) {
         setSuccess('Cập nhật hồ sơ thành công!');
         setTimeout(() => {
