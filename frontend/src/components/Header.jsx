@@ -124,7 +124,7 @@ export default function Header() {
         try {
           if (typeof window.google !== 'undefined') {
             window.google.accounts.id.initialize({
-              client_id: '1029384756-abcdefg.apps.googleusercontent.com',
+              client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1029384756-abcdefg.apps.googleusercontent.com',
               callback: handleGoogleLoginResponse,
             });
             window.google.accounts.id.renderButton(

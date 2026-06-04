@@ -64,6 +64,8 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.frontend
+      args:
+        - VITE_GOOGLE_CLIENT_ID=1029384756-abcdefg.apps.googleusercontent.com
     container_name: tncb-frontend
     restart: always
     <<: *default-logging
