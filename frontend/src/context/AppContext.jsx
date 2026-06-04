@@ -258,6 +258,9 @@ export function AppProvider({ children }) {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.requiresMfa) {
+          return { success: true, requiresMfa: true, tempMfaToken: data.tempMfaToken };
+        }
         const user = { ...data.user, id: data.user.id || data.user._id };
         localStorage.setItem('TNCB_TOKEN', data.token);
         localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
@@ -281,6 +284,8 @@ export function AppProvider({ children }) {
       if (data.success) {
         if (data.needsCompletion) {
           return { success: true, needsCompletion: true, tempToken: data.tempToken, user: data.user };
+        } else if (data.requiresMfa) {
+          return { success: true, requiresMfa: true, tempMfaToken: data.tempMfaToken };
         } else {
           const user = { ...data.user, id: data.user.id || data.user._id };
           localStorage.setItem('TNCB_TOKEN', data.token);
@@ -340,7 +345,7 @@ export function AppProvider({ children }) {
         return {
           success: true,
           otp: data.otp,
-          message: `Mã OTP đã được gửi đến số ${phone} (mô phỏng: ${data.otp}).`
+          message: `Mã OTP đã được gửi đến email ${email} (mô phỏng: ${data.otp}).`
         };
       }
       return { success: false, message: data.message };
@@ -391,22 +396,22 @@ export function AppProvider({ children }) {
     );
   }, [pendingRegistration, registerStep1]);
 
-  const forgotPasswordStep1 = useCallback(async (phone) => {
+  const forgotPasswordStep1 = useCallback(async (email) => {
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/forgot-password-step1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ email })
       });
       const data = await res.json();
       if (data.success) {
-        setPendingRegistration({ phone, _resetMode: true });
+        setPendingRegistration({ email, _resetMode: true });
         setCurrentOTP(data.otp);
         setOtpExpiry(Date.now() + 5 * 60 * 1000);
         return {
           success: true,
           otp: data.otp,
-          message: `Mã OTP khôi phục đã được gửi đến số ${phone} (mô phỏng: ${data.otp}).`
+          message: `Mã OTP khôi phục đã được gửi đến email ${email} (mô phỏng: ${data.otp}).`
         };
       }
       return { success: false, message: data.message };
@@ -424,7 +429,7 @@ export function AppProvider({ children }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: pendingRegistration.phone,
+          email: pendingRegistration.email,
           otp: inputOTP,
           newPassword
         })
@@ -443,6 +448,147 @@ export function AppProvider({ children }) {
 
   const register = useCallback(() => {
     return { success: false, message: 'Tính năng này không khả dụng.' };
+  }, []);
+
+  const setupMFA = useCallback(async () => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) return { success: false, message: 'Chưa đăng nhập.' };
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/mfa/setup', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        return { success: true, secret: data.secret, qrCodeUrl: data.qrCodeUrl };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const verifyMFA = useCallback(async (code) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) return { success: false, message: 'Chưa đăng nhập.' };
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const disableMFA = useCallback(async (code) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) return { success: false, message: 'Chưa đăng nhập.' };
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/mfa/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const verifyLoginMFA = useCallback(async (tempMfaToken, code) => {
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/mfa/login-verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tempMfaToken, code })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_TOKEN', data.token);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const verifyLoginOTP = useCallback(async (tempOtpToken, code) => {
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/otp/login-verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tempOtpToken, code })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_TOKEN', data.token);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const toggleOTP = useCallback(async (enabled) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    if (!token) return { success: false, message: 'Chưa đăng nhập.' };
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/otp/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = { ...data.user, id: data.user.id || data.user._id };
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+        setCurrentUser(user);
+        return { success: true, user };
+      }
+      return { success: false, message: data.message };
+    } catch (err) {
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -939,6 +1085,12 @@ export function AppProvider({ children }) {
     resetPassword,
     logout,
     updateProfile,
+    setupMFA,
+    verifyMFA,
+    disableMFA,
+    verifyLoginMFA,
+    verifyLoginOTP,
+    toggleOTP,
     // Helpers
     getPropertyById,
     getContractsByProperty,

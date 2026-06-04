@@ -31,27 +31,27 @@ Hiện tại Google SSO đang chạy qua cơ chế Token giả lập (`mock_toke
 Triển khai phương thức xác thực hai yếu tố (2FA) sử dụng ứng dụng tạo mã OTP (như Google Authenticator hoặc Microsoft Authenticator) dựa trên giao thức TOTP (Time-based One-time Password).
 
 ### A. Cập nhật Backend
-- [ ] **Cài đặt thư viện phụ thuộc**:
+- [x] **Cài đặt thư viện phụ thuộc**:
   - Cài đặt `otplib` (xử lý sinh/xác thực mã TOTP) và `qrcode` (tạo mã QR hiển thị cho người dùng quét).
-- [ ] **Mở rộng Schema `User.js`**:
+- [x] **Mở rộng Schema `User.js`**:
   - Thêm trường `mfaSecret` (String - lưu secret key được mã hóa của người dùng).
   - Thêm trường `mfaEnabled` (Boolean, mặc định `false`).
-- [ ] **Xây dựng API thiết lập MFA**:
-  - [ ] `/api/auth/mfa/setup` (Chỉ cho user đã đăng nhập): Tạo TOTP secret ngẫu nhiên, sinh mã QR code dạng Base64 và trả về.
-  - [ ] `/api/auth/mfa/verify` (Xác thực lần đầu): Nhận mã OTP từ người dùng, đối chiếu với secret. Nếu khớp, cập nhật `mfaEnabled = true`.
-  - [ ] `/api/auth/mfa/disable` (Hủy kích hoạt): Xác minh mật khẩu hoặc mã OTP hiện tại trước khi đặt `mfaEnabled = false`.
-- [ ] **Cập nhật Logic Đăng nhập**:
+- [x] **Xây dựng API thiết lập MFA**:
+  - [x] `/api/auth/mfa/setup` (Chỉ cho user đã đăng nhập): Tạo TOTP secret ngẫu nhiên, sinh mã QR code dạng Base64 và trả về.
+  - [x] `/api/auth/mfa/verify` (Xác thực lần đầu): Nhận mã OTP từ người dùng, đối chiếu với secret. Nếu khớp, cập nhật `mfaEnabled = true`.
+  - [x] `/api/auth/mfa/disable` (Hủy kích hoạt): Xác minh mật khẩu hoặc mã OTP hiện tại trước khi đặt `mfaEnabled = false`.
+- [x] **Cập nhật Logic Đăng nhập**:
   - Cập nhật luồng đăng nhập thường và Google SSO: Nếu người dùng đã kích hoạt MFA (`mfaEnabled === true`), backend sẽ không cấp ngay JWT session token chính mà trả về mã trạng thái `requiresMfa` kèm theo một mã token tạm thời (`tempMfaToken`).
-  - [ ] Xây dựng API `/api/auth/mfa/login-verify`: Nhận `tempMfaToken` và mã OTP 6 chữ số, nếu đúng mới cấp JWT session token chính thức.
+  - [x] Xây dựng API `/api/auth/mfa/login-verify`: Nhận `tempMfaToken` và mã OTP 6 chữ số, nếu đúng mới cấp JWT session token chính thức.
 
 ### B. Cập nhật Frontend
-- [ ] **Giao diện quản lý MFA trong Hồ sơ (Profile Modal)**:
-  - [ ] Thêm tuỳ chọn "Kích hoạt Xác thực 2 lớp (MFA)" trong `ProfileModal.jsx`.
-  - [ ] Hiển thị mã QR và chuỗi khóa dự phòng khi người dùng nhấp kích hoạt.
-  - [ ] Yêu cầu người dùng nhập mã 6 số từ ứng dụng Authenticator để xác thực trước khi bật thành công.
-- [ ] **Giao diện Đăng nhập MFA**:
-  - [ ] Khi backend phản hồi tài khoản yêu cầu MFA, chuyển giao diện Auth Modal sang chế độ nhập mã xác thực 2 lớp (MFA Code).
-  - [ ] Thiết kế form nhập 6 chữ số trực quan tương tự như form nhập mã OTP SMS.
+- [x] **Giao diện quản lý MFA trong Hồ sơ (Profile Modal)**:
+  - [x] Thêm tuỳ chọn "Kích hoạt Xác thực 2 lớp (MFA)" trong `ProfileModal.jsx`.
+  - [x] Hiển thị mã QR và chuỗi khóa dự phòng khi người dùng nhấp kích hoạt.
+  - [x] Yêu cầu người dùng nhập mã 6 số từ ứng dụng Authenticator để xác thực trước khi bật thành công.
+- [x] **Giao diện Đăng nhập MFA**:
+  - [x] Khi backend phản hồi tài khoản yêu cầu MFA, chuyển giao diện Auth Modal sang chế độ nhập mã xác thực 2 lớp (MFA Code).
+  - [x] Thiết kế form nhập 6 chữ số trực quan tương tự như form nhập mã OTP SMS.
 
 ---
 

@@ -50,6 +50,8 @@ export default function Header() {
     setIsAuthOpen,
     authMode,
     setAuthMode,
+    verifyLoginMFA,
+    verifyLoginOTP
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,6 +80,7 @@ export default function Header() {
 
   // Forgot password states
   const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   const [forgotUserName, setForgotUserName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -86,6 +89,8 @@ export default function Header() {
   const [ssoUser, setSSOUser] = useState(null);
   const [ssoPhone, setSsoPhone] = useState('');
   const [ssoRole, setSsoRole] = useState('tenant');
+  const [tempMfaToken, setTempMfaToken] = useState('');
+  const [tempOtpToken, setTempOtpToken] = useState('');
 
   // Messages
   const [authError, setAuthError] = useState('');
@@ -179,6 +184,7 @@ export default function Header() {
     setDemoOTP('');
     setOtpCountdown(0);
     setForgotPhone('');
+    setForgotEmail('');
     setForgotUserName('');
     setNewPassword('');
     setConfirmNewPassword('');
@@ -188,6 +194,7 @@ export default function Header() {
     setSsoRole('tenant');
     setTempSSOToken('');
     setSSOUser(null);
+    setTempMfaToken('');
   };
 
   const closeAuthModal = () => {
@@ -206,11 +213,24 @@ export default function Header() {
     setAuthError('');
     const res = await login(email, password);
     if (res.success) {
-      setAuthSuccess('Đăng nhập thành công!');
-      setTimeout(() => {
-        closeAuthModal();
-        navigate('/dashboard');
-      }, 1000);
+      if (res.requiresMfa) {
+        setTempMfaToken(res.tempMfaToken);
+        setOtpDigits(['', '', '', '', '', '']);
+        setAuthMode('mfa-login-verify');
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
+      } else if (res.requiresOtp) {
+        setTempOtpToken(res.tempOtpToken);
+        setDemoOTP(res.otp); // Save the demo OTP returned in sandbox mode
+        setOtpDigits(['', '', '', '', '', '']);
+        setAuthMode('otp-login-verify');
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
+      } else {
+        setAuthSuccess('Đăng nhập thành công!');
+        setTimeout(() => {
+          closeAuthModal();
+          navigate('/dashboard');
+        }, 1000);
+      }
     } else {
       setAuthError(res.message);
     }
@@ -282,17 +302,17 @@ export default function Header() {
     }
   };
 
-  // --- Forgot Password Step 1: Enter phone ---
+  // --- Forgot Password Step 1: Enter email ---
   const handleForgotStep1 = async (e) => {
     e.preventDefault();
     setAuthError('');
 
-    if (!forgotPhone) {
-      setAuthError('Vui lòng nhập số điện thoại đã đăng ký.');
+    if (!forgotEmail) {
+      setAuthError('Vui lòng nhập địa chỉ email đã đăng ký.');
       return;
     }
 
-    const res = await forgotPasswordStep1(forgotPhone);
+    const res = await forgotPasswordStep1(forgotEmail);
     if (res.success) {
       setDemoOTP(res.otp);
       setForgotUserName(res.userName);
@@ -351,6 +371,11 @@ export default function Header() {
         setSsoPhone('');
         setSsoRole('tenant');
         setAuthMode('complete-profile');
+      } else if (res.requiresMfa) {
+        setTempMfaToken(res.tempMfaToken);
+        setOtpDigits(['', '', '', '', '', '']);
+        setAuthMode('mfa-login-verify');
+        setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
       } else {
         setAuthSuccess('Đăng nhập bằng Google thành công!');
         setTimeout(() => {
@@ -381,6 +406,46 @@ export default function Header() {
     const res = await completeGoogleProfile(ssoPhone, ssoRole, tempSSOToken);
     if (res.success) {
       setAuthSuccess('Hoàn tất đăng ký tài khoản thành công!');
+      setTimeout(() => {
+        closeAuthModal();
+        navigate('/dashboard');
+      }, 1000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleVerifyMfaLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const code = otpDigits.join('');
+    if (code.length !== 6) {
+      setAuthError('Vui lòng nhập đủ 6 chữ số mã xác thực.');
+      return;
+    }
+    const res = await verifyLoginMFA(tempMfaToken, code);
+    if (res.success) {
+      setAuthSuccess('Đăng nhập thành công!');
+      setTimeout(() => {
+        closeAuthModal();
+        navigate('/dashboard');
+      }, 1000);
+    } else {
+      setAuthError(res.message);
+    }
+  };
+
+  const handleVerifyOtpLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    const code = otpDigits.join('');
+    if (code.length !== 6) {
+      setAuthError('Vui lòng nhập đủ 6 chữ số mã OTP.');
+      return;
+    }
+    const res = await verifyLoginOTP(tempOtpToken, code);
+    if (res.success) {
+      setAuthSuccess('Đăng nhập thành công!');
       setTimeout(() => {
         closeAuthModal();
         navigate('/dashboard');
@@ -633,14 +698,14 @@ export default function Header() {
             )}
 
             {/* ---- Back button for OTP / Forgot flows ---- */}
-            {(authMode === 'otp-verify' || authMode === 'forgot' || authMode === 'forgot-otp' || authMode === 'reset-password') && (
+            {(authMode === 'otp-verify' || authMode === 'forgot' || authMode === 'forgot-otp' || authMode === 'reset-password' || authMode === 'mfa-login-verify') && (
               <button
                 className="auth-back-btn"
                 onClick={() => {
                   setAuthError('');
                   setAuthSuccess('');
                   if (authMode === 'otp-verify') setAuthMode('register');
-                  else if (authMode === 'forgot') setAuthMode('login');
+                  else if (authMode === 'forgot' || authMode === 'mfa-login-verify') setAuthMode('login');
                   else if (authMode === 'forgot-otp' || authMode === 'reset-password') setAuthMode('forgot');
                 }}
               >
@@ -780,7 +845,7 @@ export default function Header() {
                       onChange={(e) => setRegPhone(e.target.value)}
                     />
                   </label>
-                  <span className="form-hint">Mã OTP xác thực sẽ được gửi đến số này qua Zalo</span>
+                   <span className="form-hint">Số điện thoại dùng để liên lạc. Mã OTP xác thực sẽ được gửi qua Email.</span>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
@@ -834,9 +899,9 @@ export default function Header() {
                   <div className="otp-icon-wrapper">
                     <ShieldCheck size={40} weight="duotone" />
                   </div>
-                  <h3 className="otp-title">Xác thực số điện thoại</h3>
+                  <h3 className="otp-title">Xác thực tài khoản</h3>
                   <p className="otp-subtitle">
-                    Nhập mã OTP 6 chữ số đã được gửi đến số <strong>{regPhone}</strong> qua Zalo
+                    Nhập mã OTP 6 chữ số đã được gửi đến email <strong>{regEmail}</strong>
                   </p>
                 </div>
 
@@ -869,7 +934,7 @@ export default function Header() {
               </form>
             )}
 
-            {/* ===================== FORGOT PASSWORD (Step 1: Enter Phone) ===================== */}
+            {/* ===================== FORGOT PASSWORD (Step 1: Enter Email) ===================== */}
             {authMode === 'forgot' && (
               <form onSubmit={handleForgotStep1} className="auth-form" id="forgot-form">
                 <div className="otp-header">
@@ -878,20 +943,21 @@ export default function Header() {
                   </div>
                   <h3 className="otp-title">Quên mật khẩu</h3>
                   <p className="otp-subtitle">
-                    Nhập số điện thoại đã đăng ký để nhận mã OTP đặt lại mật khẩu
+                    Nhập địa chỉ email đã đăng ký để nhận mã OTP đặt lại mật khẩu
                   </p>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
-                  <label className="form-label">Số điện thoại đăng ký</label>
+                  <label className="form-label">Email đăng ký</label>
                   <label className="auth-input-wrap">
-                    <PhoneIcon size={18} />
+                    <EnvelopeSimple size={18} />
                     <input
+                      type="email"
                       className="auth-input"
                       required
-                      placeholder="09XXXXXXXX"
-                      value={forgotPhone}
-                      onChange={(e) => setForgotPhone(e.target.value)}
+                      placeholder="email@tncb.vn"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
                     />
                   </label>
                 </div>
@@ -912,7 +978,7 @@ export default function Header() {
                   </div>
                   <h3 className="otp-title">Đặt lại mật khẩu</h3>
                   <p className="otp-subtitle">
-                    Xin chào <strong>{forgotUserName}</strong>, nhập mã OTP và mật khẩu mới
+                    Xin chào <strong>{forgotUserName || 'bạn'}</strong>, nhập mã OTP gửi tới email và mật khẩu mới
                   </p>
                 </div>
 
@@ -932,8 +998,8 @@ export default function Header() {
                     <button
                       type="button"
                       className="otp-resend-btn"
-                      onClick={() => {
-                        const res = forgotPasswordStep1(forgotPhone);
+                      onClick={async () => {
+                        const res = await forgotPasswordStep1(forgotEmail);
                         if (res.success) {
                           setDemoOTP(res.otp);
                           setOtpDigits(['', '', '', '', '', '']);
@@ -1044,6 +1110,58 @@ export default function Header() {
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                   Hoàn tất và Đăng nhập
+                </button>
+              </form>
+            )}
+
+            {/* ===================== MFA LOGIN VERIFICATION FORM ===================== */}
+            {authMode === 'mfa-login-verify' && (
+              <form onSubmit={handleVerifyMfaLogin} className="auth-form otp-verify-form" id="mfa-login-verify-form">
+                <div className="otp-header">
+                  <div className="otp-icon-wrapper" style={{ background: 'rgba(var(--color-primary-rgb), 0.1)', color: 'var(--color-primary)' }}>
+                    <ShieldCheck size={40} weight="duotone" />
+                  </div>
+                  <h3 className="otp-title">Xác thực 2 lớp (MFA)</h3>
+                  <p className="otp-subtitle">
+                    Tài khoản của bạn đã kích hoạt bảo mật 2 lớp. Vui lòng nhập mã 6 số từ ứng dụng Authenticator của bạn.
+                  </p>
+                </div>
+
+                {/* OTP Input */}
+                {renderOTPInput()}
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-5)' }}>
+                  Xác nhận bảo mật
+                </button>
+              </form>
+            )}
+
+            {/* ===================== OTP LOGIN VERIFICATION FORM ===================== */}
+            {authMode === 'otp-login-verify' && (
+              <form onSubmit={handleVerifyOtpLogin} className="auth-form otp-verify-form" id="otp-login-verify-form">
+                <div className="otp-header">
+                  <div className="otp-icon-wrapper" style={{ background: 'rgba(var(--color-primary-rgb), 0.1)', color: 'var(--color-primary)' }}>
+                    <EnvelopeSimple size={40} weight="duotone" />
+                  </div>
+                  <h3 className="otp-title">Xác thực OTP qua Email</h3>
+                  <p className="otp-subtitle" style={{ marginBottom: 'var(--space-4)' }}>
+                    Mã xác thực đã được gửi đến email đăng ký của bạn. Vui lòng kiểm tra hộp thư và nhập mã 6 số bên dưới.
+                  </p>
+
+                  {/* Sandboxed Demo OTP badge */}
+                  {demoOTP && (
+                    <div className="otp-demo-badge" id="otp-demo-display">
+                      <span>Mã xác thực demo (Sandbox): </span>
+                      <strong>{demoOTP}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* OTP Input */}
+                {renderOTPInput()}
+
+                <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-5)' }}>
+                  Xác nhận đăng nhập
                 </button>
               </form>
             )}

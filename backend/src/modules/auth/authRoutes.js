@@ -8,7 +8,13 @@ import {
   getMe,
   updateProfile,
   googleLogin,
-  completeGoogleProfile
+  completeGoogleProfile,
+  setupMfa,
+  verifyMfa,
+  disableMfa,
+  loginVerifyMfa,
+  loginVerifyOtp,
+  toggleOtp
 } from './authController.js';
 import { auth } from '../../middleware/auth.js';
 
@@ -22,9 +28,15 @@ router.post('/forgot-password-step1', forgotPasswordStep1);
 router.post('/forgot-password-step2', forgotPasswordStep2);
 router.post('/google', googleLogin);
 router.post('/google/complete', completeGoogleProfile);
+router.post('/mfa/login-verify', loginVerifyMfa);
+router.post('/otp/login-verify', loginVerifyOtp);
 
 // Private routes
 router.get('/me', auth, getMe);
 router.put('/profile', auth, updateProfile);
+router.post('/mfa/setup', auth, setupMfa);
+router.post('/mfa/verify', auth, verifyMfa);
+router.post('/mfa/disable', auth, disableMfa);
+router.post('/otp/toggle', auth, toggleOtp);
 
 export default router;

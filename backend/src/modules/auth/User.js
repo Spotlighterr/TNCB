@@ -49,6 +49,18 @@ const UserSchema = new mongoose.Schema({
   ssoId: {
     type: String,
     default: null
+  },
+  mfaSecret: {
+    type: String,
+    default: null
+  },
+  mfaEnabled: {
+    type: Boolean,
+    default: false
+  },
+  otpEnabled: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
