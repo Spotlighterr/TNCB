@@ -436,7 +436,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                   {/* Section 1: Email OTP */}
                   <div style={{ background: 'var(--bg-secondary)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
                       <strong style={{ fontSize: '14px', color: 'var(--color-text-main)' }}>Xác thực qua Email OTP</strong>
                       <span style={{
                         fontSize: '11px',
@@ -449,9 +449,6 @@ export default function ProfileModal({ isOpen, onClose }) {
                         {currentUser.otpEnabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}
                       </span>
                     </div>
-                    <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: '1.4', marginBottom: 'var(--space-3)' }}>
-                      Yêu cầu nhập mã xác thực OTP gửi qua Email mỗi khi đăng nhập bằng mật khẩu (không áp dụng khi đăng nhập bằng Google SSO).
-                    </p>
                     <button
                       type="button"
                       className={`btn ${currentUser.otpEnabled ? 'btn-secondary' : 'btn-primary'}`}
@@ -465,7 +462,7 @@ export default function ProfileModal({ isOpen, onClose }) {
 
                   {/* Section 2: Authenticator App (MFA) */}
                   <div style={{ background: 'var(--bg-secondary)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
                       <strong style={{ fontSize: '14px', color: 'var(--color-text-main)' }}>Ứng dụng xác thực (MFA / 2FA)</strong>
                       <span style={{
                         fontSize: '11px',
@@ -478,9 +475,6 @@ export default function ProfileModal({ isOpen, onClose }) {
                         {currentUser.mfaEnabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}
                       </span>
                     </div>
-                    <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: '1.4', marginBottom: 'var(--space-3)' }}>
-                      Bảo vệ tài khoản bằng ứng dụng Authenticator (Google / Microsoft). Khi bật, bước này sẽ được ưu tiên hơn Email OTP.
-                    </p>
                     {currentUser.mfaEnabled ? (
                       <button
                         type="button"
@@ -506,11 +500,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                     )}
                   </div>
 
-                  {currentUser.mfaEnabled && currentUser.otpEnabled && (
-                    <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', textAlign: 'center', fontStyle: 'italic', marginTop: 'var(--space-1)' }}>
-                      * Đang bật cả hai: Hệ thống sẽ chỉ yêu cầu Authenticator (MFA) vì có tính bảo mật cao hơn.
-                    </p>
-                  )}
+
                 </div>
               )}
 
