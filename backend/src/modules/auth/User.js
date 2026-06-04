@@ -31,9 +31,7 @@ const UserSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    default: function() {
-      return `https://picsum.photos/seed/user-${Date.now()}/100/100`;
-    }
+    default: '/default-avatar.jpg'
   },
   zalo: {
     type: String,
