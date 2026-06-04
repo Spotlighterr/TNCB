@@ -876,7 +876,7 @@ export default function Header() {
 
                 <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                   <ShieldCheck size={18} weight="bold" />
-                  Gửi mã OTP xác thực
+                  Đăng Ký
                 </button>
               </form>
             )}
