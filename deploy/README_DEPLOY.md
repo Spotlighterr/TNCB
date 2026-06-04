@@ -225,3 +225,69 @@ Thêm dòng sau vào cuối tệp để chạy backup tự động vào lúc **0
   docker exec tncb-mongodb mongorestore --db tncb /data/db/restore_tmp
   docker exec tncb-mongodb rm -rf /data/db/restore_tmp
   ```
+
+---
+
+## 🔓 Phần 7: Cấu Hình SSH Qua Cloudflare Tunnel Để Quản Trị Từ Xa (Khi Không Ở Nhà)
+
+Khi đi ra ngoài, máy tính cá nhân của bạn và server Ubuntu không còn chung dải mạng LAN nên không thể kết nối qua IP nội bộ `192.168.1.211`. Bạn có thể dễ dàng thiết lập định tuyến SSH bảo mật qua chính Cloudflare Tunnel đang có.
+
+### 1. Cấu hình trên Cloudflare Zero Trust Dashboard
+
+1. **Thêm ứng dụng SSH Client (Access Application)**:
+   - Truy cập vào **Cloudflare Zero Trust Dashboard** -> **Access** -> **Applications** -> Click **Add an Application**.
+   - Chọn loại ứng dụng: **Self-Hosted**.
+   - Thiết lập các thông số:
+     - **Application Name**: `SSH Server`
+     - **Application Domain**: Điền Subdomain mong muốn (Ví dụ: `ssh.findx.id.vn`).
+     - **Session Duration**: Chọn thời hạn phiên (ví dụ: `24 Hours`).
+   - Thiết lập chính sách bảo mật (**Policies**):
+     - Đặt tên Policy: `Allow Admin`.
+     - Ở phần **Configure rules**, mục **Include**: Chọn **Selector** là `Emails` và điền địa chỉ email của bạn (Ví dụ: `your_email@gmail.com`). Chỉ địa chỉ email này mới có quyền đăng nhập SSH từ xa (Cloudflare sẽ gửi mã OTP qua email để xác thực trước khi cho phép SSH kết nối).
+     - Click **Next** -> Click **Save Application**.
+
+2. **Định tuyến cổng SSH của Host trong Tunnel (Public Hostname)**:
+   - Vào **Networks** -> **Tunnels** -> Click chọn chỉnh sửa Tunnel của dự án `tncb`.
+   - Chọn tab **Public Hostname** -> Click **Add a public hostname**.
+   - Thiết lập thông số định tuyến:
+     - **Subdomain**: Điền `ssh` (hoặc subdomain bạn đã thiết lập ở bước trên).
+     - **Domain**: Chọn `findx.id.vn` (hoặc domain của bạn).
+     - **Service**:
+       - **Type**: Chọn `SSH`.
+       - **URL**: Điền `host.docker.internal:22`. *(Đây là địa chỉ trỏ ngược từ container `cloudflare-tunnel` về cổng SSH của máy chủ Ubuntu vật lý).*
+   - Click **Save Hostname**.
+   - Sau khi hoàn thành, khởi động lại container tunnel trên Server để cập nhật:
+     ```bash
+     docker compose -f deploy/docker-compose.yml up -d cloudflare-tunnel
+     ```
+
+---
+
+### 2. Cấu hình trên Máy Tính Cá Nhân (Client Windows) của bạn
+
+Để kết nối qua đường hầm mã hóa của Cloudflare, máy tính cá nhân của bạn cần cài đặt client `cloudflared`.
+
+1. **Tải và cài đặt `cloudflared` trên Windows**:
+   - Tải file thực thi `cloudflared-windows-amd64.msi` từ trang phát hành chính thức của Cloudflare: [https://github.com/cloudflare/cloudflared/releases](https://github.com/cloudflare/cloudflared/releases).
+   - Tiến hành cài đặt. Cài đặt này sẽ tạo file thực thi tại `C:\Program Files (x86)\cloudflared\cloudflared.exe` (hoặc một thư mục khác, hãy kiểm tra chính xác đường dẫn).
+
+2. **Cấu hình SSH client**:
+   - Mở PowerShell (hoặc Command Prompt) trên Windows.
+   - Tạo hoặc chỉnh sửa tệp tin cấu hình SSH cá nhân bằng cách chạy lệnh:
+     ```powershell
+     notepad $HOME\.ssh\config
+     ```
+   - Dán cấu hình sau vào tệp tin (hãy chắc chắn đường dẫn `cloudflared.exe` là chính xác):
+     ```text
+     Host ssh.findx.id.vn
+         ProxyCommand "C:\Program Files (x86)\cloudflared\cloudflared.exe" access ssh --hostname %h
+     ```
+   - Lưu và đóng tệp tin lại.
+
+3. **Kết nối SSH thử nghiệm**:
+   - Tại Terminal ở máy tính cá nhân của bạn, hãy chạy lệnh SSH:
+     ```bash
+     ssh spotlighter@ssh.findx.id.vn
+     ```
+   - **Xác thực**: Lần đầu kết nối, một cửa sổ trình duyệt Web sẽ tự động bật lên yêu cầu bạn đăng nhập Cloudflare Zero Trust. Nhập địa chỉ email đăng ký để nhận mã OTP. Sau khi xác thực thành công trên trình duyệt, phiên kết nối SSH tại Terminal sẽ tự động hoạt động và bạn nhập mật khẩu SSH của server Ubuntu (`382489`) để đăng nhập và điều khiển từ xa bình thường!
+

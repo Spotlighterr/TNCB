@@ -86,6 +86,8 @@ services:
       # Replace this token with your actual Cloudflare Tunnel token in production
       - TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
     command: tunnel --no-autoupdate run
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - tncb-network
     depends_on:
