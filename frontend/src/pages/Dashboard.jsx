@@ -35,6 +35,7 @@ import {
   Eye,
   EyeSlash,
   UploadSimple,
+  WarningCircle,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -115,9 +116,9 @@ export default function Dashboard() {
   const [duplicateReport, setDuplicateReport] = useState(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 3500);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4500);
   };
 
   // Switch tabs -> Reset form states
@@ -460,7 +461,7 @@ export default function Dashboard() {
           }
         }
       } catch (err) {
-        showToast(err.message || 'Lỗi khi gửi dữ liệu lên máy chủ.');
+        showToast(err.message || 'Lỗi khi gửi dữ liệu lên máy chủ.', 'error');
       } finally {
         setIsCheckingDuplicate(false);
       }
@@ -637,9 +638,13 @@ export default function Dashboard() {
     <div className="dashboard-page" id="dashboard-page">
       {/* Toast Notification */}
       {toast && (
-        <div className="toast-notification" id="dashboard-toast">
-          <CheckCircle size={20} weight="fill" />
-          <span>{toast}</span>
+        <div className={`toast-notification ${toast.type || 'success'}`} id="dashboard-toast">
+          {toast.type === 'error' ? (
+            <WarningCircle size={20} weight="fill" />
+          ) : (
+            <CheckCircle size={20} weight="fill" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -2021,6 +2026,10 @@ export default function Dashboard() {
           z-index: var(--z-modal);
           font-weight: var(--weight-medium);
           animation: slideIn var(--duration-spring) var(--ease-tactile) both;
+        }
+
+        .toast-notification.error {
+          background: #ef4444;
         }
 
         .bill-total-box {

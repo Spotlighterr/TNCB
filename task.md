@@ -59,21 +59,21 @@ Triển khai phương thức xác thực hai yếu tố (2FA) sử dụng ứng 
 
 Chuẩn bị sẵn sàng ứng dụng để vận hành trực tiếp trên máy chủ vật lý do nhà trường cung cấp.
 
-- [ ] **Đóng gói mã nguồn với Docker**:
-  - [ ] Tạo file `Dockerfile` cho backend để build Node image tối ưu.
-  - [ ] Tạo file `Dockerfile` cho frontend (build bằng Vite, phục vụ file tĩnh qua Nginx gọn nhẹ).
-  - [ ] Thiết lập file `docker-compose.yml` để liên kết:
+- [x] **Đóng gói mã nguồn với Docker**:
+  - [x] Tạo file `Dockerfile` cho backend để build Node image tối ưu.
+  - [x] Tạo file `Dockerfile` cho frontend (build bằng Vite, phục vụ file tĩnh qua Nginx gọn nhẹ).
+  - [x] Thiết lập file `docker-compose.yml` để liên kết:
     - Container Backend (Node.js/Express)
     - Container Frontend (Nginx phục vụ client)
     - Container Database (MongoDB Community Edition chạy cục bộ lưu hoàn toàn offline, kèm thiết lập volume persistence bảo toàn dữ liệu).
-- [ ] **Cấu hình Upload ảnh nội bộ**:
-  - [ ] Viết API endpoint upload ảnh sử dụng thư viện `multer` trong backend Node.js thay vì Cloudinary.
-  - [ ] Lưu trữ trực tiếp ảnh vào thư mục ổ đĩa được ánh xạ (volume mount `/app/public/uploads`) trên máy chủ của trường.
-  - [ ] Cấu hình Nginx / Express static middleware để phục vụ đường dẫn ảnh trực tiếp.
-- [ ] **Tài liệu Hướng dẫn Triển khai (Handover Documentation)**:
-  - [ ] Viết tệp hướng dẫn từng bước (Step-by-step) cài đặt Docker, Docker Compose trên máy chủ (Ubuntu/Windows Server).
-  - [ ] Hướng dẫn lệnh khởi chạy duy nhất: `docker-compose up -d` để chạy toàn bộ hệ thống.
-  - [ ] Hướng dẫn thiết lập sao lưu cơ sở dữ liệu tự động (`mongodump` định kỳ).
+- [x] **Cấu hình Upload ảnh nội bộ**:
+  - [x] Viết API endpoint upload ảnh sử dụng thư viện `multer` trong backend Node.js thay vì Cloudinary.
+  - [x] Lưu trữ trực tiếp ảnh vào thư mục ổ đĩa được ánh xạ (volume mount `/app/public/uploads`) trên máy chủ của trường.
+  - [x] Cấu hình Nginx / Express static middleware để phục vụ đường dẫn ảnh trực tiếp.
+- [x] **Tài liệu Hướng dẫn Triển khai (Handover Documentation)**:
+  - [x] Viết tệp hướng dẫn từng bước (Step-by-step) cài đặt Docker, Docker Compose trên máy chủ (Ubuntu/Windows Server).
+  - [x] Hướng dẫn lệnh khởi chạy duy nhất: `docker-compose up -d` để chạy toàn bộ hệ thống.
+  - [x] Hướng dẫn thiết lập sao lưu cơ sở dữ liệu tự động (`mongodump` định kỳ).
 
 ---
 
