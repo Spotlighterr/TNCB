@@ -6,7 +6,7 @@
 :root {
   /* Typography */
   --font-display: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-mono: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
 
   /* Font Sizes */
   --text-xs: 0.75rem;

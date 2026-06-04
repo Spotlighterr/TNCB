@@ -1660,7 +1660,7 @@ export default function Header() {
           border-radius: var(--radius-main);
           outline: none !important;
           transition: all var(--duration-fast) var(--ease-tactile);
-          font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+          font-family: var(--font-display);
         }
 
         .otp-digit-input:focus,
@@ -1697,7 +1697,8 @@ export default function Header() {
         }
 
         .otp-demo-badge strong {
-          font-family: 'JetBrains Mono', 'SF Mono', monospace;
+          font-family: var(--font-display);
+          font-variant-numeric: tabular-nums;
           font-size: var(--text-sm);
           letter-spacing: 3px;
         }
@@ -1715,7 +1716,8 @@ export default function Header() {
 
         .otp-countdown strong {
           color: var(--color-accent);
-          font-family: 'JetBrains Mono', monospace;
+          font-family: var(--font-display);
+          font-variant-numeric: tabular-nums;
         }
 
         .otp-resend-btn {

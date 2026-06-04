@@ -103,6 +103,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 .text-eyebrow {
@@ -717,6 +718,7 @@ main {
   font-weight: var(--weight-bold);
   color: var(--color-text-main);
   transition: all var(--duration-fast) var(--ease-smooth);
+  font-variant-numeric: tabular-nums;
 }
 
 .price-large {
