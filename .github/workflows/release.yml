@@ -1,0 +1,43 @@
+name: Auto Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes from RELEASES.md
+        id: extract
+        run: |
+          # Get the tag name (e.g., v2.4.0)
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          # Extract the section for this version from RELEASES.md
+          # Matches from "## [vX.Y.Z]" until the next "## [" or end of file
+          NOTES=$(awk "/^## \\[$TAG\\]/{found=1; next} /^## \\[v[0-9]/{if(found) exit} found" RELEASES.md)
+
+          # Write to a temp file to preserve multiline content
+          echo "$NOTES" > /tmp/release_notes.md
+
+          # Also extract the release title (the ### line)
+          TITLE=$(echo "$NOTES" | grep '^### ' | head -1 | sed 's/^### //')
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.extract.outputs.tag }}
+          name: "${{ steps.extract.outputs.tag }} — ${{ steps.extract.outputs.title }}"
+          body_path: /tmp/release_notes.md
+          draft: false
+          prerelease: false
