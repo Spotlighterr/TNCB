@@ -291,3 +291,147 @@ Khi đi ra ngoài, máy tính cá nhân của bạn và server Ubuntu không cò
      ```
    - **Xác thực**: Lần đầu kết nối, một cửa sổ trình duyệt Web sẽ tự động bật lên yêu cầu bạn đăng nhập Cloudflare Zero Trust. Nhập địa chỉ email đăng ký để nhận mã OTP. Sau khi xác thực thành công trên trình duyệt, phiên kết nối SSH tại Terminal sẽ tự động hoạt động và bạn nhập mật khẩu SSH của server Ubuntu (`382489`) để đăng nhập và điều khiển từ xa bình thường!
 
+---
+
+## 🌐 Phần 8: Cấu Hình Tailscale VPN Để SSH Từ Xa (Phương Án Thay Thế / Bổ Sung)
+
+Tailscale là giải pháp VPN dựa trên giao thức **WireGuard**, tạo một mạng riêng ảo (tailnet) giữa các thiết bị của bạn. So với Cloudflare Tunnel SSH, Tailscale có ưu điểm:
+- **Kết nối trực tiếp (peer-to-peer)**: Tốc độ nhanh hơn, độ trễ thấp hơn vì không đi qua proxy trung gian.
+- **Không cần cấu hình ProxyCommand** phức tạp trên client.
+- **Dùng được cho mọi dịch vụ** (SSH, HTTP, RDP, truy cập database,...) chứ không chỉ SSH.
+- **Miễn phí cho cá nhân** (lên tới 100 thiết bị, 3 người dùng).
+
+### Bước 1: Tạo tài khoản Tailscale
+
+1. Truy cập [https://login.tailscale.com](https://login.tailscale.com) và đăng ký tài khoản bằng Google, Microsoft, hoặc GitHub.
+2. Sau khi đăng nhập, bạn sẽ vào **Tailscale Admin Console** — nơi quản lý toàn bộ thiết bị trong tailnet của bạn.
+
+---
+
+### Bước 2: Cài đặt Tailscale trên Ubuntu Server
+
+SSH vào server Ubuntu (qua IP nội bộ `192.168.1.211` nếu đang ở nhà, hoặc qua Cloudflare Tunnel `ssh.findx.id.vn` nếu ở ngoài), sau đó chạy các lệnh sau:
+
+#### 1. Cài đặt Tailscale bằng script chính thức
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+#### 2. Khởi động và đăng nhập Tailscale
+```bash
+sudo tailscale up
+```
+Lệnh này sẽ in ra một **URL đăng nhập**. Copy URL đó và dán vào trình duyệt web trên máy tính cá nhân của bạn để xác thực và phê duyệt server vào tailnet.
+
+#### 3. Kiểm tra Tailscale IP của server
+```bash
+tailscale ip -4
+```
+Server sẽ được gán một IP riêng dạng `100.x.x.x` — đây là IP cố định trong mạng Tailscale, dùng để kết nối từ bất kỳ đâu.
+
+#### 4. Bật tính năng Tailscale SSH (Tùy chọn nâng cao)
+Tailscale SSH cho phép xác thực SSH thông qua tài khoản Tailscale, **không cần quản lý SSH key thủ công**:
+```bash
+sudo tailscale set --ssh
+```
+> **Lưu ý**: Khi bật Tailscale SSH, bạn cần cấu hình thêm Access Control trên Admin Console (xem Bước 4 bên dưới).
+
+#### 5. Tắt hết hạn key cho server (Quan trọng)
+Mặc định, node key của Tailscale sẽ hết hạn sau 180 ngày, khiến server bị ngắt khỏi tailnet. Để tránh điều này cho máy chủ headless:
+1. Vào [Tailscale Admin Console](https://login.tailscale.com/admin/machines).
+2. Tìm máy chủ Ubuntu trong danh sách **Machines**.
+3. Click biểu tượng `⋯` (ba chấm) → Chọn **Disable key expiry**.
+
+---
+
+### Bước 3: Cài đặt Tailscale trên Windows (Client)
+
+#### 1. Tải và cài đặt
+- Truy cập [https://tailscale.com/download](https://tailscale.com/download) và tải bản cài **Tailscale cho Windows**.
+- Chạy file `.exe` và cài đặt theo hướng dẫn.
+
+#### 2. Đăng nhập
+- Sau khi cài xong, biểu tượng Tailscale sẽ xuất hiện ở **System Tray** (góc phải dưới thanh Taskbar, gần đồng hồ).
+- Click vào biểu tượng → Chọn **Log in** → Đăng nhập bằng **cùng tài khoản** đã dùng trên server.
+
+#### 3. Kiểm tra kết nối
+Mở PowerShell và kiểm tra trạng thái:
+```powershell
+tailscale status
+```
+Bạn sẽ thấy danh sách tất cả thiết bị trong tailnet, bao gồm cả server Ubuntu.
+
+---
+
+### Bước 4: Cấu hình Access Control cho Tailscale SSH (Nếu đã bật ở Bước 2.4)
+
+Nếu bạn đã bật `tailscale set --ssh` trên server, cần thêm quy tắc SSH vào chính sách truy cập:
+
+1. Vào [Tailscale Admin Console](https://login.tailscale.com/admin/acls) → Mục **Access Controls**.
+2. Thêm đoạn sau vào policy file JSON:
+```json
+"ssh": [
+  {
+    "action": "accept",
+    "src":    ["autogroup:member"],
+    "dst":    ["autogroup:self"],
+    "users":  ["autogroup:nonroot", "root"]
+  }
+]
+```
+> Quy tắc trên cho phép tất cả thành viên trong tailnet SSH vào mọi máy của mình với bất kỳ user nào. Bạn có thể tùy chỉnh chặt hơn nếu cần.
+
+3. Click **Save** để áp dụng.
+
+---
+
+### Bước 5: Kết nối SSH vào Server qua Tailscale
+
+Từ máy tính Windows, mở PowerShell hoặc Terminal và chạy:
+
+#### Cách 1: SSH bằng Tailscale IP
+```bash
+ssh spotlighter@100.x.x.x
+```
+*(Thay `100.x.x.x` bằng Tailscale IP thực tế của server, lấy từ lệnh `tailscale ip -4` ở Bước 2.3)*
+
+#### Cách 2: SSH bằng MagicDNS hostname (Khuyên dùng)
+Tailscale tự động bật **MagicDNS**, cho phép bạn SSH bằng tên máy thay vì IP:
+```bash
+ssh spotlighter@ubuntu-server
+```
+*(Tên máy là hostname Ubuntu Server của bạn — kiểm tra trong Admin Console hoặc chạy `hostname` trên server)*
+
+#### Cách 3: SSH bằng Tailscale SSH (Nếu đã bật ở Bước 2.4)
+Khi dùng Tailscale SSH, bạn **không cần nhập mật khẩu** — Tailscale tự xác thực qua tài khoản:
+```bash
+ssh spotlighter@ubuntu-server
+```
+
+---
+
+### Bước 6: Cấu hình VS Code Remote SSH qua Tailscale (Bonus)
+
+Để code trực tiếp trên server từ VS Code:
+
+1. Cài extension **Remote - SSH** trên VS Code.
+2. Nhấn `Ctrl+Shift+P` → Gõ `Remote-SSH: Connect to Host...`.
+3. Nhập `spotlighter@ubuntu-server` (MagicDNS hostname) hoặc `spotlighter@100.x.x.x` (Tailscale IP).
+4. VS Code sẽ kết nối và mở môi trường phát triển từ xa trên server!
+
+---
+
+### So sánh: Cloudflare Tunnel SSH vs Tailscale SSH
+
+| Tiêu chí | Cloudflare Tunnel SSH | Tailscale SSH |
+|---|---|---|
+| **Kiểu kết nối** | Proxy qua Cloudflare Edge | Peer-to-peer (WireGuard) |
+| **Độ trễ** | Cao hơn (đi qua trung gian) | Thấp hơn (kết nối trực tiếp) |
+| **Cài đặt client** | Cần `cloudflared` + cấu hình ProxyCommand | Chỉ cần cài Tailscale app |
+| **Xác thực** | Email OTP qua Cloudflare Access | Tài khoản Tailscale (SSO) |
+| **Phạm vi sử dụng** | Chỉ SSH (hoặc HTTP) | Mọi dịch vụ mạng (SSH, HTTP, DB,...) |
+| **Yêu cầu domain** | Cần domain + Cloudflare DNS | Không cần domain |
+| **Phù hợp với** | Expose dịch vụ public + SSH | SSH nội bộ + truy cập dịch vụ private |
+
+> **💡 Khuyến nghị**: Sử dụng **Tailscale** làm phương thức SSH chính (nhanh, tiện) và giữ **Cloudflare Tunnel SSH** làm phương thức dự phòng khi Tailscale gặp sự cố.
+
