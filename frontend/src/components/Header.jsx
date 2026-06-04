@@ -833,7 +833,7 @@ export default function Header() {
 
                 <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
                   <label className="form-label">
-                    Số điện thoại <span className="required-badge">Bắt buộc</span>
+                    Số điện thoại
                   </label>
                   <label className="auth-input-wrap">
                     <PhoneIcon size={18} />
