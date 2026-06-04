@@ -6,7 +6,7 @@ Tài liệu này cung cấp cái nhìn tổng quan về kiến trúc hệ thốn
 
 ## 1. Sơ Đồ Kiến Trúc Tổng Thể (System Architecture)
 
-Dự án được xây dựng dưới dạng ứng dụng SPA chạy phía Client sử dụng React + Vite. Dữ liệu được quản lý tập trung qua **React Context (AppContext)** và lưu trữ bền vững tại **LocalStorage Database Engine** ở trình duyệt.
+Dự án được xây dựng dưới dạng mô hình Client-Server. Frontend là ứng dụng SPA sử dụng React + Vite, giao tiếp qua REST APIs với Backend Node.js/Express (Modular Monolith) và lưu trữ bền vững tại cơ sở dữ liệu MongoDB. JWT token được lưu ở LocalStorage của trình duyệt để duy trì phiên làm việc của người dùng.
 
 ```mermaid
 graph TD
@@ -53,7 +53,6 @@ graph TD
     Ctx -->|Cung cấp State & Actions| DashP
 ```
 
----
 
 ## 2. Luồng Nghiệp Vụ Theo Vai Trò (User Role Journeys)
 
@@ -181,16 +180,19 @@ graph TD
 
 ## 4. Luồng Đồng Bộ Trạng Thái & Dữ Liệu (State & Storage Sync Flow)
 
-Cơ chế cập nhật dữ liệu tự động giữa client-side state và LocalStorage được cấu trúc để đảm bảo tính liên tục của dữ liệu mà không cần server database phức tạp:
+Cơ chế cập nhật dữ liệu tự động giữa client-side state và hệ thống Backend REST APIs/MongoDB được cấu trúc như sau:
 
-1. **Khởi tạo (App Load):**
-   - Trình duyệt đọc dữ liệu từ `localStorage` thông qua các key `TNCB_PROPERTIES`, `TNCB_CONTRACTS`, `TNCB_VIEW_HISTORY`, và `TNCB_USER`.
-   - Nếu `localStorage` trống, hệ thống sẽ nạp dữ liệu mặc định từ `mockProperties.js` và `mockContracts.js`, sau đó lưu ngược lại vào `localStorage`.
+1. **Khởi tạo & Đồng bộ Phiên (App Load & Session Sync):**
+   - Trình duyệt đọc token JWT được lưu trữ trong `localStorage` để duy trì trạng thái đăng nhập.
+   - Nếu tồn tại token, client gửi yêu cầu GET tới `/api/auth/me` để nạp thông tin tài khoản người dùng cùng các cấu hình bảo mật (`otpEnabled`, `mfaEnabled`).
+   - Danh sách tin đăng trọ được fetch động thông qua API `/api/properties` kết nối trực tiếp với database MongoDB.
 
-2. **Cập nhật & Lọc trùng (User Action & Deduplication Flow):**
-   - Khi Chủ trọ thêm phòng trọ mới $\rightarrow$ Hệ thống chạy thuật toán kiểm tra trùng lặp (Haversine khoảng cách GPS + Jaccard văn bản tiêu đề/mô tả).
-     - Nếu trùng lặp cao ($\ge 50\%$), thuộc tính `status` được đặt thành `'pending'` và kèm `duplicateReport` chi tiết, bài viết bị ẩn khỏi tập hiển thị công khai và đưa vào hàng chờ duyệt của Admin.
-     - Nếu không trùng lặp (hoặc do Admin đăng), bài viết được đặt là `status: 'active'`.
-   - Khi Chủ trọ/Admin thay đổi trạng thái thuê phòng (Trống $\leftrightarrow$ Đang thuê) hoặc gỡ bài đăng (Unlist $\leftrightarrow$ Publish) $\rightarrow$ React State `properties` cập nhật $\rightarrow$ kích hoạt `useEffect` ghi đè xuống `TNCB_PROPERTIES` trong `localStorage`.
-     - Bài đăng ở trạng thái `isUnlisted === true` hoặc `status === 'pending'` sẽ lập tức được ẩn khỏi danh sách tìm kiếm công khai và bản đồ Leaflet.
-   - Khi Khách thuê truy cập chi tiết phòng trọ $\rightarrow$ React State lịch sử xem tin tự động ghi nhận lượt xem mới, lọc bỏ các bản ghi đã quá 7 ngày $\rightarrow$ ghi đè xuống `TNCB_VIEW_HISTORY` trong `localStorage`.
+2. **Luồng Thách Thức Bảo Mật (MFA & Email OTP Challenge Flow):**
+   - Khi gửi yêu cầu đăng nhập:
+     - Nếu tài khoản đã kích hoạt **MFA** (ưu tiên cao nhất): Backend phản hồi trạng thái `requiresMfa` kèm token tạm thời, client chuyển modal sang luồng xác thực mã Authenticator.
+     - Nếu tài khoản kích hoạt **Email OTP** (và không bật MFA, đồng thời không đăng nhập qua Google SSO): Backend gửi mã OTP về email đăng ký và phản hồi `requiresOtp`, client chuyển modal sang luồng điền mã xác thực OTP.
+     - Sau khi người dùng điền đúng mã xác thực, backend cấp JWT session token chính thức để client lưu vào `localStorage`.
+
+3. **Cập nhật & Lọc trùng (User Action & Deduplication Flow):**
+   - Khi Chủ trọ thêm phòng trọ mới $\rightarrow$ API Backend chạy thuật toán lọc trùng tự động 3 lớp. Các bài viết trùng lặp cao sẽ được lưu dưới dạng `status: 'pending'` và chuyển vào hàng chờ duyệt của Admin.
+   - Khi Khách thuê truy cập chi tiết phòng trọ $\rightarrow$ Client tự động cập nhật lịch sử xem tin vào `TNCB_VIEW_HISTORY` trong `localStorage` và tự động xóa các bản ghi đã quá 7 ngày để tránh phình dung lượng.

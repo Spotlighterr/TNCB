@@ -4,6 +4,23 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 
 ---
 
+## [v2.4.0] - 2026-06-04
+### 🔒 Tích hợp Xác thực Email OTP & Đồng tồn tại với Bảo mật 2 lớp (MFA)
+Phiên bản này nâng cấp luồng đăng nhập bảo mật của hệ thống bằng phương thức xác thực mã OTP qua Email, đồng thời thiết lập cơ chế đồng tồn tại và phân cấp ưu tiên thông minh giữa Email OTP và ứng dụng Authenticator (MFA).
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Luồng xác thực Email OTP đăng nhập thông minh:**
+  - Đăng ký tài khoản (Người dùng mới): Bắt buộc xác thực mã OTP gửi qua Email để hoàn tất đăng ký.
+  - Đăng nhập (Từ lần thứ hai): Mặc định không yêu cầu OTP, trừ khi người dùng chủ động kích hoạt tính năng xác thực OTP qua Email trong cấu hình Hồ sơ cá nhân.
+  - Cơ chế Google SSO: Tự động bỏ qua kiểm tra Email OTP khi đăng nhập nhanh bằng Google, đảm bảo trải nghiệm liền mạch.
+* **Cơ chế phân cấp ưu tiên Bảo mật (MFA vs OTP):**
+  - Nếu người dùng kích hoạt cả hai tính năng Email OTP và Ứng dụng Authenticator (MFA): Hệ thống sẽ tự động ưu tiên và chỉ yêu cầu điền mã Authenticator (MFA) có tính bảo mật cao hơn khi đăng nhập.
+* **Giao diện quản lý Bảo mật & Xác thực song song:**
+  - Tái cấu trúc tab MFA thành **Bảo mật & Xác thực** trong Profile Modal, hiển thị song song cấu hình Email OTP và Authenticator kèm nhãn trạng thái kích hoạt trực quan.
+  - Tích hợp khung nhập mã 6 số cho Email OTP tại Auth Modal trên Header, có hỗ trợ badge hiển thị mã OTP Sandbox trên môi trường phát triển cục bộ.
+
+---
+
 ## [v2.3.0] - 2026-06-04
 ### 📸 Tải Ảnh WebP Cục Bộ, Tự Động Dọn Dẹp Ảnh Cũ & Đồng Bộ Persistent Volume
 Phiên bản này tối ưu hóa dung lượng lưu trữ hình ảnh tin đăng trọ, tăng tốc độ tải trang bằng định dạng WebP chất lượng cao và giải phóng ổ đĩa máy chủ qua cơ chế dọn dẹp ảnh mồ côi tự động.
