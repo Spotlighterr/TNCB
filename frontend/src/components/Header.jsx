@@ -782,19 +782,8 @@ export default function Header() {
                   <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <div id="google-signin-btn" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}></div>
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ width: '100%', gap: 'var(--space-2)', justifyContent: 'center', height: '40px' }}
-                    onClick={() => handleGoogleLoginResponse({ credential: 'mock_token_demo_user_' + Math.floor(Math.random() * 10000) })}
-                    id="google-signin-demo-btn"
-                  >
-                    <SignIn size={18} />
-                    Đăng nhập nhanh Google (Demo)
-                  </button>
                 </div>
               </form>
             )}

@@ -193,14 +193,11 @@ export default function Dashboard() {
               setIsAuthOpen(true);
               setAuthMode('login');
             }}
-            style={{ width: '100%', marginBottom: 'var(--space-6)', justifyContent: 'center' }}
+            style={{ width: '100%', justifyContent: 'center' }}
             id="dashboard-login-btn"
           >
             Đăng nhập ngay
           </button>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-subtle)', background: 'var(--bg-secondary)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)' }}>
-            Gợi ý: Bạn có thể nhấn nút Đăng nhập nhanh bằng tài khoản test để trải nghiệm ngay lập tức.
-          </p>
         </div>
       </div>
     );
