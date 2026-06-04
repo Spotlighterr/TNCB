@@ -50,7 +50,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/tncb
       - JWT_SECRET=your_production_jwt_secret_key_change_me
       - JWT_EXPIRES_IN=7d
-      - GOOGLE_CLIENT_ID=933443619049-s3ko97thdke1f5al5nbvh3l7cck0t64.apps.googleusercontent.com
+      - GOOGLE_CLIENT_ID=933443619049-s3ko97thdke1f5al5snbvh3l7cck0t64.apps.googleusercontent.com
     networks:
       - tncb-network
     volumes:
@@ -65,7 +65,7 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile.frontend
       args:
-        - VITE_GOOGLE_CLIENT_ID=933443619049-s3ko97thdke1f5al5nbvh3l7cck0t64.apps.googleusercontent.com
+        - VITE_GOOGLE_CLIENT_ID=933443619049-s3ko97thdke1f5al5snbvh3l7cck0t64.apps.googleusercontent.com
     container_name: tncb-frontend
     restart: always
     <<: *default-logging
