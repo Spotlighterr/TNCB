@@ -10,6 +10,7 @@ import propertyRoutes from './modules/property/propertyRoutes.js';
 import ticketRoutes from './modules/ticket/ticketRoutes.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { initPropertyBloomFilter } from './modules/property/propertyBloomFilter.js';
+import HeroSlide from './modules/property/HeroSlide.js';
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +37,46 @@ mongoose.connect(mongoURI)
   .then(async () => {
     console.log('✅ Connected to MongoDB successfully.');
     await initPropertyBloomFilter();
+    
+    // Seed default hero slides if collection is empty
+    try {
+      const slideCount = await HeroSlide.countDocuments();
+      if (slideCount === 0) {
+        console.log('[Seed] Seeding default Hero Slides...');
+        await HeroSlide.insertMany([
+          {
+            image: '/club_team_photo.png',
+            tag: 'Cộng đồng FindX',
+            title: 'Đội ngũ Core Team FindX',
+            description: 'Nơi kết nối và mang đến những giải pháp phòng trọ tối ưu cho sinh viên FTU.',
+            badgeText: 'CLB Hỗ trợ sinh viên',
+            link: 'https://www.facebook.com/FTU.HousingBank',
+            order: 1
+          },
+          {
+            image: '/university_activities.png',
+            tag: 'Hoạt động nổi bật',
+            title: 'Hành trình cùng Tân sinh viên',
+            description: 'Chương trình đồng hành hỗ trợ tìm kiếm nhà trọ an toàn, giá tốt đầu khóa học.',
+            badgeText: 'Sự kiện 2026',
+            link: 'https://www.facebook.com/FTU.HousingBank',
+            order: 2
+          },
+          {
+            image: '/student_room_hero.png',
+            tag: 'Phòng trọ kiểu mẫu',
+            title: 'Không gian sống thông minh',
+            description: 'Gợi ý các căn hộ studio đẹp mắt, gần trường đại học tại Hà Nội & TP.HCM.',
+            badgeText: 'Xác thực 100%',
+            link: '/search',
+            order: 3
+          }
+        ]);
+        console.log('[Seed] Default Hero Slides seeded successfully.');
+      }
+    } catch (seedErr) {
+      console.error('[Seed] Failed to seed Hero Slides:', seedErr.message);
+    }
   })
   .catch((err) => {
     console.error('❌ Failed to connect to MongoDB:', err.message);

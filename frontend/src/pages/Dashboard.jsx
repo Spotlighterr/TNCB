@@ -59,6 +59,7 @@ const LANDLORD_TABS = [
 const ADMIN_TABS = [
   { id: 'overview', label: 'Tổng quan & Quản lý', icon: ChartBar },
   { id: 'pending-reviews', label: 'Kiểm duyệt tin', icon: ShieldCheck },
+  { id: 'banners', label: 'Quản lý Bản tin', icon: Buildings },
 ];
 
 const TENANT_TABS = [
@@ -90,6 +91,11 @@ export default function Dashboard() {
     createContract,
     addBill,
     createTicket,
+    // Dynamic slides API
+    heroSlides,
+    addHeroSlide,
+    updateHeroSlide,
+    deleteHeroSlide,
   } = useApp();
 
   const isAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
@@ -116,6 +122,19 @@ export default function Dashboard() {
   const [duplicateReport, setDuplicateReport] = useState(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
+  // Hero slides management states
+  const [isAddingSlide, setIsAddingSlide] = useState(false);
+  const [editingSlide, setEditingSlide] = useState(null);
+  const [slideForm, setSlideForm] = useState({
+    tag: '',
+    title: '',
+    description: '',
+    badgeText: '',
+    link: '',
+    image: null,
+    order: 1
+  });
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
@@ -129,6 +148,8 @@ export default function Dashboard() {
     setIsCreatingContract(false);
     setIsCreatingBill(false);
     setIsCreatingTicket(false);
+    setIsAddingSlide(false);
+    setEditingSlide(null);
   };
 
   // --- Form States ---
@@ -619,6 +640,71 @@ export default function Dashboard() {
     showToast('Đã gửi yêu cầu hỗ trợ thành công!');
   };
 
+  // --- Hero Slide Actions ---
+  const handleAddSlideClick = () => {
+    setSlideForm({
+      tag: '',
+      title: '',
+      description: '',
+      badgeText: '',
+      link: '',
+      image: null,
+      order: heroSlides.length + 1
+    });
+    setIsAddingSlide(true);
+    setEditingSlide(null);
+  };
+
+  const handleEditSlideClick = (slide) => {
+    setSlideForm({
+      tag: slide.tag || '',
+      title: slide.title || '',
+      description: slide.description || '',
+      badgeText: slide.badgeText || '',
+      link: slide.link || '',
+      image: slide.image || null,
+      order: slide.order || 1
+    });
+    setEditingSlide(slide);
+    setIsAddingSlide(false);
+  };
+
+  const handleSlideSubmit = async (e) => {
+    e.preventDefault();
+    if (!slideForm.title || !slideForm.tag || !slideForm.description || !slideForm.badgeText) {
+      showToast('Vui lòng điền đầy đủ thông tin slide.', 'error');
+      return;
+    }
+    if (!editingSlide && !slideForm.image) {
+      showToast('Vui lòng tải lên ảnh của slide.', 'error');
+      return;
+    }
+
+    try {
+      if (editingSlide) {
+        const res = await updateHeroSlide(editingSlide.id, slideForm);
+        if (res.success) {
+          showToast('Cập nhật slide thành công!');
+          setIsAddingSlide(false);
+          setEditingSlide(null);
+        } else {
+          showToast(res.message || 'Lỗi cập nhật slide.', 'error');
+        }
+      } else {
+        const res = await addHeroSlide(slideForm);
+        if (res.success) {
+          showToast('Thêm slide thành công!');
+          setIsAddingSlide(false);
+          setEditingSlide(null);
+        } else {
+          showToast(res.message || 'Lỗi thêm slide.', 'error');
+        }
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+  };
+
   // --- Landlord Computations ---
   const totalListings = landlordProperties.length;
   const activeListings = landlordProperties.filter((p) => p.status !== 'pending' && !p.isUnlisted && !p.isRented).length;
@@ -650,7 +736,7 @@ export default function Dashboard() {
         <div className="sidebar-header">
           <Buildings size={24} weight="duotone" color="var(--color-accent)" />
           <span className="sidebar-title">
-            {userRole === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê'}
+            {isAdmin ? 'Quản trị viên' : (userRole === 'landlord' ? 'Chủ trọ / AMS' : 'Khách thuê')}
           </span>
         </div>
 
@@ -1271,6 +1357,333 @@ export default function Dashboard() {
                 <button className="btn btn-primary" onClick={handleAddRoomClick}>
                   Đăng tin tìm khách thuê ngay
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/* ===================== ADMIN PENDING REVIEWS VIEW ===================== */}
+        {isAdmin && activeTab === 'pending-reviews' && (
+          <div className="animate-fade-in">
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Hàng chờ kiểm duyệt tin đăng</h2>
+            </div>
+            
+            {properties.filter((p) => p.status === 'pending').length > 0 ? (
+              <div className="rooms-table-wrap animate-scale-in">
+                <table className="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>Tin đăng mới</th>
+                      <th>Người đăng</th>
+                      <th>Quận</th>
+                      <th>Giá thuê</th>
+                      <th>Độ trùng lặp</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {properties
+                      .filter((p) => p.status === 'pending')
+                      .map((p) => (
+                        <tr key={p.id}>
+                          <td>
+                            <div className="room-cell">
+                              <img src={p.images?.[0]} alt="" className="room-cell-img" />
+                              <div>
+                                <div className="room-cell-title">{p.title}</div>
+                                <div className="text-caption">{p.address}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="text-caption" style={{ fontWeight: 'var(--weight-semibold)' }}>
+                              {p.owner?.name || 'Chủ nhà'}
+                            </div>
+                            <div className="text-caption" style={{ fontSize: '11px' }}>
+                              {p.owner?.phone}
+                            </div>
+                          </td>
+                          <td>{p.district}</td>
+                          <td><span className="price">{formatPriceShort(p.price)}</span></td>
+                          <td>
+                            <span className="badge" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)', fontWeight: 'var(--weight-semibold)' }}>
+                              {p.duplicateReport?.confidenceScore || 0}%
+                            </span>
+                          </td>
+                          <td>
+                            <div className="room-actions">
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => {
+                                  setDuplicateReport({
+                                    ...p.duplicateReport,
+                                    pendingProperty: p,
+                                    matchedProperty: properties.find((x) => x.id === p.duplicateReport?.matchedPropertyId),
+                                    isAdminReview: true
+                                  });
+                                }}
+                                style={{ padding: '4px 12px', fontSize: '12px' }}
+                              >
+                                Xem đối chiếu
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="dashboard-empty">
+                <ShieldCheck size={48} color="var(--color-success)" />
+                <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--color-success)' }}>Hàng chờ trống!</p>
+                <p className="text-caption">Tất cả bài đăng trọ trên hệ thống đã được kiểm duyệt và an toàn.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+
+        {/* ===================== HERO SLIDES / BANNERS MANAGEMENT ===================== */}
+        {isAdmin && activeTab === 'banners' && (
+          <div className="animate-fade-in">
+            {/* Form to Add or Edit Slide */}
+            {(isAddingSlide || editingSlide) ? (
+              <div className="form-container animate-scale-in">
+                <div className="form-header">
+                  <h3 className="form-title">
+                    {editingSlide ? 'Chỉnh sửa slide bản tin' : 'Thêm slide bản tin mới'}
+                  </h3>
+                  <button
+                    className="btn btn-ghost btn-icon"
+                    onClick={() => {
+                      setIsAddingSlide(false);
+                      setEditingSlide(null);
+                    }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSlideSubmit}>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label className="form-label">Thẻ tiêu đề (Tag) *</label>
+                      <input
+                        className="input"
+                        required
+                        placeholder="Ví dụ: Cộng đồng FindX, Hoạt động nổi bật"
+                        value={slideForm.tag}
+                        onChange={(e) => setSlideForm({ ...slideForm, tag: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Huy hiệu góc (Badge) *</label>
+                      <input
+                        className="input"
+                        required
+                        placeholder="Ví dụ: Sự kiện 2026, CLB Hỗ trợ sinh viên"
+                        value={slideForm.badgeText}
+                        onChange={(e) => setSlideForm({ ...slideForm, badgeText: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label className="form-label">Tiêu đề chính *</label>
+                      <input
+                        className="input"
+                        required
+                        placeholder="Ví dụ: Đội ngũ Core Team FindX"
+                        value={slideForm.title}
+                        onChange={(e) => setSlideForm({ ...slideForm, title: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label className="form-label">Mô tả chi tiết *</label>
+                      <textarea
+                        className="input"
+                        required
+                        rows={3}
+                        placeholder="Nhập mô tả ngắn gọn về slide..."
+                        value={slideForm.description}
+                        onChange={(e) => setSlideForm({ ...slideForm, description: e.target.value })}
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Đường dẫn liên kết (Link) *</label>
+                      <input
+                        className="input"
+                        required
+                        placeholder="Ví dụ: https://facebook.com/... hoặc /search"
+                        value={slideForm.link}
+                        onChange={(e) => setSlideForm({ ...slideForm, link: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Thứ tự hiển thị *</label>
+                      <input
+                        type="number"
+                        className="input text-mono"
+                        required
+                        min="1"
+                        value={slideForm.order}
+                        onChange={(e) => setSlideForm({ ...slideForm, order: Number(e.target.value) })}
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label className="form-label">Hình ảnh banner *</label>
+                      <div 
+                        className="image-upload-dropzone" 
+                        onClick={() => document.getElementById('slide-image-file').click()}
+                      >
+                        <UploadSimple size={24} color="var(--color-text-subtle)" />
+                        <span className="dropzone-text">Nhấp để chọn ảnh banner</span>
+                        <input
+                          id="slide-image-file"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setSlideForm({ ...slideForm, image: file });
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                      </div>
+
+                      {slideForm.image && (
+                        <div className="upload-preview-grid" style={{ marginTop: 'var(--space-2)' }}>
+                          <div className="upload-preview-item" style={{ width: '200px', height: '120px' }}>
+                            <img
+                              src={slideForm.image instanceof File ? URL.createObjectURL(slideForm.image) : slideForm.image}
+                              alt="Preview"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                            <button
+                              type="button"
+                              className="upload-preview-remove"
+                              onClick={() => setSlideForm({ ...slideForm, image: null })}
+                            >
+                              <X size={12} weight="bold" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-actions-row">
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        setIsAddingSlide(false);
+                        setEditingSlide(null);
+                      }}
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      {editingSlide ? 'Lưu cập nhật' : 'Thêm slide'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="animate-scale-in">
+                <div className="dashboard-page-header">
+                  <h2 className="dashboard-page-title">Quản lý slide quảng cáo & bản tin</h2>
+                  <button className="btn btn-primary" onClick={handleAddSlideClick}>
+                    <Plus size={18} />
+                    Thêm slide mới
+                  </button>
+                </div>
+
+                {heroSlides.length > 0 ? (
+                  <div className="rooms-table-wrap">
+                    <table className="rooms-table">
+                      <thead>
+                        <tr>
+                          <th>Hình ảnh</th>
+                          <th>Tiêu đề & Thẻ</th>
+                          <th>Huy hiệu</th>
+                          <th>Đường dẫn</th>
+                          <th>Thứ tự</th>
+                          <th>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {heroSlides.map((slide) => (
+                          <tr key={slide.id}>
+                            <td>
+                              <img 
+                                src={slide.image} 
+                                alt="" 
+                                style={{ width: '80px', height: '50px', borderRadius: '4px', objectFit: 'cover' }} 
+                              />
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>
+                                {slide.title}
+                              </div>
+                              <div className="text-caption" style={{ color: 'var(--color-accent)' }}>
+                                {slide.tag}
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge badge-available">{slide.badgeText}</span>
+                            </td>
+                            <td className="text-mono" style={{ fontSize: '11px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {slide.link}
+                            </td>
+                            <td className="text-mono">{slide.order}</td>
+                            <td>
+                              <div className="room-actions">
+                                <button
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => handleEditSlideClick(slide)}
+                                  title="Chỉnh sửa"
+                                >
+                                  <PencilSimple size={16} />
+                                </button>
+                                <button
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => {
+                                    if (confirm('Bạn có chắc chắn muốn xóa slide này?')) {
+                                      deleteHeroSlide(slide.id);
+                                      showToast('Xóa slide thành công!');
+                                    }
+                                  }}
+                                  style={{ color: 'var(--color-error)' }}
+                                  title="Xóa"
+                                >
+                                  <Trash size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="dashboard-empty">
+                    <Buildings size={48} color="var(--color-text-subtle)" />
+                    <p>Chưa có slide nào được tải lên cơ sở dữ liệu.</p>
+                    <button className="btn btn-primary" onClick={handleAddSlideClick}>
+                      Thêm slide đầu tiên ngay
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

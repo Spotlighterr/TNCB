@@ -34,6 +34,7 @@ export function AppProvider({ children }) {
     loadFromStorage('TNCB_CONTRACTS', mockContracts)
   );
   const [tickets, setTickets] = useState([]);
+  const [heroSlides, setHeroSlides] = useState([]);
 
   // Auth Modal State (Global)
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -128,6 +129,17 @@ export function AppProvider({ children }) {
     };
   }, []);
 
+  const transformHeroSlide = useCallback((slide) => {
+    if (!slide) return slide;
+    return {
+      ...slide,
+      id: slide._id || slide.id,
+      image: typeof slide.image === 'string' && slide.image.startsWith('/uploads/')
+        ? `${API_BASE_URL}${slide.image}`
+        : slide.image
+    };
+  }, []);
+
   // API Fetch actions
   const fetchProperties = useCallback(async () => {
     try {
@@ -212,6 +224,18 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  const fetchHeroSlides = useCallback(async () => {
+    try {
+      const res = await fetch(API_BASE_URL + '/api/properties/hero-slides');
+      const data = await res.json();
+      if (data.success) {
+        setHeroSlides(data.slides.map(transformHeroSlide));
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách hero slides:', err);
+    }
+  }, [transformHeroSlide]);
+
   // Restore session on mount
   useEffect(() => {
     const restoreSession = async () => {
@@ -244,7 +268,8 @@ export function AppProvider({ children }) {
   useEffect(() => {
     fetchProperties();
     fetchTickets();
-  }, [currentUser, fetchProperties, fetchTickets]);
+    fetchHeroSlides();
+  }, [currentUser, fetchProperties, fetchTickets, fetchHeroSlides]);
 
   // ============================
   // Auth Actions (REST APIs)
@@ -897,6 +922,94 @@ export function AppProvider({ children }) {
     }
   }, [transformProperty]);
 
+  // --- Hero Slides Actions ---
+  const addHeroSlide = useCallback(async (slideData) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const formData = new FormData();
+      Object.keys(slideData).forEach((key) => {
+        if (key === 'image' && slideData[key] instanceof File) {
+          formData.append('image', slideData[key]);
+        } else if (slideData[key] !== undefined && slideData[key] !== null) {
+          formData.append(key, slideData[key]);
+        }
+      });
+
+      const res = await fetch(API_BASE_URL + '/api/properties/hero-slides', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformHeroSlide(data.slide);
+        setHeroSlides((prev) => [...prev, transformed].sort((a, b) => (a.order || 0) - (b.order || 0)));
+        return { success: true, slide: transformed };
+      }
+      return { success: false, message: data.message || 'Lỗi thêm slide.' };
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, [transformHeroSlide]);
+
+  const updateHeroSlideAction = useCallback(async (id, updates) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const formData = new FormData();
+      Object.keys(updates).forEach((key) => {
+        if (key === 'image' && updates[key] instanceof File) {
+          formData.append('image', updates[key]);
+        } else if (updates[key] !== undefined && updates[key] !== null) {
+          formData.append(key, updates[key]);
+        }
+      });
+
+      const res = await fetch(`${API_BASE_URL}/api/properties/hero-slides/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        const transformed = transformHeroSlide(data.slide);
+        setHeroSlides((prev) =>
+          prev.map((s) => (s.id === id ? transformed : s)).sort((a, b) => (a.order || 0) - (b.order || 0))
+        );
+        return { success: true, slide: transformed };
+      }
+      return { success: false, message: data.message || 'Lỗi cập nhật slide.' };
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, [transformHeroSlide]);
+
+  const deleteHeroSlideAction = useCallback(async (id) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/properties/hero-slides/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setHeroSlides((prev) => prev.filter((s) => s.id !== id));
+        return { success: true };
+      }
+      return { success: false, message: data.message || 'Lỗi xóa slide.' };
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
   // --- View History ---
   const addViewToHistory = useCallback((propertyId) => {
     setViewHistory((prev) => {
@@ -1063,6 +1176,12 @@ export function AppProvider({ children }) {
     togglePropertyStatus,
     toggleUnlistProperty,
     toggleVerifyProperty,
+    // Hero Slides
+    heroSlides,
+    fetchHeroSlides,
+    addHeroSlide,
+    updateHeroSlide: updateHeroSlideAction,
+    deleteHeroSlide: deleteHeroSlideAction,
     // View History
     addViewToHistory,
     // Contracts

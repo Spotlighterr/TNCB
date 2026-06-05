@@ -11,7 +11,11 @@ import {
   toggleVerifyStatus,
   getAdminReviewQueue,
   approveProperty,
-  rejectProperty
+  rejectProperty,
+  getHeroSlides,
+  createHeroSlide,
+  updateHeroSlide,
+  deleteHeroSlide
 } from './propertyController.js';
 import { auth, checkRole } from '../../middleware/auth.js';
 import { checkPropertyBloomFilter } from './propertyBloomFilter.js';
@@ -24,6 +28,7 @@ const router = express.Router();
 // Public routes
 router.get('/', getProperties);
 router.get('/detail/:id', checkPropertyBloomFilter, getPropertyDetail);
+router.get('/hero-slides', getHeroSlides);
 
 // Private routes for Landlords & Admins
 router.get('/my-properties', auth, checkRole(['landlord', 'admin']), getMyProperties);
@@ -38,5 +43,10 @@ router.get('/admin/review-queue', auth, checkRole(['admin']), getAdminReviewQueu
 router.patch('/:id/toggle-verify', auth, checkRole(['admin']), checkPropertyBloomFilter, toggleVerifyStatus);
 router.patch('/:id/approve', auth, checkRole(['admin']), checkPropertyBloomFilter, approveProperty);
 router.patch('/:id/reject', auth, checkRole(['admin']), checkPropertyBloomFilter, rejectProperty);
+
+// Hero Slides management
+router.post('/hero-slides', auth, checkRole(['admin']), upload.array('image', 1), createHeroSlide);
+router.put('/hero-slides/:id', auth, checkRole(['admin']), upload.array('image', 1), updateHeroSlide);
+router.delete('/hero-slides/:id', auth, checkRole(['admin']), deleteHeroSlide);
 
 export default router;

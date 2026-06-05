@@ -5,7 +5,7 @@ Dưới đây là danh sách toàn bộ các tài khoản thử nghiệm đã đ
 ---
 
 ## 🛡️ 1. Tài Khoản Quản Trị Viên (Admin)
-Tài khoản có quyền kiểm duyệt tin đăng trùng lặp, phê duyệt/từ chối tin trong hàng chờ, bật/tắt nhãn xác thực (Verified) và chỉnh sửa/xóa/gỡ bất kỳ tin nào trên hệ thống.
+Tài khoản có quyền kiểm duyệt tin đăng trùng lặp, phê duyệt/từ chối tin trong hàng chờ, bật/tắt nhãn xác thực (Verified), chỉnh sửa/xóa/gỡ bất kỳ tin nào trên hệ thống và quản lý slide quảng cáo/bản tin trang chủ.
 
 * **Email:** `admin@tncb.vn`
 * **Mật khẩu:** `admin`

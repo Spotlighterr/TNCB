@@ -1,4 +1,5 @@
 import Property from './Property.js';
+import HeroSlide from './HeroSlide.js';
 import { checkDuplicateProperty } from './deduplication.js';
 import { propertyBloomFilter } from './propertyBloomFilter.js';
 import sharp from 'sharp';
@@ -631,6 +632,132 @@ export const rejectProperty = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Lỗi từ chối tin đăng: ' + err.message
+    });
+  }
+};
+
+// ============================================
+// Hero Slides CRUD Controller Actions
+// ============================================
+export const getHeroSlides = async (req, res) => {
+  try {
+    const slides = await HeroSlide.find().sort({ order: 1 });
+    return res.status(200).json({
+      success: true,
+      slides
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi lấy danh sách banner: ' + err.message
+    });
+  }
+};
+
+export const createHeroSlide = async (req, res) => {
+  try {
+    const { tag, title, description, badgeText, link, order } = req.body;
+
+    let imageUrl = '';
+    if (req.files && req.files.length > 0) {
+      imageUrl = await processAndSaveImage(req.files[0]);
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng tải lên hình ảnh cho banner.'
+      });
+    }
+
+    const slide = new HeroSlide({
+      image: imageUrl,
+      tag,
+      title,
+      description,
+      badgeText,
+      link,
+      order: Number(order) || 0
+    });
+
+    await slide.save();
+    return res.status(201).json({
+      success: true,
+      message: 'Tạo banner mới thành công.',
+      slide
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi tạo banner mới: ' + err.message
+    });
+  }
+};
+
+export const updateHeroSlide = async (req, res) => {
+  try {
+    const { tag, title, description, badgeText, link, order } = req.body;
+    const slide = await HeroSlide.findById(req.params.id);
+
+    if (!slide) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy banner.'
+      });
+    }
+
+    if (tag) slide.tag = tag;
+    if (title) slide.title = title;
+    if (description) slide.description = description;
+    if (badgeText) slide.badgeText = badgeText;
+    if (link) slide.link = link;
+    if (order !== undefined) slide.order = Number(order) || 0;
+
+    if (req.files && req.files.length > 0) {
+      // Delete old image if it is in /uploads/
+      if (slide.image.startsWith('/uploads/')) {
+        await deleteLocalImage(slide.image);
+      }
+      slide.image = await processAndSaveImage(req.files[0]);
+    }
+
+    await slide.save();
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật banner thành công.',
+      slide
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi cập nhật banner: ' + err.message
+    });
+  }
+};
+
+export const deleteHeroSlide = async (req, res) => {
+  try {
+    const slide = await HeroSlide.findById(req.params.id);
+
+    if (!slide) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy banner.'
+      });
+    }
+
+    // Delete image file if it is stored in /uploads/
+    if (slide.image.startsWith('/uploads/')) {
+      await deleteLocalImage(slide.image);
+    }
+
+    await slide.deleteOne();
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa banner thành công.'
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi xóa banner: ' + err.message
     });
   }
 };
