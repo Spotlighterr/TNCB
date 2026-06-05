@@ -104,7 +104,7 @@
   --mobile-bottom-nav-height: calc(var(--mobile-bottom-nav-bar) + env(safe-area-inset-bottom, 0px));
 
   /* ========================================
-     Motion System — Spring Physics Curves
+     Motion System - Spring Physics Curves
      ======================================== */
   /* Transitions (Spring Physics) */
   --ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);

@@ -3,30 +3,11 @@
 Tài liệu này lưu lại danh sách công việc cần làm để chuyển giao hệ thống sang môi trường thực tế và tích hợp các tính năng bảo mật nâng cao trong tương lai.
 
 > [!IMPORTANT]
-> - Sau khi cấu hình xong môi trường thực tế và xác nhận Google SSO hoạt động bình thường, hãy xoá phần nhiệm vụ số 1 (Cấu hình Google SSO Thực tế) khỏi tài liệu này.
 > - Bất kỳ nhiệm vụ hay tính năng mới nào được thống nhất phát triển trong tương lai sẽ được cập nhật trực tiếp tại tệp `task.md` này làm nguồn theo dõi chính thức.
 
 ---
 
-## 🔐 1. Cấu hình Google SSO Thực tế (Sản xuất)
-
-Hiện tại Google SSO đang chạy qua cơ chế Token giả lập (`mock_token_*`). Cần làm các bước sau để tích hợp tài khoản Google thật:
-
-- [ ] **Google Cloud Console Setup**:
-  - [ ] Truy cập [Google Cloud Console](https://console.cloud.google.com/).
-  - [ ] Cấu hình màn hình đồng ý OAuth (OAuth consent screen) với phạm vi (scopes): `email`, `profile`, `openid`.
-  - [ ] Tạo thông tin xác thực OAuth Client ID (loại Web Application).
-  - [ ] Thêm `http://localhost:5173` và miền sản xuất vào mục **Authorized JavaScript origins**.
-- [ ] **Cấu hình Backend**:
-  - [ ] Cập nhật biến `GOOGLE_CLIENT_ID` trong `backend/.env` với Client ID thực tế.
-- [ ] **Cấu hình Frontend**:
-  - [ ] Cập nhật `client_id` trong file `frontend/src/components/Header.jsx` (dòng khởi tạo Google SDK trong `useEffect`).
-- [ ] **Kiểm thử E2E**:
-  - [ ] Thực hiện đăng nhập bằng một tài khoản Gmail thực tế và kiểm tra quy trình liên kết tài khoản / cập nhật số điện thoại.
-
----
-
-## 🛡️ 2. Lộ trình tích hợp Xác thực 2 lớp (MFA - Multi-Factor Authentication)
+## 🛡️ 1. Lộ trình tích hợp Xác thực 2 lớp (MFA - Multi-Factor Authentication)
 
 Triển khai phương thức xác thực hai yếu tố (2FA) sử dụng ứng dụng tạo mã OTP (như Google Authenticator hoặc Microsoft Authenticator) dựa trên giao thức TOTP (Time-based One-time Password).
 
@@ -55,7 +36,7 @@ Triển khai phương thức xác thực hai yếu tố (2FA) sử dụng ứng 
 
 ---
 
-## 📦 3. Đóng gói & Triển khai ứng dụng trên Máy chủ riêng (On-premise Server)
+## 📦 2. Đóng gói & Triển khai ứng dụng trên Máy chủ riêng (On-premise Server)
 
 Chuẩn bị sẵn sàng ứng dụng để vận hành trực tiếp trên máy chủ vật lý do nhà trường cung cấp.
 
@@ -77,7 +58,7 @@ Chuẩn bị sẵn sàng ứng dụng để vận hành trực tiếp trên máy
 
 ---
 
-## 🌐 4. Lộ trình chuyển đổi sang Microservices (Định hướng tương lai)
+## 🌐 3. Lộ trình chuyển đổi sang Microservices (Định hướng tương lai)
 
 Dự án hiện đã được tái cấu trúc sang mô hình **Modular Monolith** (tách biệt các module `auth`, `property`, `ticket` độc lập trong code backend). Khi quy mô người dùng tăng lớn, thực hiện các bước sau để chuyển giao sang Microservices:
 
@@ -92,7 +73,7 @@ Dự án hiện đã được tái cấu trúc sang mô hình **Modular Monolith
 
 ---
 
-## 💬 5. Tích hợp nút Chat Live Messenger trực tiếp trên Website
+## 💬 4. Tích hợp nút Chat Live Messenger trực tiếp trên Website
 
 Triển khai nút nhắn tin Messenger nổi ở góc màn hình, cho phép khách truy cập chat trực tiếp với đội ngũ hỗ trợ của FindX ngay trên giao diện web mà không cần rời trang.
 
@@ -117,7 +98,7 @@ Triển khai nút nhắn tin Messenger nổi ở góc màn hình, cho phép khá
 
 ---
 
-## 💬 6. Tích hợp Zalo API & Zalo Chat Widget
+## 💬 5. Tích hợp Zalo API & Zalo Chat Widget
 
 Tích hợp cổng hỗ trợ qua Zalo Official Account (OA) hoặc Zalo Chat Widget để hỗ trợ khách thuê nhắn tin trực tiếp qua nền tảng Zalo phổ biến tại Việt Nam.
 
@@ -139,7 +120,7 @@ Tích hợp cổng hỗ trợ qua Zalo Official Account (OA) hoặc Zalo Chat Wi
 
 ---
 
-## 🛡️ 7. Bộ lọc Nội dung Nhạy cảm (Ngôn từ & Hình ảnh NSFW)
+## 🛡️ 6. Bộ lọc Nội dung Nhạy cảm (Ngôn từ & Hình ảnh NSFW)
 
 Xây dựng lớp bảo vệ kép cho cổng đăng tin FindX để tự động chặn các nội dung văn bản chứa ngôn từ tục tĩu/nhạy cảm và các hình ảnh không lành mạnh (NSFW - Not Safe For Work) do người dùng đăng tải.
 

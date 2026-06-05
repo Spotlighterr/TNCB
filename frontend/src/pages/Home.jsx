@@ -199,7 +199,7 @@ export default function Home() {
 
       <style>{`
         /* ============================================
-           HERO SECTION — Cinematic Entry
+           HERO SECTION - Cinematic Entry
            ============================================ */
         .hero {
           min-height: calc(100dvh - var(--header-height));
@@ -428,7 +428,7 @@ export default function Home() {
         }
 
         /* ============================================
-           BENTO STATS — Interactive cards
+           BENTO STATS - Interactive cards
            ============================================ */
         .bento-grid {
           display: grid;

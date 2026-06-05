@@ -186,7 +186,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   BUTTONS — with ripple-like press feedback
+   BUTTONS - with ripple-like press feedback
    ============================================ */
 .btn {
   display: inline-flex;
@@ -282,7 +282,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   CARDS — with ambient glow on hover
+   CARDS - with ambient glow on hover
    ============================================ */
 .card {
   background: var(--color-surface);
@@ -342,7 +342,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   FORM ELEMENTS — Focus glow transitions
+   FORM ELEMENTS - Focus glow transitions
    ============================================ */
 .input {
   width: 100%;
@@ -397,7 +397,7 @@ h1, h2, h3, h4, h5, h6 {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 256 256'%3E%3Cpath fill='%230284c7' d='m216.49 151.51a12 12 0 0 1-17 17L128 97l-71.51 71.52a12 12 0 0 1-17-17l80-80a12 12 0 0 1 17 0Z'/%3E%3C/svg%3E");
 }
 
-/* ---- Toggle Switch — Springy Knob ---- */
+/* ---- Toggle Switch - Springy Knob ---- */
 .switch {
   position: relative;
   width: 44px;
@@ -430,7 +430,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   ANIMATION KEYFRAMES — Full System
+   ANIMATION KEYFRAMES - Full System
    ============================================ */
 
 /* Basic Entries */
@@ -616,7 +616,7 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin 1s linear infinite;
 }
 
-/* Staggered delays — up to 12 levels */
+/* Staggered delays - up to 12 levels */
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
@@ -650,7 +650,7 @@ main {
 }
 
 /* ============================================
-   LINK HOVER — Underline grow effect
+   LINK HOVER - Underline grow effect
    ============================================ */
 .footer-links a {
   position: relative;
@@ -673,7 +673,7 @@ main {
 }
 
 /* ============================================
-   SCROLLBAR — Premium
+   SCROLLBAR - Premium
    ============================================ */
 ::-webkit-scrollbar {
   width: 6px;
@@ -760,7 +760,7 @@ main {
 }
 
 /* ============================================
-   FOCUS VISIBLE — Ring style
+   FOCUS VISIBLE - Ring style
    ============================================ */
 a:focus-visible,
 button:focus-visible,
@@ -777,7 +777,7 @@ textarea:focus-visible {
 }
 
 /* ============================================
-   TOOLTIP — Generic styling
+   TOOLTIP - Generic styling
    ============================================ */
 [title] {
   position: relative;
@@ -850,7 +850,7 @@ textarea:focus-visible {
 }
 
 /* ============================================
-   REDUCED MOTION — Disabled for rich visual demo
+   REDUCED MOTION - Disabled for rich visual demo
    ============================================ */
 /* 
 @media (prefers-reduced-motion: reduce) {

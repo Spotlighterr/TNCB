@@ -1062,7 +1062,7 @@ export default function Dashboard() {
                         <td><span className="text-mono">{p.area} m&sup2;</span></td>
                         <td>
                           <span className="text-caption" style={{ whiteSpace: 'nowrap' }}>
-                            {p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                            {p.createdAt ? new Date(p.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
                           </span>
                         </td>
                         <td>

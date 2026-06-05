@@ -304,7 +304,7 @@ Tailscale là giải pháp VPN dựa trên giao thức **WireGuard**, tạo mộ
 ### Bước 1: Tạo tài khoản Tailscale
 
 1. Truy cập [https://login.tailscale.com](https://login.tailscale.com) và đăng ký tài khoản bằng Google, Microsoft, hoặc GitHub.
-2. Sau khi đăng nhập, bạn sẽ vào **Tailscale Admin Console** — nơi quản lý toàn bộ thiết bị trong tailnet của bạn.
+2. Sau khi đăng nhập, bạn sẽ vào **Tailscale Admin Console** - nơi quản lý toàn bộ thiết bị trong tailnet của bạn.
 
 ---
 
@@ -327,7 +327,7 @@ Lệnh này sẽ in ra một **URL đăng nhập**. Copy URL đó và dán vào 
 ```bash
 tailscale ip -4
 ```
-Server sẽ được gán một IP riêng dạng `100.x.x.x` — đây là IP cố định trong mạng Tailscale, dùng để kết nối từ bất kỳ đâu.
+Server sẽ được gán một IP riêng dạng `100.x.x.x` - đây là IP cố định trong mạng Tailscale, dùng để kết nối từ bất kỳ đâu.
 
 #### 4. Bật tính năng Tailscale SSH (Tùy chọn nâng cao)
 Tailscale SSH cho phép xác thực SSH thông qua tài khoản Tailscale, **không cần quản lý SSH key thủ công**:
@@ -400,10 +400,10 @@ Tailscale tự động bật **MagicDNS**, cho phép bạn SSH bằng tên máy 
 ```bash
 ssh spotlighter@ubuntu-server
 ```
-*(Tên máy là hostname Ubuntu Server của bạn — kiểm tra trong Admin Console hoặc chạy `hostname` trên server)*
+*(Tên máy là hostname Ubuntu Server của bạn - kiểm tra trong Admin Console hoặc chạy `hostname` trên server)*
 
 #### Cách 3: SSH bằng Tailscale SSH (Nếu đã bật ở Bước 2.4)
-Khi dùng Tailscale SSH, bạn **không cần nhập mật khẩu** — Tailscale tự xác thực qua tài khoản:
+Khi dùng Tailscale SSH, bạn **không cần nhập mật khẩu** - Tailscale tự xác thực qua tài khoản:
 ```bash
 ssh spotlighter@ubuntu-server
 ```

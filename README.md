@@ -1,4 +1,4 @@
-# FindX — Tìm Nhà Cùng Bạn
+# FindX - Tìm Nhà Cùng Bạn
 
 **FindX** (FTU Housing Bank). Repo được làm cho mục đích nghiên cứu cá nhân của tôi, có thể được deploy miễn phí. Anh nào ủng hộ bạn đi =((
 
@@ -75,7 +75,7 @@ TNCB/                              # Thư mục gốc dự án FindX
 | Thư mục / file | Mô tả |
 |----------------|--------|
 | `node_modules/` | Dependency npm (sau `npm install`) |
-| `dist/` | Bản build production (sau `npm run build`) — Netlify publish từ đây |
+| `dist/` | Bản build production (sau `npm run build`) - Netlify publish từ đây |
 
 ---
 
@@ -157,7 +157,7 @@ npm run dev
 2. Cấu hình build:
    - **Build command:** `npm run build`
    - **Publish directory:** `dist`
-3. Deploy — file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
+3. Deploy - file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
 4. Hoặc sử dụng Render.com, build frontend.
 
 ### Docker + NGINX
