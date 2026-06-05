@@ -1832,12 +1832,6 @@ export default function Dashboard() {
           min-height: calc(100dvh - var(--header-height));
         }
 
-        @media (max-width: 768px) {
-          .dashboard-page {
-            grid-template-columns: 1fr;
-          }
-        }
-
         /* Sidebar */
         .dashboard-sidebar {
           position: sticky;
@@ -1849,38 +1843,6 @@ export default function Dashboard() {
           flex-direction: column;
           gap: var(--space-6);
           overflow-y: auto;
-        }
-
-        @media (max-width: 768px) {
-          .dashboard-sidebar {
-            position: static;
-            height: auto;
-            flex-direction: row;
-            overflow-x: auto;
-            padding: var(--space-3) var(--content-padding);
-            border-right: none;
-            border-bottom: 1px solid var(--color-divider);
-            gap: var(--space-3);
-          }
-
-          .sidebar-header {
-            display: none;
-          }
-
-          .sidebar-nav {
-            display: flex;
-            flex-direction: row;
-            gap: var(--space-2) !important;
-          }
-
-          .sidebar-nav-item {
-            white-space: nowrap;
-            padding: var(--space-2) var(--space-3) !important;
-          }
-
-          .sidebar-arrow {
-            display: none;
-          }
         }
 
         .sidebar-header {
@@ -1939,12 +1901,6 @@ export default function Dashboard() {
           overflow-y: auto;
         }
 
-        @media (max-width: 768px) {
-          .dashboard-main {
-            padding: var(--space-5) var(--content-padding);
-          }
-        }
-
         .dashboard-page-title {
           font-size: var(--text-2xl);
           font-weight: var(--weight-bold);
@@ -1983,12 +1939,6 @@ export default function Dashboard() {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: var(--space-4);
-        }
-
-        @media (max-width: 1024px) {
-          .overview-cards {
-            grid-template-columns: repeat(2, 1fr);
-          }
         }
 
         .overview-card {
@@ -2112,6 +2062,80 @@ export default function Dashboard() {
           display: flex;
           flex-direction: column;
           gap: var(--space-3);
+        }
+
+        .contract-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+        }
+
+        /* Responsive Styles (Placed at the end to guarantee correct cascade order) */
+        @media (max-width: 1024px) {
+          .overview-cards {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .dashboard-page {
+            grid-template-columns: 1fr;
+          }
+
+          .dashboard-sidebar {
+            position: static;
+            height: auto;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: var(--space-3) var(--content-padding);
+            border-right: none;
+            border-bottom: 1px solid var(--color-divider);
+            gap: var(--space-3);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+          }
+
+          .sidebar-header {
+            display: none !important;
+          }
+
+          .sidebar-nav {
+            display: flex;
+            flex-direction: row;
+            gap: var(--space-2);
+            width: 100%;
+            justify-content: center;
+          }
+
+          .sidebar-nav-item {
+            white-space: nowrap;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-pill);
+            font-size: var(--text-xs);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: auto;
+            text-align: center;
+          }
+
+          .sidebar-arrow {
+            display: none !important;
+          }
+
+          .dashboard-main {
+            padding: var(--space-5) var(--content-padding);
+          }
+
+          .overview-cards {
+            grid-template-columns: 1fr;
+            gap: var(--space-3);
+          }
+
+          .rooms-table th, .rooms-table td {
+            padding: var(--space-2.5) var(--space-3);
+          }
         }
 
         .contract-header {

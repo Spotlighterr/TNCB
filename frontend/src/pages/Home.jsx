@@ -339,7 +339,7 @@ export default function Home() {
         .hero-inner {
           position: relative;
           z-index: 1;
-          padding: var(--space-16) 0;
+          padding: var(--space-16) var(--content-padding);
           display: flex;
           flex-direction: column;
           gap: var(--space-10);
@@ -351,7 +351,7 @@ export default function Home() {
             align-items: center;
             justify-content: space-between;
             gap: var(--space-16);
-            padding: var(--space-20) 0;
+            padding: var(--space-20) var(--content-padding);
           }
         }
 

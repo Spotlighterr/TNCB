@@ -81,6 +81,11 @@
   .dashboard-sidebar {
     top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
   }
+
+  /* Prevent verified badge from overflowing the left screen edge */
+  .verified-badge {
+    left: var(--space-3) !important;
+  }
 }
 
 @media (max-width: 440px) {
@@ -89,7 +94,7 @@
   }
 
   .hero-inner {
-    padding: var(--space-10) 0 var(--space-8);
+    padding: var(--space-10) var(--content-padding) var(--space-8);
   }
 
   .hero::before {
