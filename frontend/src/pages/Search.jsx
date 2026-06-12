@@ -74,9 +74,27 @@ export default function Search() {
     } else if (sortBy === 'price-desc') {
       list.sort((a, b) => b.price - a.price);
     } else if (sortBy === 'date-desc') {
-      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      list.sort((a, b) => {
+        if (a.verified !== b.verified) {
+          return b.verified ? 1 : -1;
+        }
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
     } else if (sortBy === 'date-asc') {
-      list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+      list.sort((a, b) => {
+        if (a.verified !== b.verified) {
+          return b.verified ? 1 : -1;
+        }
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      });
+    } else {
+      // Default sort - Prioritize verified first, then sort by createdAt descending
+      list.sort((a, b) => {
+        if (a.verified !== b.verified) {
+          return b.verified ? 1 : -1;
+        }
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
     }
     return list;
   }, [filteredProperties, sortBy]);

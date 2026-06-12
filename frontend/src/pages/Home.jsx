@@ -197,7 +197,7 @@ export default function Home() {
             <div>
               <h2 className="text-headline">Phòng trọ nổi bật</h2>
               <p className="text-caption" style={{ marginTop: 'var(--space-2)' }}>
-                Đã xác thực bởi đội ngũ FindX
+                Đã Review bởi đội ngũ FindX
               </p>
             </div>
             <button
@@ -278,7 +278,7 @@ export default function Home() {
                 <SealCheck size={32} weight="duotone" color="var(--color-accent)" />
               </div>
               <div className="bento-stat text-mono">100%</div>
-              <div className="bento-label">Xác thực thực tế</div>
+              <div className="bento-label">Đã Review thực tế</div>
             </div>
           </div>
         </div>

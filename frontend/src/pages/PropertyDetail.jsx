@@ -169,7 +169,7 @@ export default function PropertyDetail() {
                 {property.verified && (
                   <span className="verified-badge">
                     <SealCheck size={14} weight="fill" />
-                    Nhà thật, Giá thật, Vị trí thật
+                    Đã Review
                   </span>
                 )}
                 <span className={`badge ${property.postType === 'find_roommate' ? 'badge-roommate' : 'badge-status'}`}>

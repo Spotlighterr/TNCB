@@ -97,7 +97,7 @@ export const getProperties = async (req, res) => {
 
     const properties = await Property.find(query)
       .populate('postedBy', 'name phone avatar zalo')
-      .sort({ createdAt: -1 });
+      .sort({ verified: -1, createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -545,13 +545,13 @@ export const toggleVerifyStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: property.verified ? 'Đã xác thực tin đăng này.' : 'Đã gỡ xác thực tin đăng này.',
+      message: property.verified ? 'Đã Review tin đăng này.' : 'Đã gỡ Review tin đăng này.',
       property
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: 'Lỗi xác thực tin đăng: ' + err.message
+      message: 'Lỗi Review tin đăng: ' + err.message
     });
   }
 };
@@ -596,7 +596,7 @@ export const approveProperty = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Đã duyệt tin đăng. Tin đã hiển thị công khai và gắn nhãn xác thực.',
+      message: 'Đã duyệt tin đăng. Tin đã hiển thị công khai và gắn nhãn Review.',
       property
     });
   } catch (err) {

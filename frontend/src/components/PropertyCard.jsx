@@ -102,7 +102,7 @@ export default function PropertyCard({ property, index = 0 }) {
             {property.verified && (
               <span className="verified-badge-inline" id={`verified-${property.id}`}>
                 <SealCheck size={12} weight="fill" />
-                Xác thực
+                Đã Review
               </span>
             )}
             {property.isRented && (

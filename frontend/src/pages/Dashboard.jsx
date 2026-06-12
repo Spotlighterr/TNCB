@@ -436,7 +436,7 @@ export default function Dashboard() {
             setEditingRoomId(null);
           } else {
             await addProperty(adminData);
-            showToast('Admin: Đăng tin mới thành công và đã tự động xác thực!');
+            showToast('Admin: Đăng tin mới thành công và đã tự động Review!');
             setIsAddingRoom(false);
           }
           setIsCheckingDuplicate(false);
@@ -1126,7 +1126,7 @@ export default function Dashboard() {
                       <th>Diện tích</th>
                       <th>Ngày đăng</th>
                       <th>Hiển thị</th>
-                      {isAdmin && <th>Xác thực</th>}
+                      {isAdmin && <th>Đã Review</th>}
                       <th>Tình trạng</th>
                       <th>Thao tác</th>
                     </tr>
@@ -1161,7 +1161,7 @@ export default function Dashboard() {
                             <div
                               className={`switch ${p.verified ? 'active' : ''}`}
                               onClick={() => toggleVerifyProperty(p.id)}
-                              title={p.verified ? 'Đã xác thực' : 'Chưa xác thực'}
+                              title={p.verified ? 'Đã Review' : 'Chưa Review'}
                             />
                           </td>
                         )}
