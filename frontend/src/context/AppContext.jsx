@@ -1010,16 +1010,43 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  const importPropertiesFromSheets = useCallback(async (sheetUrl, clearExisting) => {
+  const getImportSettings = useCallback(async () => {
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/properties/import-sheets`, {
+      const res = await fetch(`${API_BASE_URL}/api/properties/import-settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const saveImportSettings = useCallback(async (settings) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/properties/import-settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ sheetUrl, clearExisting })
+        body: JSON.stringify(settings)
+      });
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, []);
+
+  const syncPropertiesNow = useCallback(async () => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/properties/sync-now`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (data.success) {
@@ -1198,7 +1225,9 @@ export function AppProvider({ children }) {
     togglePropertyStatus,
     toggleUnlistProperty,
     toggleVerifyProperty,
-    importPropertiesFromSheets,
+    getImportSettings,
+    saveImportSettings,
+    syncPropertiesNow,
     // Hero Slides
     heroSlides,
     fetchHeroSlides,

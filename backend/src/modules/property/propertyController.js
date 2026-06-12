@@ -5,6 +5,13 @@ import { propertyBloomFilter } from './propertyBloomFilter.js';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
+import SystemSettings from './SystemSettings.js';
+import User from '../auth/User.js';
+import { sendImportErrorReport } from '../../utils/mailer.js';
+
+// Global In-Memory Cache for Properties loaded from Google Sheets
+export let cachedProperties = [];
+export let cacheLastUpdated = null;
 
 const processAndSaveImage = async (file) => {
   const filename = `prop-${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
@@ -51,58 +58,72 @@ export const getProperties = async (req, res) => {
       search
     } = req.query;
 
-    const query = {
-      status: 'active',
-      isUnlisted: false
-    };
+    let filtered = [...cachedProperties];
 
-    // Filters
-    if (city) query.city = city;
-    if (district) query.district = district;
-    if (ward) query.ward = ward;
-    if (type) query.type = type;
-
+    // Filter by city
+    if (city) {
+      filtered = filtered.filter(p => p.city === city);
+    }
+    // Filter by district
+    if (district) {
+      filtered = filtered.filter(p => p.district === district);
+    }
+    // Filter by ward
+    if (ward) {
+      filtered = filtered.filter(p => p.ward === ward);
+    }
+    // Filter by type
+    if (type) {
+      filtered = filtered.filter(p => p.type === type);
+    }
     // Price range
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+    if (minPrice) {
+      filtered = filtered.filter(p => p.price >= Number(minPrice));
     }
-
+    if (maxPrice) {
+      filtered = filtered.filter(p => p.price <= Number(maxPrice));
+    }
     // Area range
-    if (minArea || maxArea) {
-      query.area = {};
-      if (minArea) query.area.$gte = Number(minArea);
-      if (maxArea) query.area.$lte = Number(maxArea);
+    if (minArea) {
+      filtered = filtered.filter(p => p.area >= Number(minArea));
     }
-
-    // Amenities (Must contain all selected amenities)
+    if (maxArea) {
+      filtered = filtered.filter(p => p.area <= Number(maxArea));
+    }
+    // Amenities
     if (amenities) {
       const amenitiesList = Array.isArray(amenities)
         ? amenities
-        : amenities.split(',').map(a => a.trim());
+        : amenities.split(',').map(a => a.trim()).filter(Boolean);
       if (amenitiesList.length > 0) {
-        query.amenities = { $all: amenitiesList };
+        filtered = filtered.filter(p => 
+          amenitiesList.every(a => p.amenities && p.amenities.includes(a))
+        );
       }
     }
-
-    // Search query (case-insensitive in title and description)
+    // Search query (case-insensitive in title, description, address)
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { address: { $regex: search, $options: 'i' } }
-      ];
+      const s = search.toLowerCase();
+      filtered = filtered.filter(p => 
+        (p.title && p.title.toLowerCase().includes(s)) ||
+        (p.description && p.description.toLowerCase().includes(s)) ||
+        (p.address && p.address.toLowerCase().includes(s))
+      );
     }
 
-    const properties = await Property.find(query)
-      .populate('postedBy', 'name phone avatar zalo')
-      .sort({ verified: -1, createdAt: -1 });
+    // Sort: verified first, then createdAt desc
+    filtered.sort((a, b) => {
+      if (a.verified && !b.verified) return -1;
+      if (!a.verified && b.verified) return 1;
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return res.status(200).json({
       success: true,
-      count: properties.length,
-      properties
+      count: filtered.length,
+      properties: filtered
     });
   } catch (err) {
     return res.status(500).json({
@@ -114,28 +135,22 @@ export const getProperties = async (req, res) => {
 
 export const getMyProperties = async (req, res) => {
   try {
-    const properties = await Property.find({ postedBy: req.user._id })
-      .populate('postedBy', 'name phone avatar zalo')
-      .sort({ createdAt: -1 });
-
     return res.status(200).json({
       success: true,
-      count: properties.length,
-      properties
+      count: cachedProperties.length,
+      properties: cachedProperties
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: 'Lỗi lấy danh sách tin đăng cá nhân: ' + err.message
+      message: 'Lỗi lấy danh sách tin đăng: ' + err.message
     });
   }
 };
 
 export const getPropertyDetail = async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id)
-      .populate('postedBy', 'name phone avatar zalo')
-      .populate('duplicateReport.matchedProperty', 'title price area address');
+    const property = cachedProperties.find(p => p.id === req.params.id);
 
     if (!property) {
       return res.status(404).json({
@@ -156,484 +171,51 @@ export const getPropertyDetail = async (req, res) => {
   }
 };
 
+const returnSheetsModeError = (res) => {
+  return res.status(400).json({
+    success: false,
+    message: 'Hệ thống đang hoạt động ở chế độ Google Sheet Database. Mọi thay đổi dữ liệu cần thực hiện trực tiếp trên bảng tính Google Sheet của bạn.'
+  });
+};
+
 export const createProperty = async (req, res) => {
-  try {
-    const {
-      title,
-      type,
-      price,
-      area,
-      city,
-      district,
-      ward,
-      address,
-      coords,
-      amenities,
-      electricity,
-      water,
-      service,
-      description
-    } = req.body;
-
-    const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
-
-    // Process and save uploaded images
-    const uploadedImages = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const imageUrl = await processAndSaveImage(file);
-        uploadedImages.push(imageUrl);
-      }
-    }
-
-    const parsedCoords = typeof coords === 'string' ? JSON.parse(coords) : coords;
-    const parsedAmenities = typeof amenities === 'string' ? JSON.parse(amenities) : (amenities || []);
-
-    // Build the new property object structure for verification
-    const newPropertyData = {
-      title,
-      type,
-      price: Number(price),
-      area: Number(area),
-      city,
-      district,
-      ward,
-      address,
-      coords: parsedCoords,
-      images: uploadedImages,
-      amenities: parsedAmenities,
-      electricity: Number(electricity),
-      water: Number(water),
-      service: Number(service),
-      description,
-      postedBy: req.user._id
-    };
-
-    let status = 'active';
-    let verified = isAdmin; // Automatically verified for admin posts
-    let duplicateReport = { confidenceScore: 0, matchedProperty: null, reasons: [] };
-
-    // Anti-spam checks (Skip if logged in user is admin)
-    if (!isAdmin) {
-      // Find active listings of the SAME landlord
-      const activeProperties = await Property.find({
-        postedBy: req.user._id,
-        status: 'active',
-        isRented: false,
-        isUnlisted: false
-      });
-
-      const dupCheck = checkDuplicateProperty(newPropertyData, activeProperties);
-
-      if (dupCheck.isDuplicate) {
-        // Cleanup newly uploaded files since request is rejected
-        for (const img of uploadedImages) {
-          await deleteLocalImage(img);
-        }
-        return res.status(400).json({
-          success: false,
-          message: 'Tin đăng bị chặn do phát hiện trùng lặp cao (>= 80%) với một tin đăng khác của bạn.',
-          reasons: dupCheck.reasons,
-          matchedProperty: dupCheck.matchedProperty ? {
-            id: dupCheck.matchedProperty._id,
-            title: dupCheck.matchedProperty.title,
-            address: dupCheck.matchedProperty.address
-          } : null
-        });
-      }
-
-      if (dupCheck.isSuspicious) {
-        status = 'pending';
-        duplicateReport = {
-          confidenceScore: dupCheck.confidenceScore,
-          matchedProperty: dupCheck.matchedProperty._id,
-          reasons: dupCheck.reasons
-        };
-      }
-    }
-
-    const property = new Property({
-      ...newPropertyData,
-      status,
-      verified,
-      duplicateReport
-    });
-
-    await property.save();
-
-    // Register the new property ID in Bloom Filter
-    propertyBloomFilter.add(property._id.toString());
-
-    return res.status(201).json({
-      success: true,
-      message: status === 'pending'
-        ? 'Tin đăng của bạn nghi ngờ trùng lặp và đã được chuyển vào hàng chờ kiểm duyệt của Admin.'
-        : 'Đăng tin phòng trọ thành công.',
-      property
-    });
-  } catch (err) {
-    // Cleanup files if saving fails
-    if (req.files && req.files.length > 0) {
-      // Find all file names we might have created
-      // Since saving to DB failed, delete files to avoid orphaned images
-      try {
-        const filenames = fs.readdirSync(path.join(process.cwd(), 'uploads'));
-        // Any file created recently could be cleaned up or we can parse file objects
-      } catch (e) {}
-    }
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi đăng tin phòng trọ: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const updateProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
-    const isOwner = property.postedBy.toString() === req.user._id.toString();
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền chỉnh sửa tin đăng này.'
-      });
-    }
-
-    // Parse existing images array and new uploaded files
-    const parsedExisting = typeof req.body.existingImages === 'string'
-      ? JSON.parse(req.body.existingImages)
-      : (req.body.existingImages || []);
-
-    const newUploaded = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const imageUrl = await processAndSaveImage(file);
-        newUploaded.push(imageUrl);
-      }
-    }
-
-    const finalImages = [...parsedExisting, ...newUploaded];
-
-    // Identify images that were removed and delete them from disk
-    const imagesToDelete = property.images.filter(img => !parsedExisting.includes(img));
-    for (const img of imagesToDelete) {
-      await deleteLocalImage(img);
-    }
-
-    // Update fields
-    const fieldsToUpdate = [
-      'title', 'type', 'address', 'description'
-    ];
-    fieldsToUpdate.forEach(field => {
-      if (req.body[field] !== undefined) {
-        property[field] = req.body[field];
-      }
-    });
-
-    if (req.body.price !== undefined) property.price = Number(req.body.price);
-    if (req.body.area !== undefined) property.area = Number(req.body.area);
-    if (req.body.electricity !== undefined) property.electricity = Number(req.body.electricity);
-    if (req.body.water !== undefined) property.water = Number(req.body.water);
-    if (req.body.service !== undefined) property.service = Number(req.body.service);
-    if (req.body.city !== undefined) property.city = req.body.city;
-    if (req.body.district !== undefined) property.district = req.body.district;
-    if (req.body.ward !== undefined) property.ward = req.body.ward;
-
-    if (req.body.coords !== undefined) {
-      property.coords = typeof req.body.coords === 'string' ? JSON.parse(req.body.coords) : req.body.coords;
-    }
-    if (req.body.amenities !== undefined) {
-      property.amenities = typeof req.body.amenities === 'string' ? JSON.parse(req.body.amenities) : req.body.amenities;
-    }
-
-    property.images = finalImages;
-
-    // Run duplicate checking again on update if not admin
-    if (!isAdmin) {
-      const activeProperties = await Property.find({
-        postedBy: req.user._id,
-        status: 'active',
-        isRented: false,
-        isUnlisted: false,
-        _id: { $ne: property._id }
-      });
-
-      const dupCheck = checkDuplicateProperty(property, activeProperties);
-
-      if (dupCheck.isDuplicate) {
-        // Cleanup newly uploaded files since update is rejected
-        for (const img of newUploaded) {
-          await deleteLocalImage(img);
-        }
-        return res.status(400).json({
-          success: false,
-          message: 'Cập nhật thất bại. Phát hiện trùng lặp cao (>= 80%) với một tin đăng khác của bạn.',
-          reasons: dupCheck.reasons
-        });
-      }
-
-      if (dupCheck.isSuspicious) {
-        property.status = 'pending';
-        property.duplicateReport = {
-          confidenceScore: dupCheck.confidenceScore,
-          matchedProperty: dupCheck.matchedProperty._id,
-          reasons: dupCheck.reasons
-        };
-      } else {
-        // Clear old reports if no longer suspicious
-        property.status = 'active';
-        property.duplicateReport = { confidenceScore: 0, matchedProperty: null, reasons: [] };
-      }
-    }
-
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: property.status === 'pending'
-        ? 'Tin cập nhật bị chuyển vào trạng thái chờ duyệt do nghi ngờ trùng lặp.'
-        : 'Cập nhật tin đăng thành công.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi cập nhật tin đăng: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const deleteProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
-    const isOwner = property.postedBy.toString() === req.user._id.toString();
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền xóa tin đăng này.'
-      });
-    }
-
-    // Delete all local files associated with this listing
-    if (property.images && property.images.length > 0) {
-      for (const img of property.images) {
-        await deleteLocalImage(img);
-      }
-    }
-
-    await Property.findByIdAndDelete(req.params.id);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Xóa tin đăng phòng trọ thành công.'
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi xóa tin đăng: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const toggleRentedStatus = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
-    const isOwner = property.postedBy.toString() === req.user._id.toString();
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền thực hiện hành động này.'
-      });
-    }
-
-    property.isRented = !property.isRented;
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: property.isRented ? 'Đã đánh dấu phòng trọ đã cho thuê.' : 'Đã mở trống phòng trọ.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi cập nhật trạng thái thuê: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const toggleUnlistedStatus = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@tncb.vn';
-    const isOwner = property.postedBy.toString() === req.user._id.toString();
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền thực hiện hành động này.'
-      });
-    }
-
-    property.isUnlisted = !property.isUnlisted;
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: property.isUnlisted ? 'Đã ẩn tin đăng.' : 'Đã hiển thị lại tin đăng.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi cập nhật trạng thái ẩn: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const toggleVerifyStatus = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    property.verified = !property.verified;
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: property.verified ? 'Đã Review tin đăng này.' : 'Đã gỡ Review tin đăng này.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi Review tin đăng: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const getAdminReviewQueue = async (req, res) => {
-  try {
-    const queue = await Property.find({ status: 'pending' })
-      .populate('postedBy', 'name phone email avatar')
-      .populate('duplicateReport.matchedProperty', 'title address price area')
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      count: queue.length,
-      queue
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi lấy danh sách chờ duyệt: ' + err.message
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    count: 0,
+    queue: []
+  });
 };
 
 export const approveProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    property.status = 'active';
-    property.verified = true; // Auto-verify on admin approval
-    // Clear duplicate report details
-    property.duplicateReport = { confidenceScore: 0, matchedProperty: null, reasons: [] };
-
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Đã duyệt tin đăng. Tin đã hiển thị công khai và gắn nhãn Review.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi duyệt tin: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 export const rejectProperty = async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tin đăng.'
-      });
-    }
-
-    // Set status to rejected (or delete it completely)
-    // To match flow charts and Admin controls, we can just delete it, or set status = 'rejected'
-    property.status = 'rejected';
-    await property.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Đã từ chối tin đăng trùng lặp.',
-      property
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi từ chối tin đăng: ' + err.message
-    });
-  }
+  return returnSheetsModeError(res);
 };
 
 // ============================================
@@ -762,7 +344,7 @@ export const deleteHeroSlide = async (req, res) => {
   }
 };
 
-// --- Google Sheets Import Logic ---
+// --- Google Sheets Import & Sync Logic ---
 
 const parseCSV = (text) => {
   const lines = [];
@@ -843,47 +425,38 @@ const mapHeaders = (headerRow) => {
   return mapping;
 };
 
-export const importPropertiesFromSheets = async (req, res) => {
+export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
   try {
-    const { sheetUrl, clearExisting } = req.body;
-
-    if (!sheetUrl) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp đường dẫn Google Sheet.'
-      });
+    console.log(`[Sync] Bắt đầu đồng bộ từ Google Sheet. Trigger: ${triggerType}`);
+    const settingsDoc = await SystemSettings.findOne({ key: 'import_settings' });
+    if (!settingsDoc || !settingsDoc.value || !settingsDoc.value.sheetUrl) {
+      console.log('[Sync Skip] Chưa cấu hình Google Sheet URL trong Settings.');
+      return { success: false, message: 'Chưa cấu hình đường dẫn Google Sheet URL.' };
     }
+
+    const { sheetUrl, notificationEmail } = settingsDoc.value;
 
     const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
     if (!match) {
-      return res.status(400).json({
-        success: false,
-        message: 'Đường dẫn Google Sheet không hợp lệ.'
-      });
+      console.log('[Sync Error] Đường dẫn Google Sheet không hợp lệ.');
+      return { success: false, message: 'Đường dẫn Google Sheet không hợp lệ.' };
     }
     const sheetId = match[1];
-
     const gidMatch = sheetUrl.match(/[#&]gid=([0-9]+)/);
     const gid = gidMatch ? gidMatch[1] : '0';
 
     const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-
     const fetchResponse = await fetch(csvUrl);
     if (!fetchResponse.ok) {
-      return res.status(400).json({
-        success: false,
-        message: 'Không thể tải dữ liệu từ Google Sheet. Vui lòng đảm bảo bảng tính ở chế độ chia sẻ công khai (Bất kỳ ai có liên kết đều có thể xem).'
-      });
+      console.log('[Sync Error] Không thể tải dữ liệu CSV từ Google Sheet.');
+      return { success: false, message: 'Không thể tải dữ liệu từ Google Sheet. Hãy kiểm tra chế độ chia sẻ công khai.' };
     }
 
     const text = await fetchResponse.text();
     const rows = parseCSV(text);
 
     if (rows.length < 2) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bảng tính không có dữ liệu hoặc hàng tiêu đề trống.'
-      });
+      return { success: false, message: 'Bảng tính rỗng hoặc thiếu tiêu đề.' };
     }
 
     const headers = rows[0];
@@ -891,148 +464,289 @@ export const importPropertiesFromSheets = async (req, res) => {
 
     const required = ['title', 'type', 'price', 'area', 'city', 'district', 'ward', 'address'];
     const missing = required.filter(field => headerMap[field] === undefined);
-    
     const hasCoords = headerMap['coords'] !== undefined || (headerMap['latitude'] !== undefined && headerMap['longitude'] !== undefined);
+
     if (missing.length > 0 || !hasCoords) {
-      let msg = 'Bảng tính thiếu các cột tiêu đề bắt buộc: ';
+      let msg = 'Thiếu các cột bắt buộc: ';
       if (missing.length > 0) msg += missing.join(', ');
       if (!hasCoords) msg += (missing.length > 0 ? ', ' : '') + 'coords (hoặc latitude & longitude)';
-      return res.status(400).json({
-        success: false,
-        message: msg
-      });
+      return { success: false, message: msg };
     }
 
-    if (clearExisting === true) {
-      await Property.deleteMany({});
-    }
+    // Find the Admin user to set postedBy
+    const adminUser = await User.findOne({ $or: [{ role: 'admin' }, { email: 'admin@tncb.vn' }] });
+    const adminId = adminUser ? adminUser._id : null;
 
-    const imported = [];
+    const newProperties = [];
     const errors = [];
+
+    const generateStableId = (title, address, city, district, ward) => {
+      const str = `${title}-${address}-${city}-${district}-${ward}`;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return 'prop-' + Math.abs(hash).toString(16);
+    };
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (row.length === 1 && row[0] === '') continue;
       if (row.every(cell => cell === '')) continue;
 
-      try {
-        const getVal = (field) => {
-          const idx = headerMap[field];
-          return idx !== undefined ? row[idx] : '';
-        };
+      const getVal = (field) => {
+        const idx = headerMap[field];
+        return idx !== undefined ? row[idx] : '';
+      };
 
-        const title = getVal('title');
-        const type = getVal('type');
-        const rawPrice = getVal('price');
-        const rawArea = getVal('area');
-        const city = getVal('city');
-        const district = getVal('district');
-        const ward = getVal('ward');
-        const address = getVal('address');
-        const rawElectricity = getVal('electricity');
-        const rawWater = getVal('water');
-        const rawService = getVal('service');
-        const rawImages = getVal('images');
-        const rawVerified = getVal('verified');
-        const rawAmenities = getVal('amenities');
-        const description = getVal('description');
+      const title = getVal('title');
+      const type = getVal('type');
+      const rawPrice = getVal('price');
+      const rawArea = getVal('area');
+      const city = getVal('city');
+      const district = getVal('district');
+      const ward = getVal('ward');
+      const address = getVal('address');
+      const rawElectricity = getVal('electricity');
+      const rawWater = getVal('water');
+      const rawService = getVal('service');
+      const rawImages = getVal('images');
+      const rawVerified = getVal('verified');
+      const rawAmenities = getVal('amenities');
+      const description = getVal('description');
 
-        if (!title || !type || !rawPrice || !rawArea || !city || !district || !ward || !address) {
-          errors.push({ row: i + 1, message: 'Thiếu thông tin bắt buộc.' });
-          continue;
-        }
-
-        const parseNum = (val) => {
-          if (!val) return 0;
-          const clean = val.replace(/[^\d.]/g, '');
-          return Number(clean) || 0;
-        };
-
-        const price = parseNum(rawPrice);
-        const area = parseNum(rawArea);
-        const electricity = rawElectricity ? parseNum(rawElectricity) : 3500;
-        const water = rawWater ? parseNum(rawWater) : 100000;
-        const service = rawService ? parseNum(rawService) : 150000;
-
-        let coords = [21.0223, 105.8019];
-        if (headerMap['coords'] !== undefined) {
-          const rawCoords = getVal('coords');
-          if (rawCoords) {
-            const split = rawCoords.split(',').map(n => Number(n.trim()));
-            if (split.length === 2 && !isNaN(split[0]) && !isNaN(split[1])) {
-              coords = split;
-            }
-          }
-        } else {
-          const lat = Number(getVal('latitude'));
-          const lng = Number(getVal('longitude'));
-          if (!isNaN(lat) && !isNaN(lng)) {
-            coords = [lat, lng];
-          }
-        }
-
-        let images = [];
-        if (rawImages) {
-          images = rawImages.split(/[\n,;]/).map(url => url.trim()).filter(Boolean);
-        }
-        if (images.length === 0) {
-          images = ['/student_room_hero.png'];
-        }
-
-        let amenities = [];
-        if (rawAmenities) {
-          amenities = rawAmenities.split(/[\n,;]/).map(a => a.trim()).filter(Boolean);
-        }
-
-        const verified = rawVerified
-          ? ['true', '1', 'yes', 'y', 'x', 'dã review', 'da review', 'xác thực'].includes(rawVerified.toLowerCase().trim())
-          : false;
-
-        const propertyDoc = new Property({
-          title,
-          type,
-          price,
-          area,
-          city,
-          district,
-          ward,
-          address,
-          coords,
-          images,
-          amenities,
-          electricity,
-          water,
-          service,
-          description,
-          verified,
-          status: 'active',
-          postedBy: req.user._id
-        });
-
-        await propertyDoc.save();
-        imported.push(propertyDoc._id);
-
-      } catch (err) {
-        errors.push({ row: i + 1, message: err.message });
+      // SILENT SKIP for incomplete rows
+      const missingRequiredFields = !title && !type && !rawPrice && !rawArea && !city && !district && !ward && !address;
+      if (missingRequiredFields) {
+        continue;
       }
+
+      if (!title || !type || !rawPrice || !rawArea || !city || !district || !ward || !address) {
+        continue;
+      }
+
+      const parseNum = (val) => {
+        if (!val) return NaN;
+        const clean = val.replace(/[^\d.]/g, '');
+        return Number(clean);
+      };
+
+      const price = parseNum(rawPrice);
+      const area = parseNum(rawArea);
+      const electricity = rawElectricity ? parseNum(rawElectricity) : 3500;
+      const water = rawWater ? parseNum(rawWater) : 100000;
+      const service = rawService ? parseNum(rawService) : 150000;
+
+      if (isNaN(price) || price <= 0) {
+        errors.push({ row: i + 1, message: `Giá thuê phòng phải là một số lớn hơn 0 (Nhận được: "${rawPrice}").` });
+        continue;
+      }
+      if (isNaN(area) || area <= 0) {
+        errors.push({ row: i + 1, message: `Diện tích phòng phải là một số lớn hơn 0 (Nhận được: "${rawArea}").` });
+        continue;
+      }
+
+      let coords = null;
+      if (headerMap['coords'] !== undefined) {
+        const rawCoords = getVal('coords');
+        if (rawCoords) {
+          const split = rawCoords.split(',').map(n => Number(n.trim()));
+          if (split.length === 2 && !isNaN(split[0]) && !isNaN(split[1])) {
+            coords = split;
+          }
+        }
+      } else {
+        const lat = Number(getVal('latitude'));
+        const lng = Number(getVal('longitude'));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          coords = [lat, lng];
+        }
+      }
+
+      if (!coords) {
+        errors.push({ row: i + 1, message: `Tọa độ không hợp lệ (Phải là định dạng "Vĩ độ,Kinh độ" chứa hai số thực).` });
+        continue;
+      }
+
+      let images = [];
+      if (rawImages) {
+        images = rawImages.split(/[\n,;]/).map(url => url.trim()).filter(Boolean);
+      }
+      if (images.length === 0) {
+        images = ['/student_room_hero.png'];
+      }
+
+      let amenities = [];
+      if (rawAmenities) {
+        amenities = rawAmenities.split(/[\n,;]/).map(a => a.trim()).filter(Boolean);
+      }
+
+      const verified = rawVerified
+        ? ['true', '1', 'yes', 'y', 'x', 'đã review', 'da review', 'xác thực'].includes(rawVerified.toLowerCase().trim())
+        : false;
+
+      const propId = generateStableId(title, address, city, district, ward);
+
+      newProperties.push({
+        id: propId,
+        _id: propId,
+        title,
+        type,
+        price,
+        area,
+        city,
+        district,
+        ward,
+        address,
+        coords,
+        images,
+        amenities,
+        electricity,
+        water,
+        service,
+        description,
+        verified,
+        status: 'active',
+        isRented: false,
+        isUnlisted: false,
+        postedBy: adminId || 'user-admin',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
     }
 
-    imported.forEach(id => {
-      propertyBloomFilter.add(id.toString());
-    });
+    cachedProperties = newProperties;
+    cacheLastUpdated = new Date();
 
-    return res.status(200).json({
+    settingsDoc.value.lastRun = cacheLastUpdated;
+    settingsDoc.markModified('value');
+    await settingsDoc.save();
+
+    console.log(`[Sync Success] Đồng bộ hoàn tất: ${newProperties.length} phòng trọ. Lỗi: ${errors.length}`);
+
+    if (errors.length > 0 && notificationEmail) {
+      sendImportErrorReport(notificationEmail, sheetUrl, newProperties.length, errors.length, errors);
+    }
+
+    return {
       success: true,
-      message: `Nhập dữ liệu thành công. Đã thêm ${imported.length} phòng trọ. Có ${errors.length} hàng bị lỗi.`,
-      importedCount: imported.length,
+      importedCount: newProperties.length,
       failedCount: errors.length,
       errors
-    });
+    };
 
+  } catch (err) {
+    console.error('[Sync Exception] Lỗi:', err);
+    return { success: false, message: 'Lỗi hệ thống khi đồng bộ: ' + err.message };
+  }
+};
+
+export const getImportSettings = async (req, res) => {
+  try {
+    let settings = await SystemSettings.findOne({ key: 'import_settings' });
+    if (!settings) {
+      settings = new SystemSettings({
+        key: 'import_settings',
+        value: {
+          sheetUrl: '',
+          autoImportEnabled: false,
+          intervalHours: 24,
+          notificationEmail: '',
+          clearExisting: false,
+          lastRun: null
+        }
+      });
+      await settings.save();
+    }
+    return res.status(200).json({
+      success: true,
+      settings: settings.value,
+      cacheLastUpdated,
+      syncSecretToken: process.env.SYNC_SECRET_TOKEN || ''
+    });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi import dữ liệu: ' + err.message
+      message: 'Lỗi lấy cấu hình đồng bộ: ' + err.message
+    });
+  }
+};
+
+export const saveImportSettings = async (req, res) => {
+  try {
+    const { sheetUrl, autoImportEnabled, intervalHours, notificationEmail, clearExisting } = req.body;
+
+    let settings = await SystemSettings.findOne({ key: 'import_settings' });
+    if (!settings) {
+      settings = new SystemSettings({ key: 'import_settings', value: {} });
+    }
+
+    settings.value = {
+      sheetUrl: sheetUrl || '',
+      autoImportEnabled: !!autoImportEnabled,
+      intervalHours: Number(intervalHours) || 24,
+      notificationEmail: notificationEmail || '',
+      clearExisting: !!clearExisting,
+      lastRun: settings.value.lastRun || null
+    };
+
+    settings.markModified('value');
+    await settings.save();
+
+    // Trigger update of Scheduler
+    try {
+      const { updateSchedulerInterval } = await import('./importScheduler.js');
+      updateSchedulerInterval();
+    } catch (e) {
+      console.error('Cannot update scheduler:', e.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lưu cấu hình đồng bộ thành công.',
+      settings: settings.value
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi lưu cấu hình đồng bộ: ' + err.message
+    });
+  }
+};
+
+export const syncPropertiesNow = async (req, res) => {
+  try {
+    const syncTokenHeader = req.headers['x-sync-token'];
+    const isWebhook = syncTokenHeader && syncTokenHeader === process.env.SYNC_SECRET_TOKEN;
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.email === 'admin@tncb.vn');
+
+    if (!isWebhook && !isAdmin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Bạn không có quyền thực hiện hành động này.'
+      });
+    }
+
+    const result = await syncPropertiesFromSheet(isWebhook ? 'webhook' : 'manual');
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: `Đồng bộ thành công! Đã tải ${result.importedCount} phòng trọ. Có ${result.failedCount} dòng bị lỗi.`,
+        importedCount: result.importedCount,
+        failedCount: result.failedCount,
+        errors: result.errors
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: result.message || 'Đồng bộ thất bại.'
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi đồng bộ dữ liệu: ' + err.message
     });
   }
 };

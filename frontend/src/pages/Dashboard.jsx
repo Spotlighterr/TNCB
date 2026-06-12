@@ -98,7 +98,9 @@ export default function Dashboard() {
     addHeroSlide,
     updateHeroSlide,
     deleteHeroSlide,
-    importPropertiesFromSheets,
+    getImportSettings,
+    saveImportSettings,
+    syncPropertiesNow,
   } = useApp();
 
   const isAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
@@ -138,11 +140,17 @@ export default function Dashboard() {
     order: 1
   });
 
-  // Google Sheets import states
+  // Google Sheets import & settings states
   const [sheetUrl, setSheetUrl] = useState('');
   const [clearExisting, setClearExisting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [autoImportEnabled, setAutoImportEnabled] = useState(false);
+  const [intervalHours, setIntervalHours] = useState(24);
+  const [notificationEmail, setNotificationEmail] = useState('');
+  const [syncSecretToken, setSyncSecretToken] = useState('');
+  const [cacheLastUpdated, setCacheLastUpdated] = useState(null);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -159,10 +167,31 @@ export default function Dashboard() {
     setIsCreatingTicket(false);
     setIsAddingSlide(false);
     setEditingSlide(null);
-    setSheetUrl('');
-    setClearExisting(false);
     setImportResult(null);
   };
+
+  // Fetch configurations when import tab active
+  useEffect(() => {
+    if (isAdmin && activeTab === 'import') {
+      const fetchSettings = async () => {
+        try {
+          const res = await getImportSettings();
+          if (res.success && res.settings) {
+            setSheetUrl(res.settings.sheetUrl || '');
+            setAutoImportEnabled(res.settings.autoImportEnabled || false);
+            setIntervalHours(res.settings.intervalHours || 24);
+            setNotificationEmail(res.settings.notificationEmail || '');
+            setClearExisting(res.settings.clearExisting || false);
+            setSyncSecretToken(res.syncSecretToken || '');
+            setCacheLastUpdated(res.cacheLastUpdated || null);
+          }
+        } catch (err) {
+          console.error('Lỗi khi lấy cấu hình:', err);
+        }
+      };
+      fetchSettings();
+    }
+  }, [isAdmin, activeTab, getImportSettings]);
 
   // --- Form States ---
   const [roomForm, setRoomForm] = useState({
@@ -717,22 +746,55 @@ export default function Dashboard() {
     }
   };
 
-  const handleImportSubmit = async (e) => {
+  const handleSettingsSubmit = async (e) => {
     e.preventDefault();
-    if (!sheetUrl) {
-      showToast('Vui lòng nhập đường dẫn Google Sheet.', 'error');
-      return;
+    setIsSavingSettings(true);
+    try {
+      const res = await saveImportSettings({
+        sheetUrl,
+        autoImportEnabled,
+        intervalHours: Number(intervalHours),
+        notificationEmail,
+        clearExisting,
+      });
+      if (res.success) {
+        showToast(res.message || 'Lưu cấu hình đồng bộ thành công!');
+      } else {
+        showToast(res.message || 'Lưu cấu hình thất bại.', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối máy chủ.', 'error');
+    } finally {
+      setIsSavingSettings(false);
     }
+  };
+
+  const handleSyncNow = async () => {
     setIsImporting(true);
     setImportResult(null);
     try {
-      const res = await importPropertiesFromSheets(sheetUrl, clearExisting);
+      // Save current configuration first
+      const saveRes = await saveImportSettings({
+        sheetUrl,
+        autoImportEnabled,
+        intervalHours: Number(intervalHours),
+        notificationEmail,
+        clearExisting,
+      });
+      
+      if (!saveRes.success) {
+        showToast('Không thể lưu cấu hình trước khi đồng bộ: ' + saveRes.message, 'error');
+        setIsImporting(false);
+        return;
+      }
+
+      const res = await syncPropertiesNow();
       if (res.success) {
-        showToast(res.message || 'Nhập dữ liệu thành công!');
+        showToast(res.message || 'Đồng bộ dữ liệu thành công!');
         setImportResult(res);
-        setSheetUrl('');
+        setCacheLastUpdated(new Date().toISOString());
       } else {
-        showToast(res.message || 'Nhập dữ liệu thất bại.', 'error');
+        showToast(res.message || 'Đồng bộ thất bại.', 'error');
         setImportResult(res);
       }
     } catch (err) {
@@ -740,6 +802,43 @@ export default function Dashboard() {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const getBackendUrl = () => {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    if (window.location.port === '3000') {
+      return `${protocol}//${host}:5000/api/properties/sync-now`;
+    }
+    return `${protocol}//${host}${window.location.port ? ':' + window.location.port : ''}/api/properties/sync-now`;
+  };
+
+  const appsScriptSnippet = `function onEdit(e) {
+  // Thực hiện đồng bộ tức thì khi bạn chỉnh sửa dữ liệu trên Google Sheets
+  var url = "${getBackendUrl()}";
+  var token = "${syncSecretToken || 'YOUR_SYNC_SECRET_TOKEN'}";
+  
+  var options = {
+    "method": "post",
+    "headers": {
+      "x-sync-token": token
+    },
+    "muteHttpExceptions": true
+  };
+  
+  try {
+    var response = UrlFetchApp.fetch(url, options);
+    Logger.log("Đồng bộ: " + response.getContentText());
+  } catch(err) {
+    Logger.log("Lỗi đồng bộ: " + err.toString());
+  }
+}`;
+
+  const [copiedScript, setCopiedScript] = useState(false);
+  const handleCopyScript = () => {
+    navigator.clipboard.writeText(appsScriptSnippet);
+    setCopiedScript(true);
+    setTimeout(() => setCopiedScript(false), 2000);
   };
 
   // --- Landlord Computations ---
@@ -1727,198 +1826,208 @@ export default function Dashboard() {
         )}
 
         {/* ===================== GOOGLE SHEETS IMPORT ===================== */}
+        {/* ===================== GOOGLE SHEETS IMPORT & SYNC SETTINGS ===================== */}
         {isAdmin && activeTab === 'import' && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
             <div className="dashboard-page-header">
-              <h2 className="dashboard-page-title">Nhập dữ liệu từ Google Sheet</h2>
-            </div>
-            
-            <div className="form-container">
-              <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)', lineHeight: '1.6' }}>
-                Tính năng này cho phép bạn nhập hàng loạt bài đăng phòng trọ từ một bảng tính Google Sheet công khai (Bất kỳ ai có liên kết đều có thể xem). 
-                Dữ liệu sẽ được tự động chuẩn hóa, kiểm tra hợp lệ và đẩy trực tiếp lên hệ thống web.
+              <h2 className="dashboard-page-title">Cấu hình & Đồng bộ Google Sheets</h2>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+                Tận dụng Google Sheets làm cơ sở dữ liệu (Database) thời gian thực, đồng bộ trực tiếp lên hệ thống Web.
               </p>
-
-              <form onSubmit={handleImportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                <div className="form-group full-width">
-                  <label className="form-label">Đường dẫn liên kết Google Sheet (URL) *</label>
-                  <input
-                    type="url"
-                    className="input"
-                    required
-                    placeholder="Ví dụ: https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
-                    value={sheetUrl}
-                    onChange={(e) => setSheetUrl(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <input
-                    type="checkbox"
-                    id="clearExisting"
-                    checked={clearExisting}
-                    onChange={(e) => setClearExisting(e.target.checked)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="clearExisting" style={{ fontSize: 'var(--text-sm)', cursor: 'pointer', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-main)' }}>
-                    Xóa toàn bộ dữ liệu hiện có trên hệ thống trước khi nhập
-                  </label>
-                </div>
-
-                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
-                  <button type="submit" className="btn btn-primary" disabled={isImporting} style={{ minWidth: '160px', justifyContent: 'center' }}>
-                    {isImporting ? (
-                      <>
-                        <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', marginRight: 'var(--space-2)' }}></div>
-                        Đang nhập...
-                      </>
-                    ) : (
-                      'Bắt đầu nhập dữ liệu'
-                    )}
-                  </button>
-                </div>
-              </form>
             </div>
 
-            {/* Instruction / Help Box */}
-            <div className="card" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', marginBottom: 'var(--space-6)' }}>
-              <h4 style={{ fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-3)', color: 'var(--color-text-main)' }}>
-                Hướng dẫn chuẩn bị bảng tính Google Sheet:
-              </h4>
-              <ol style={{ paddingLeft: 'var(--space-4)', margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                <li>
-                  Chia sẻ Google Sheet ở chế độ công khai: Bấm nút <strong>Chia sẻ (Share)</strong> ở góc trên bên phải → Trong phần Quyền truy cập chung chọn <strong>"Bất kỳ ai có liên kết đều có thể xem" (Anyone with the link can view)</strong>.
-                </li>
-                <li>
-                  Các tiêu đề cột được hỗ trợ (Hệ thống tự nhận diện không phân biệt viết hoa/thường, có dấu/không dấu):
-                  <div style={{ overflowX: 'auto', marginTop: 'var(--space-2)' }}>
-                    <table className="rooms-table" style={{ fontSize: '12px' }}>
-                      <thead>
-                        <tr>
-                          <th>Thông tin thuộc tính</th>
-                          <th>Tên tiêu đề được hỗ trợ</th>
-                          <th>Ghi chú / Bắt buộc</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td><strong>Tiêu đề bài đăng</strong></td>
-                          <td><code>Tiêu đề</code>, <code>title</code>, <code>tenphong</code>, <code>ten</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Loại phòng</strong></td>
-                          <td><code>Loại phòng</code>, <code>type</code>, <code>loai</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span> (Chung cư mini, Căn hộ, Phòng trọ...)</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Giá thuê (VND)</strong></td>
-                          <td><code>Giá thuê</code>, <code>price</code>, <code>gia</code>, <code>tienphong</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Diện tích (m²)</strong></td>
-                          <td><code>Diện tích</code>, <code>area</code>, <code>rong</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Thành phố / Tỉnh</strong></td>
-                          <td><code>Thành phố</code>, <code>city</code>, <code>tp</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Quận / Huyện</strong></td>
-                          <td><code>Quận huyện</code>, <code>district</code>, <code>quan</code>, <code>huyen</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Phường / Xã</strong></td>
-                          <td><code>Phường xã</code>, <code>ward</code>, <code>phuong</code>, <code>xa</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Địa chỉ chi tiết</strong></td>
-                          <td><code>Địa chỉ chi tiết</code>, <code>address</code>, <code>diachi</code></td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Tọa độ (Vĩ độ,Kinh độ)</strong></td>
-                          <td><code>Tọa độ</code>, <code>coords</code>, <code>toado</code> (Hoặc 2 cột <code>latitude</code>, <code>longitude</code>)</td>
-                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span> (Ví dụ: <code>21.0285,105.7823</code>)</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Hình ảnh (URLs)</strong></td>
-                          <td><code>Hình ảnh</code>, <code>images</code>, <code>linkanh</code>, <code>anh</code></td>
-                          <td>Phân cách bằng dấu phẩy hoặc xuống dòng</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Đã Review</strong></td>
-                          <td><code>Đã Review</code>, <code>verified</code>, <code>dareview</code></td>
-                          <td>Nhập <code>yes</code>, <code>true</code>, <code>1</code> hoặc <code>x</code> nếu muốn gắn nhãn Review</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Tiện ích</strong></td>
-                          <td><code>Tiện ích</code>, <code>amenities</code>, <code>tiennghi</code></td>
-                          <td>Phân cách bằng dấu phẩy hoặc xuống dòng (dieuhoa, nonglanh...)</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Điện / Nước / Dịch vụ</strong></td>
-                          <td><code>Điện</code>, <code>Nước</code>, <code>Dịch vụ</code>, <code>tiendien</code>, <code>tiennuoc</code></td>
-                          <td>Đơn giá tương ứng. Nếu trống sẽ dùng giá mặc định</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Mô tả</strong></td>
-                          <td><code>Mô tả</code>, <code>description</code>, <code>noidung</code>, <code>mota</code></td>
-                          <td>Mô tả chi tiết phòng trọ</td>
-                        </tr>
-                      </tbody>
-                    </table>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 'var(--space-6)' }} className="sync-grid">
+              
+              {/* Cấu hình Tự động Đồng bộ */}
+              <div className="card glass-strong" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', borderBottom: '1px solid var(--color-divider)', paddingBottom: 'var(--space-2)' }}>
+                  <CloudArrowDown size={20} color="var(--color-accent)" weight="fill" />
+                  Cấu hình Tự động Đồng bộ
+                </h3>
+
+                <form onSubmit={handleSettingsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Đường dẫn liên kết Google Sheet (URL) *</label>
+                    <input
+                      type="url"
+                      className="input"
+                      required
+                      placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
+                      value={sheetUrl}
+                      onChange={(e) => setSheetUrl(e.target.value)}
+                      style={{ width: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-subtle)', padding: 'var(--space-2) var(--space-3)' }}
+                    />
                   </div>
-                </li>
-              </ol>
+
+                  <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                    <input
+                      type="checkbox"
+                      id="autoImportEnabled"
+                      checked={autoImportEnabled}
+                      onChange={(e) => setAutoImportEnabled(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="autoImportEnabled" style={{ fontSize: 'var(--text-sm)', cursor: 'pointer', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-main)' }}>
+                      Kích hoạt tác vụ đồng bộ tự động định kỳ
+                    </label>
+                  </div>
+
+                  {autoImportEnabled && (
+                    <div className="form-group" style={{ paddingLeft: 'var(--space-6)', animation: 'slideDown 0.2s ease' }}>
+                      <label className="form-label" style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Tần suất đồng bộ tự động (Giờ) *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="168"
+                        className="input"
+                        required
+                        value={intervalHours}
+                        onChange={(e) => setIntervalHours(e.target.value)}
+                        style={{ width: '120px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-subtle)', padding: 'var(--space-2) var(--space-3)' }}
+                      />
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                        Đồng bộ định kỳ sau mỗi {intervalHours} giờ.
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>Email nhận báo cáo lỗi dữ liệu</label>
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="admin@tncb.vn"
+                      value={notificationEmail}
+                      onChange={(e) => setNotificationEmail(e.target.value)}
+                      style={{ width: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-subtle)', padding: 'var(--space-2) var(--space-3)' }}
+                    />
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                      Khi có lỗi định dạng hoặc dữ liệu không hợp lệ (nhưng không bị trống các trường bắt buộc), hệ thống sẽ gửi danh sách dòng lỗi qua email này.
+                    </span>
+                  </div>
+
+                  <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                    <input
+                      type="checkbox"
+                      id="clearExisting"
+                      checked={clearExisting}
+                      onChange={(e) => setClearExisting(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="clearExisting" style={{ fontSize: 'var(--text-sm)', cursor: 'pointer', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-main)' }}>
+                      Xóa toàn bộ dữ liệu tin đăng cũ trên Web khi đồng bộ
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                    <button type="submit" className="btn btn-primary" disabled={isSavingSettings} style={{ minWidth: '150px', justifyContent: 'center' }}>
+                      {isSavingSettings ? (
+                        <>
+                          <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', marginRight: 'var(--space-2)' }}></div>
+                          Đang lưu...
+                        </>
+                      ) : (
+                        'Lưu cấu hình'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Trạng thái & Đồng bộ thủ công */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div className="card glass-strong" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', borderBottom: '1px solid var(--color-divider)', paddingBottom: 'var(--space-2)' }}>
+                    <CheckCircle size={20} color="var(--color-success)" weight="fill" />
+                    Đồng bộ thủ công & Trạng thái
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                    <div>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block' }}>Cập nhật cache gần nhất</span>
+                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--color-text-main)' }}>
+                        {cacheLastUpdated ? new Date(cacheLastUpdated).toLocaleString('vi-VN') : 'Chưa từng đồng bộ'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block' }}>Chế độ lưu trữ dữ liệu</span>
+                      <span className="badge" style={{ background: '#dbeafe', color: '#1e40af', padding: 'var(--space-1) var(--space-2)', borderRadius: 'var(--radius-subtle)', fontSize: '11px', display: 'inline-block', marginTop: '4px', fontWeight: 'var(--weight-semibold)' }}>
+                        In-Memory Caching (MongoDB Bypassed)
+                      </span>
+                    </div>
+
+                    <div style={{ marginTop: 'var(--space-2)', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-4)' }}>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)', lineHeight: '1.4' }}>
+                        Nhấn nút dưới đây để chạy đồng bộ ngay lập tức từ bảng tính hiện tại. Cấu hình sẽ tự động được lưu trước khi đồng bộ.
+                      </p>
+                      
+                      <button 
+                        type="button" 
+                        onClick={handleSyncNow} 
+                        className="btn btn-secondary" 
+                        disabled={isImporting || !sheetUrl} 
+                        style={{ width: '100%', justifyContent: 'center', gap: 'var(--space-2)' }}
+                      >
+                        {isImporting ? (
+                          <>
+                            <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                            Đang đồng bộ...
+                          </>
+                        ) : (
+                          <>
+                            <CloudArrowDown size={18} />
+                            Đồng bộ dữ liệu ngay
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Import Result / Summary Panel */}
             {importResult && (
-              <div className="card" style={{ padding: 'var(--space-6)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', marginBottom: 'var(--space-6)', animation: 'fadeIn 0.3s ease both' }}>
-                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <CheckCircle size={24} color="var(--color-success)" weight="fill" />
-                  Kết quả nhập dữ liệu
+              <div className="card glass-strong" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', animation: 'fadeIn 0.3s ease both' }}>
+                <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <CheckCircle size={20} color="var(--color-success)" weight="fill" />
+                  Kết quả đồng bộ gần nhất
                 </h3>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
-                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
                     <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Trạng thái</span>
-                    <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>Thành công</span>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>Hoàn tất</span>
                   </div>
-                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Thêm thành công</span>
-                    <span className="text-mono" style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>{importResult.importedCount}</span>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Dòng nhập thành công</span>
+                    <span className="text-mono" style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>{importResult.importedCount}</span>
                   </div>
-                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Bị lỗi (Bỏ qua)</span>
-                    <span className="text-mono" style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: importResult.failedCount > 0 ? '#ef4444' : 'var(--color-text-muted)' }}>{importResult.failedCount}</span>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Dòng lỗi định dạng (Bỏ qua)</span>
+                    <span className="text-mono" style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', color: importResult.failedCount > 0 ? 'var(--color-error)' : 'var(--color-text-muted)' }}>{importResult.failedCount}</span>
                   </div>
                 </div>
 
                 {importResult.errors && importResult.errors.length > 0 && (
                   <div>
-                    <h4 style={{ fontWeight: 'var(--weight-semibold)', color: '#ef4444', marginBottom: 'var(--space-2)' }}>
-                      Chi tiết các dòng bị lỗi dữ liệu:
+                    <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-error)', marginBottom: 'var(--space-2)' }}>
+                      Chi tiết các dòng bị bỏ qua hoặc lỗi định dạng:
                     </h4>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)' }}>
-                      <table className="rooms-table" style={{ fontSize: '13px' }}>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'var(--color-surface)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)' }}>
+                      <table className="rooms-table" style={{ fontSize: '12px', width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                          <tr>
-                            <th style={{ width: '80px' }}>Dòng số</th>
-                            <th>Mô tả chi tiết lỗi</th>
+                          <tr style={{ background: 'var(--bg-tertiary)' }}>
+                            <th style={{ width: '80px', padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--color-divider)' }}>Dòng số</th>
+                            <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--color-divider)' }}>Mô tả chi tiết lỗi dữ liệu</th>
                           </tr>
                         </thead>
                         <tbody>
                           {importResult.errors.map((err, idx) => (
-                            <tr key={idx}>
-                              <td className="text-mono" style={{ fontWeight: 'var(--weight-semibold)' }}>{err.row}</td>
-                              <td style={{ color: 'var(--color-text-muted)' }}>{err.message}</td>
+                            <tr key={idx} style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                              <td className="text-mono" style={{ padding: '8px', fontWeight: 'var(--weight-semibold)' }}>{err.row}</td>
+                              <td style={{ padding: '8px', color: 'var(--color-text-muted)' }}>{err.message}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1928,6 +2037,130 @@ export default function Dashboard() {
                 )}
               </div>
             )}
+
+            {/* Real-time Google Apps Script Setup Trigger */}
+            <div className="card glass-strong" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', borderBottom: '1px solid var(--color-divider)', paddingBottom: 'var(--space-2)' }}>
+                <Buildings size={20} color="var(--color-accent)" weight="fill" />
+                Tự động cập nhật Web tức thì khi sửa Sheet (Real-time Webhook)
+              </h3>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', lineHeight: '1.5', margin: 0 }}>
+                Bạn có thể cài đặt một trigger <code>onEdit</code> trên Google Sheet để mỗi khi bạn chỉnh sửa, cập nhật hoặc thêm dòng mới, bảng tính sẽ tự động gọi API đẩy dữ liệu lên trang Web ngay lập tức (không cần bấm nút đồng bộ thủ công hay chờ đợi tác vụ định kỳ).
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--color-text-main)' }}>
+                <strong>Các bước thực hiện:</strong>
+                <ol style={{ paddingLeft: 'var(--space-4)', margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', color: 'var(--color-text-muted)' }}>
+                  <li>Trên Google Sheets của bạn, chọn menu <strong>Tiện ích mở rộng (Extensions)</strong> &gt; <strong>Apps Script</strong>.</li>
+                  <li>Xóa mọi đoạn mã mặc định trong khung soạn thảo.</li>
+                  <li>Dán đoạn mã dưới đây vào (đoạn mã đã tự động điền URL Web và Token bảo mật của bạn):</li>
+                </ol>
+
+                <div style={{ position: 'relative', marginTop: 'var(--space-2)' }}>
+                  <pre style={{ background: '#1e1e1e', color: '#d4d4d4', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', fontSize: '12px', overflowX: 'auto', fontFamily: 'monospace', margin: 0, border: '1px solid #333' }}>
+                    {appsScriptSnippet}
+                  </pre>
+                  <button 
+                    onClick={handleCopyScript} 
+                    style={{ position: 'absolute', top: '10px', right: '10px', background: copiedScript ? 'var(--color-success)' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s ease' }}
+                  >
+                    {copiedScript ? 'Đã sao chép!' : 'Sao chép mã'}
+                  </button>
+                </div>
+
+                <ol start="4" style={{ paddingLeft: 'var(--space-4)', margin: 'var(--space-2) 0 0 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', color: 'var(--color-text-muted)' }}>
+                  <li>Nhấn nút <strong>Lưu (Save)</strong> (biểu tượng đĩa mềm) hoặc tổ hợp phím <code>Ctrl + S</code>.</li>
+                  <li>Từ bây giờ, bất kỳ thay đổi nào của bạn trên trang tính sẽ kích hoạt webhook và đồng bộ dữ liệu ngay lập tức lên web!</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Instruction / Help Box */}
+            <div className="card glass-strong" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)' }}>
+              <h4 style={{ fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-3)', color: 'var(--color-text-main)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <CloudArrowDown size={18} />
+                Hướng dẫn định dạng cột dữ liệu trên Google Sheet:
+              </h4>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', margin: 0 }}>
+                  Để hệ thống nhận diện chính xác, bảng tính Google Sheet của bạn phải ở chế độ công khai (<strong>Chia sẻ &gt; Bất kỳ ai có liên kết đều có thể xem</strong>) và có tiêu đề các cột trùng với một trong các tên được hỗ trợ sau đây:
+                </p>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="rooms-table" style={{ fontSize: '12px', width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-tertiary)' }}>
+                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--color-divider)' }}>Thông tin thuộc tính</th>
+                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--color-divider)' }}>Tên tiêu đề cột hỗ trợ</th>
+                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid var(--color-divider)' }}>Yêu cầu / Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Tiêu đề tin đăng</strong></td>
+                        <td style={{ padding: '8px' }}><code>Tiêu đề</code>, <code>title</code>, <code>tenphong</code>, <code>ten</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Chuỗi văn bản mô tả ngắn</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Loại phòng</strong></td>
+                        <td style={{ padding: '8px' }}><code>Loại phòng</code>, <code>type</code>, <code>loai</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Giá trị: <code>Chung cư mini</code>, <code>Căn hộ</code>, <code>Phòng trọ</code>, <code>Nhà nguyên căn</code></td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Giá thuê (VND)</strong></td>
+                        <td style={{ padding: '8px' }}><code>Giá thuê</code>, <code>price</code>, <code>gia</code>, <code>tienphong</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Nhập số nguyên dương (ví dụ: 3500000)</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Diện tích (m²)</strong></td>
+                        <td style={{ padding: '8px' }}><code>Diện tích</code>, <code>area</code>, <code>rong</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Số nguyên hoặc số thập phân (ví dụ: 25.5)</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Thành phố / Tỉnh</strong></td>
+                        <td style={{ padding: '8px' }}><code>Thành phố</code>, <code>city</code>, <code>tp</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Ví dụ: <code>Hà Nội</code>, <code>TP Hồ Chí Minh</code></td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Quận / Huyện</strong></td>
+                        <td style={{ padding: '8px' }}><code>Quận huyện</code>, <code>district</code>, <code>quan</code>, <code>huyen</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Ví dụ: <code>Cầu Giấy</code>, <code>Quận 1</code></td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Phường / Xã</strong></td>
+                        <td style={{ padding: '8px' }}><code>Phường xã</code>, <code>ward</code>, <code>phuong</code>, <code>xa</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Ví dụ: <code>Dịch Vọng</code>, <code>Bến Nghé</code></td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Địa chỉ chi tiết</strong></td>
+                        <td style={{ padding: '8px' }}><code>Địa chỉ chi tiết</code>, <code>address</code>, <code>diachi</code></td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Số nhà, ngõ/ngách, tên đường</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Tọa độ bản đồ</strong></td>
+                        <td style={{ padding: '8px' }}><code>Tọa độ</code>, <code>coords</code>, <code>toado</code> (Hoặc tách làm 2 cột: <code>latitude</code> &amp; <code>longitude</code>)</td>
+                        <td style={{ padding: '8px' }}><span style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>Bắt buộc</span>. Định dạng: <code>vĩ độ, kinh độ</code> (Ví dụ: <code>21.0285, 105.7823</code>)</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Hình ảnh (URLs)</strong></td>
+                        <td style={{ padding: '8px' }}><code>Hình ảnh</code>, <code>images</code>, <code>linkanh</code>, <code>anh</code></td>
+                        <td style={{ padding: '8px' }}>Phân cách nhiều link bằng dấu phẩy hoặc xuống dòng.</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid var(--color-divider)' }}>
+                        <td style={{ padding: '8px' }}><strong>Tiện ích</strong></td>
+                        <td style={{ padding: '8px' }}><code>Tiện ích</code>, <code>amenities</code>, <code>tiennghi</code></td>
+                        <td style={{ padding: '8px' }}>Danh sách mã tiện ích viết thường phân cách bằng dấu phẩy (ví dụ: <code>dieuhoa,nonglanh,wifi,tulanh</code>)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ background: 'var(--bg-tertiary)', padding: 'var(--space-3)', borderRadius: 'var(--radius-subtle)', borderLeft: '4px solid var(--color-accent)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+                  <strong>Lưu ý về Dòng trống / Dữ liệu dở dang:</strong> Những hàng dữ liệu chưa điền đủ các thông tin bắt buộc (ví dụ đang nhập dở tiêu đề, địa chỉ, hoặc tọa độ) sẽ được hệ thống tự động bỏ qua trong quá trình đồng bộ mà không gửi cảnh báo lỗi về email, giúp bạn thoải mái thao tác chỉnh sửa trực tiếp trên bảng tính.
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

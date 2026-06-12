@@ -11,6 +11,7 @@ import ticketRoutes from './modules/ticket/ticketRoutes.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { initPropertyBloomFilter } from './modules/property/propertyBloomFilter.js';
 import HeroSlide from './modules/property/HeroSlide.js';
+import { initImportScheduler } from './modules/property/importScheduler.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,7 @@ mongoose.connect(mongoURI)
   .then(async () => {
     console.log('✅ Connected to MongoDB successfully.');
     await initPropertyBloomFilter();
+    await initImportScheduler();
     
     // Seed default hero slides if collection is empty
     try {
