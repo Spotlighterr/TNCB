@@ -77,7 +77,7 @@ flowchart TD
     GetProp[Xác định ID phòng trọ & trạng thái isUnlisted hiện tại]:::process
     ToggleUnlist[Đảo ngược trạng thái: isUnlisted = !isUnlisted]:::process
     UpdateContext[Cập nhật phòng trọ trong State properties của AppContext]:::process
-    WriteStorage[Ghi mảng properties mới xuống LocalStorage TNCB_PROPERTIES]:::process
+    WriteDB[Gửi yêu cầu PATCH/PUT lên API Backend và cập nhật MongoDB]:::process
     
     CheckUnlist{Trạng thái isUnlisted mới là gì?}:::decision
     HideProp[Ẩn phòng khỏi trang Tìm kiếm công khai <br> & Bỏ qua phòng trong so khớp trùng lặp]:::process
@@ -89,8 +89,8 @@ flowchart TD
     Start --> GetProp
     GetProp --> ToggleUnlist
     ToggleUnlist --> UpdateContext
-    UpdateContext --> WriteStorage
-    WriteStorage --> CheckUnlist
+    UpdateContext --> WriteDB
+    WriteDB --> CheckUnlist
     CheckUnlist -->|Đúng - Đã gỡ| HideProp
     CheckUnlist -->|Sai - Công khai| ShowProp
     HideProp --> End
@@ -115,7 +115,7 @@ flowchart TD
     GetProp[Xác định ID phòng trọ tương ứng]:::process
     ToggleStatus[Đảo ngược trạng thái: Trống <--> Đã thuê]:::process
     UpdateContext[Cập nhật thuộc tính của phòng trong State properties]:::process
-    WriteLocalStorage[Ghi đè danh sách properties mới xuống LocalStorage]:::process
+    WriteDB[Gửi yêu cầu PATCH lên API Backend và cập nhật MongoDB]:::process
     
     CheckStatus{Trạng thái mới là gì?}:::decision
     HideMap[Ẩn phòng khỏi trang Tìm kiếm <br> & Xóa Marker trên bản đồ tìm kiếm]:::process
@@ -127,8 +127,8 @@ flowchart TD
     Start --> GetProp
     GetProp --> ToggleStatus
     ToggleStatus --> UpdateContext
-    UpdateContext --> WriteLocalStorage
-    WriteLocalStorage --> CheckStatus
+    UpdateContext --> WriteDB
+    WriteDB --> CheckStatus
     CheckStatus -->|Đã thuê| HideMap
     CheckStatus -->|Còn trống| ShowMap
     HideMap --> End

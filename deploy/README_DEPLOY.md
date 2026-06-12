@@ -435,3 +435,33 @@ ssh spotlighter@ubuntu-server
 
 > **💡 Khuyến nghị**: Sử dụng **Tailscale** làm phương thức SSH chính (nhanh, tiện) và giữ **Cloudflare Tunnel SSH** làm phương thức dự phòng khi Tailscale gặp sự cố.
 
+
+---
+
+## 📊 Phần 9: Hướng Dẫn Cấu Hình Đồng Bộ Google Sheets & Webhook Tức Thời
+
+FindX hỗ trợ đồng bộ dữ liệu phòng trọ trực tiếp từ Google Sheets vào cơ sở dữ liệu MongoDB thông qua cơ chế chạy định kỳ hoặc nhận Webhook kích hoạt tức thời từ Google Sheets Apps Script.
+
+### 1. Cấu hình biến môi trường
+Trong tệp `.env` của Backend hoặc phần `environment` của `backend` service trong `deploy/docker-compose.yml`, thiết lập mã bảo mật để xác thực Webhook:
+```yaml
+      - SYNC_SECRET_TOKEN=findx_sheet_sync_secret_2026
+```
+
+### 2. Thiết lập trên Admin Dashboard
+1. Truy cập trang quản trị hệ thống với tài khoản Admin (`admin@tncb.vn`).
+2. Vào mục **Nhập dữ liệu** (Cấu hình & Đồng bộ Google Sheets).
+3. Điền các thông tin:
+   - **Đường dẫn Google Sheet**: URL bảng tính ở chế độ chia sẻ công khai (bất kỳ ai có liên kết đều có thể xem).
+   - **Tần suất tự động đồng bộ (Giờ)**: Chu kỳ tự động quét (cron job chạy ngầm ở backend).
+   - **Email nhận thông báo lỗi**: Địa chỉ email nhận báo cáo khi có dòng dữ liệu sai định dạng.
+   - **Tùy chọn dọn dẹp tin cũ**: Nếu bật, khi đồng bộ hệ thống sẽ chỉ xóa sạch các tin cũ từ Google Sheets và giữ lại nguyên vẹn các tin đăng do người dùng nhập tay thủ công.
+
+### 3. Thiết lập Webhook tức thì (Real-time Webhook) từ Google Sheets
+Để hệ thống tự động cập nhật ngay khi sửa đổi bảng tính Google Sheets:
+1. Tại Admin Dashboard, hệ thống sẽ tự động sinh đoạn mã **Google Apps Script** khớp với IP/Tên miền server của bạn và mã `SYNC_SECRET_TOKEN`. Hãy nhấn nút **Sao chép mã**.
+2. Trên bảng tính Google Sheets của bạn, chọn **Tiện ích mở rộng (Extensions)** > **Apps Script**.
+3. Xóa mọi đoạn mã mặc định và dán đoạn mã Apps Script vừa sao chép vào.
+4. Nhấn **Lưu (Ctrl + S)**.
+5. Từ bây giờ, bất kỳ thay đổi nào trên các dòng dữ liệu (đã điền đủ trường bắt buộc) trên Google Sheet sẽ tự động gửi tín hiệu Webhook để cập nhật dữ liệu lên web ngay lập tức!
+

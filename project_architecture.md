@@ -6,7 +6,7 @@ Tài liệu này cung cấp cái nhìn tổng quan về kiến trúc hệ thốn
 
 ## 1. Sơ Đồ Kiến Trúc Tổng Thể (System Architecture)
 
-Dự án được xây dựng dưới dạng mô hình Client-Server. Frontend là ứng dụng SPA sử dụng React + Vite, giao tiếp qua REST APIs với Backend Node.js/Express (Modular Monolith) và lưu trữ bền vững tại cơ sở dữ liệu MongoDB. JWT token được lưu ở LocalStorage của trình duyệt để duy trì phiên làm việc của người dùng.
+Dự án được xây dựng dưới dạng mô hình Client-Server. Frontend là ứng dụng SPA sử dụng React + Vite, giao tiếp qua REST APIs với Backend Node.js/Express (Modular Monolith) và lưu trữ bền vững tại cơ sở dữ liệu MongoDB. Caching được hỗ trợ qua Redis. Đồng bộ dữ liệu cũng hỗ trợ qua Google Sheets Sync (tự động, thủ công hoặc webhook tức thời).
 
 ```mermaid
 graph TD
@@ -17,29 +17,30 @@ graph TD
     classDef comp fill:#fef3c7,stroke:#d97706,stroke-width:1px;
 
     %% Elements
-    subgraph DataLayer ["Tầng Dữ Liệu & State"]
-        LS[("LocalStorage <br> (TNCB_PROPERTIES, TNCB_CONTRACTS, etc.)")]:::storage
-        Mock[("Mock Data Source <br> (mockProperties.js, mockContracts.js)")]:::storage
-        Ctx["React AppContext <br> (State: properties, contracts, saved, user)"]:::context
+    subgraph DataLayer ["Tầng Dữ Liệu & Lưu Trữ"]
+        DB[("MongoDB Database <br> (Properties, Users, Settings)")]:::storage
+        Cache[("Redis Caching <br> (Session caching)")]:::storage
+        Sheet[("Google Sheets <br> (Bảng tính dữ liệu nguồn)")]:::storage
+        Ctx["React AppContext <br> (State: properties, contracts, heroSlides, user)"]:::context
     end
 
     subgraph AppContainer ["Ứng Dụng Chính (App.jsx)"]
         Router{{"React Router <br> (SPA Routes)"}}
         Header["Header.jsx <br> (Theme Toggle, Role Switcher)"]:::comp
-        Footer["Footer.jsx <br> (Bottom Mobile Navigation)"]:::comp
-        Float["FloatingContact.jsx <br> (Quick Zalo / Call)"]:::comp
+        Footer["Footer.jsx <br> (Bottom Mobile Nav)"]:::comp
     end
 
     subgraph Pages ["Tầng Trang (Pages)"]
         HomeP["Home.jsx <br> (Trang Chủ)"]:::page
         SearchP["Search.jsx <br> (Lọc & Tìm Kiếm)"]:::page
         DetailP["PropertyDetail.jsx <br> (Chi Tiết Phòng)"]:::page
-        DashP["Dashboard.jsx <br> (Hệ Điều Hành Quản Trị)"]:::page
+        DashP["Dashboard.jsx <br> (Hệ Điều Hành Quản Trị & Sync Config)"]:::page
     end
 
     %% Relations
-    Mock -.->|Khởi tạo lần đầu| Ctx
-    Ctx <-->|Đồng bộ 2 chiều| LS
+    Sheet -->|Sync Webhook / Cron| DB
+    Ctx <-->|REST APIs| DB
+    DB <-->|Cache| Cache
     
     AppContainer --> Ctx
     Router --> HomeP

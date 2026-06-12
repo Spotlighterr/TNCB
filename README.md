@@ -162,8 +162,7 @@ npm run dev
 
 ### Docker + NGINX
 
-Dùng khi cần chạy stack đầy đủ (frontend + mock API + Redis + Cloudflare Tunnel). Xem hướng dẫn chi tiết trong [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md).
-Chưa bao gồm cơ sở dữ liệu (bổ sung sau).
+Dùng khi cần chạy cụm dịch vụ đầy đủ (frontend + backend API + MongoDB + Redis + Cloudflare Tunnel). Xem hướng dẫn chi tiết trong [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md).
 
 ```bash
 docker compose -f deploy/docker-compose.yml up --build -d
