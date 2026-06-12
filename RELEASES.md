@@ -18,6 +18,26 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 >    ```
 > GitHub Actions sẽ tự động đọc phần nội dung tương ứng dưới tiêu đề `## [vX.Y.Z]` trong file này và tạo GitHub Release mới tương ứng.
 
+## [v2.5.0] - 2026-06-12
+### 📊 Nhập Liệu Song Song (Nhập Tay & Google Sheets) & Lưu MongoDB Trực Tiếp
+
+Phiên bản này tích hợp và tối ưu hóa hệ thống để hỗ trợ song song hai hình thức nhập tin đăng (nhập thủ công trên website và đồng bộ từ Google Sheets), đồng thời bảo đảm an toàn dữ liệu cũ và khắc phục các vấn đề tương thích ID tùy chỉnh.
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Hỗ trợ chạy song song 2 luồng nhập liệu:**
+  - Giữ lại đầy đủ các tính năng Đăng/Sửa/Xóa tin thủ công trên trang Dashboard dành cho Admin và Chủ trọ.
+  - Đồng thời cho phép đồng bộ tự động định kỳ hoặc kích hoạt Webhook tức thời từ Google Sheets.
+* **Lưu trữ Persistent MongoDB cho dữ liệu Google Sheets:**
+  - Chuyển đổi cơ chế lưu trữ dữ liệu Google Sheets từ lưu tạm trên RAM sang lưu trực tiếp vào cơ sở dữ liệu MongoDB thông qua trường phân biệt `source: 'sheet'` và `source: 'manual'`.
+  - Tích hợp cấu hình dọn dẹp tin đăng cũ (`clearExisting`):
+    - Khi kích hoạt dọn dẹp (`clearExisting === true`): Hệ thống chỉ xóa các tin đăng có nguồn từ Google Sheets (`source: 'sheet'`), giữ nguyên 100% các tin đăng do người dùng nhập tay (`source: 'manual'`).
+    - Khi tắt dọn dẹp (`clearExisting === false`): Thực hiện cập nhật đè (upsert) từng tin từ Google Sheets theo ID ổn định để tránh ghi đè dữ liệu.
+* **Nới lỏng bộ lọc Bloom Filter & Middleware:**
+  - Cấu hình lại Regex trong middleware `checkPropertyBloomFilter` để cho phép cả định dạng ID Mongoose (24 ký tự hex) và định dạng ID chuỗi tùy chỉnh từ Google Sheets (`prop-xxxx`).
+  - Tự động gọi lại `initPropertyBloomFilter()` sau mỗi phiên đồng bộ để cập nhật danh sách ID hợp lệ mới nhất vào Bloom Filter.
+* **Sửa lỗi CastError khi so khớp trùng tin đăng:**
+  - Chuyển đổi kiểu dữ liệu của trường `duplicateReport.matchedProperty` trong Schema `Property` sang `String`. Việc này giúp ngăn ngừa các lỗi CastError của Mongoose khi hệ thống so sánh trùng lặp với tin đăng từ Google Sheets.
+
 ---
 
 ## [v2.4.0] - 2026-06-04

@@ -69,43 +69,19 @@ export function PropertyMap({ lat, lng, address }) {
 ```
 Lợi thế lớn của giải pháp này là không phát sinh chi phí, tải nhanh, và tương thích 100% với môi trường Việt Nam.
 
-### B. Cơ Chế Lưu Trữ Dữ Liệu Bền Vững (LocalStorage Database Engine)
-Toàn bộ dữ liệu của hệ thống được khởi tạo ban đầu từ `mockProperties.js` và sau đó được quản lý hoàn toàn bằng React Context lưu vào `localStorage`. 
+### B. Cơ Chế Lưu Trữ Dữ Liệu Bền Vững (MongoDB Database Engine & Sheets Sync)
+Hệ thống sử dụng cơ sở dữ liệu MongoDB làm lớp lưu trữ dữ liệu bền vững chính. Toàn bộ các API Đăng tin, Duyệt tin, Sửa/Xóa tin đều ghi nhận trực tiếp vào cơ sở dữ liệu MongoDB (`PropertySchema`), đồng thời hỗ trợ lưu trữ phân chia theo nguồn dữ liệu (`source`):
 
-```javascript
-// Cấu trúc React Context lưu trữ
-export const AppProvider = ({ children }) => {
-  const [properties, setProperties] = useState(() => {
-    const saved = localStorage.getItem("TNCB_PROPERTIES");
-    return saved ? JSON.parse(saved) : defaultProperties;
-  });
+- **source: 'manual'**: Các tin đăng được nhập thủ công bởi người dùng hoặc quản trị viên trực tiếp qua form trên web.
+- **source: 'sheet'**: Các tin đăng được đồng bộ tự động hoặc thủ công từ Google Sheets.
 
-  const [contracts, setContracts] = useState(() => {
-    const saved = localStorage.getItem("TNCB_CONTRACTS");
-    return saved ? JSON.parse(saved) : defaultContracts;
-  });
-
-  // Đồng bộ xuống LocalStorage mỗi khi state thay đổi
-  useEffect(() => {
-    localStorage.setItem("TNCB_PROPERTIES", JSON.stringify(properties));
-  }, [properties]);
-
-  useEffect(() => {
-    localStorage.setItem("TNCB_CONTRACTS", JSON.stringify(contracts));
-  }, [contracts]);
-
-  // Các hàm nghiệp vụ: addProperty, togglePropertyStatus, createContract, addBill...
-  return (
-    <AppContext.Provider value={{ properties, contracts, addProperty, togglePropertyStatus }}>
-      {children}
-    </AppContext.Provider>
-  );
-};
-```
-Nhờ cơ chế này, hệ thống **không cần cài đặt database cồng kềnh** nhưng vẫn đảm bảo:
-- Thêm phòng trọ mới từ Dashboard sẽ lập tức hiển thị trên Bản đồ tìm kiếm ở trang ngoài.
-- Bật/tắt trạng thái thuê phòng sẽ cập nhật marker tương ứng thời gian thực.
-- Lịch sử xem tin của khách thuê được lưu trữ trong vòng 7 ngày và tự động dọn dẹp khi tải lại trang.
+#### Cơ chế đồng bộ Google Sheets thông minh:
+Hệ thống hỗ trợ đồng bộ dữ liệu hai chiều mà không ảnh hưởng tới dữ liệu cũ:
+- **Khi đồng bộ**: Cho phép Admin cấu hình tự động hoặc thủ công thông qua bảng điều khiển. Có thể bật chế độ xóa dữ liệu cũ (`clearExisting`).
+  - Nếu `clearExisting` bật: Chỉ dọn sạch các tin đăng có `source: 'sheet'` cũ trên DB và ghi đè bằng các dòng mới hợp lệ từ sheet. Dữ liệu tin đăng nhập thủ công (`source: 'manual'`) được giữ nguyên hoàn toàn để bảo vệ dữ liệu cũ.
+  - Nếu `clearExisting` tắt: Hệ thống thực hiện cập nhật đè (upsert) từng tin từ Google Sheets theo ID ổn định được tạo từ thông tin phòng để tránh trùng lặp.
+- **Tự động làm mới Bloom Filter**: Sau mỗi lượt đồng bộ từ Google Sheets, hệ thống sẽ tự động gọi hàm cập nhật Bloom Filter ở backend nhằm làm mới danh sách ID phòng hợp lệ tức thời.
+- **Nới lỏng Bloom Filter ID**: Bloom Filter cho phép kiểm tra song song cả ID 24 ký tự hex của MongoDB và ID chuỗi tùy chỉnh `prop-` của Google Sheets giúp các tin từ Sheets hoạt động đầy đủ trên web.
 
 ### C. Tactile Physics & Spring Motion (Micro-interactions)
 Toàn bộ các chuyển dịch giao diện (như mở popup trên bản đồ, thẻ hover phóng to, chuyển trang) sẽ sử dụng CSS Transition định nghĩa ở `global.css`:
