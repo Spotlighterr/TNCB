@@ -73,8 +73,8 @@ export const initPropertyBloomFilter = async () => {
 export const checkPropertyBloomFilter = (req, res, next) => {
   const { id } = req.params;
 
-  // 1. Validate if the ID matches standard MongoDB ObjectId hex structure (24 chars)
-  if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+  // 1. Validate if the ID matches standard MongoDB ObjectId hex structure (24 chars) or custom stable sheet ID (prop-hex)
+  if (!id || (!/^[0-9a-fA-F]{24}$/.test(id) && !/^prop-[0-9a-fA-F]+$/.test(id))) {
     return res.status(404).json({
       success: false,
       message: 'Không tìm thấy thông tin phòng trọ (Định dạng ID không hợp lệ).'

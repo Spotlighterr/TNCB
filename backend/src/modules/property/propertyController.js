@@ -1,7 +1,7 @@
 import Property from './Property.js';
 import HeroSlide from './HeroSlide.js';
 import { checkDuplicateProperty } from './deduplication.js';
-import { propertyBloomFilter } from './propertyBloomFilter.js';
+import { propertyBloomFilter, initPropertyBloomFilter } from './propertyBloomFilter.js';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
@@ -58,37 +58,24 @@ export const getProperties = async (req, res) => {
       search
     } = req.query;
 
-    let filtered = [...cachedProperties];
+    const query = { isUnlisted: { $ne: true } };
 
-    // Filter by city
-    if (city) {
-      filtered = filtered.filter(p => p.city === city);
-    }
-    // Filter by district
-    if (district) {
-      filtered = filtered.filter(p => p.district === district);
-    }
-    // Filter by ward
-    if (ward) {
-      filtered = filtered.filter(p => p.ward === ward);
-    }
-    // Filter by type
-    if (type) {
-      filtered = filtered.filter(p => p.type === type);
-    }
+    if (city) query.city = city;
+    if (district) query.district = district;
+    if (ward) query.ward = ward;
+    if (type) query.type = type;
+
     // Price range
-    if (minPrice) {
-      filtered = filtered.filter(p => p.price >= Number(minPrice));
-    }
-    if (maxPrice) {
-      filtered = filtered.filter(p => p.price <= Number(maxPrice));
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
     }
     // Area range
-    if (minArea) {
-      filtered = filtered.filter(p => p.area >= Number(minArea));
-    }
-    if (maxArea) {
-      filtered = filtered.filter(p => p.area <= Number(maxArea));
+    if (minArea || maxArea) {
+      query.area = {};
+      if (minArea) query.area.$gte = Number(minArea);
+      if (maxArea) query.area.$lte = Number(maxArea);
     }
     // Amenities
     if (amenities) {
@@ -96,34 +83,27 @@ export const getProperties = async (req, res) => {
         ? amenities
         : amenities.split(',').map(a => a.trim()).filter(Boolean);
       if (amenitiesList.length > 0) {
-        filtered = filtered.filter(p => 
-          amenitiesList.every(a => p.amenities && p.amenities.includes(a))
-        );
+        query.amenities = { $all: amenitiesList };
       }
     }
-    // Search query (case-insensitive in title, description, address)
+    // Search query (case-insensitive regex in title, description, address)
     if (search) {
-      const s = search.toLowerCase();
-      filtered = filtered.filter(p => 
-        (p.title && p.title.toLowerCase().includes(s)) ||
-        (p.description && p.description.toLowerCase().includes(s)) ||
-        (p.address && p.address.toLowerCase().includes(s))
-      );
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { address: { $regex: search, $options: 'i' } }
+      ];
     }
 
     // Sort: verified first, then createdAt desc
-    filtered.sort((a, b) => {
-      if (a.verified && !b.verified) return -1;
-      if (!a.verified && b.verified) return 1;
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
+    const properties = await Property.find(query)
+      .sort({ verified: -1, createdAt: -1 })
+      .populate('postedBy', 'name email phone avatar');
 
     return res.status(200).json({
       success: true,
-      count: filtered.length,
-      properties: filtered
+      count: properties.length,
+      properties
     });
   } catch (err) {
     return res.status(500).json({
@@ -135,10 +115,16 @@ export const getProperties = async (req, res) => {
 
 export const getMyProperties = async (req, res) => {
   try {
+    const query = {};
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.email === 'admin@tncb.vn');
+    if (!isAdmin) {
+      query.postedBy = req.user.id;
+    }
+    const properties = await Property.find(query).sort({ createdAt: -1 });
     return res.status(200).json({
       success: true,
-      count: cachedProperties.length,
-      properties: cachedProperties
+      count: properties.length,
+      properties
     });
   } catch (err) {
     return res.status(500).json({
@@ -150,7 +136,7 @@ export const getMyProperties = async (req, res) => {
 
 export const getPropertyDetail = async (req, res) => {
   try {
-    const property = cachedProperties.find(p => p.id === req.params.id);
+    const property = await Property.findById(req.params.id).populate('postedBy', 'name email phone avatar');
 
     if (!property) {
       return res.status(404).json({
@@ -179,43 +165,209 @@ const returnSheetsModeError = (res) => {
 };
 
 export const createProperty = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const propertyData = { ...req.body, source: 'manual' };
+    
+    if (req.user) {
+      propertyData.postedBy = req.user.id;
+    } else {
+      propertyData.postedBy = 'user-admin';
+    }
+
+    if (req.files && req.files.length > 0) {
+      const imageUrls = [];
+      for (const file of req.files) {
+        const url = await processAndSaveImage(file);
+        imageUrls.push(url);
+      }
+      propertyData.images = imageUrls;
+    }
+
+    const property = new Property(propertyData);
+    await property.save();
+
+    if (propertyBloomFilter) {
+      propertyBloomFilter.add(property._id.toString());
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đăng tin phòng trọ mới thành công.',
+      property
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi đăng tin phòng trọ: ' + err.message
+    });
+  }
 };
 
 export const updateProperty = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thông tin phòng trọ.'
+      });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const newImages = [];
+      for (const file of req.files) {
+        const url = await processAndSaveImage(file);
+        newImages.push(url);
+      }
+      
+      const existingImages = req.body.existingImages ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]) : [];
+      property.images = [...existingImages, ...newImages];
+    } else if (req.body.existingImages) {
+      property.images = Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages];
+    }
+
+    const allowedUpdates = [
+      'title', 'type', 'price', 'area', 'city', 'district', 'ward', 'address',
+      'coords', 'amenities', 'electricity', 'water', 'service', 'description',
+      'status', 'verified', 'isRented', 'isUnlisted'
+    ];
+
+    allowedUpdates.forEach(field => {
+      if (req.body[field] !== undefined) {
+        property[field] = req.body[field];
+      }
+    });
+
+    await property.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin phòng trọ thành công.',
+      property
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi cập nhật phòng trọ: ' + err.message
+    });
+  }
 };
 
 export const deleteProperty = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thông tin phòng trọ.'
+      });
+    }
+
+    if (property.images && property.images.length > 0) {
+      for (const img of property.images) {
+        await deleteLocalImage(img);
+      }
+    }
+
+    await Property.findByIdAndDelete(req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa phòng trọ thành công.'
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi xóa phòng trọ: ' + err.message
+    });
+  }
 };
 
 export const toggleRentedStatus = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ success: false, message: 'Không tìm thấy phòng trọ.' });
+    
+    property.isRented = !property.isRented;
+    await property.save();
+    
+    return res.status(200).json({ success: true, message: 'Cập nhật trạng thái thuê thành công.', property });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 export const toggleUnlistedStatus = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ success: false, message: 'Không tìm thấy phòng trọ.' });
+    
+    property.isUnlisted = !property.isUnlisted;
+    await property.save();
+    
+    return res.status(200).json({ success: true, message: 'Cập nhật trạng thái hiển thị thành công.', property });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 export const toggleVerifyStatus = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ success: false, message: 'Không tìm thấy phòng trọ.' });
+    
+    property.verified = !property.verified;
+    await property.save();
+    
+    return res.status(200).json({ success: true, message: 'Cập nhật xác thực thành công.', property });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 export const getAdminReviewQueue = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    count: 0,
-    queue: []
-  });
+  try {
+    const queue = await Property.find({ status: 'pending' }).populate('postedBy', 'name email');
+    return res.status(200).json({
+      success: true,
+      count: queue.length,
+      queue
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
 };
 
 export const approveProperty = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ success: false, message: 'Không tìm thấy tin trọ.' });
+    
+    property.status = 'active';
+    property.verified = true;
+    await property.save();
+    
+    return res.status(200).json({ success: true, message: 'Duyệt bài đăng thành công.', property });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 export const rejectProperty = async (req, res) => {
-  return returnSheetsModeError(res);
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ success: false, message: 'Không tìm thấy tin trọ.' });
+    
+    property.status = 'rejected';
+    await property.save();
+    
+    return res.status(200).json({ success: true, message: 'Từ chối bài đăng thành công.', property });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 // ============================================
@@ -553,7 +705,7 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
       return { success: false, message: 'Chưa cấu hình đường dẫn Google Sheet URL.' };
     }
 
-    const { sheetUrl, notificationEmail } = settingsDoc.value;
+    const { sheetUrl, notificationEmail, clearExisting } = settingsDoc.value;
 
     const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
     if (!match) {
@@ -743,9 +895,36 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
         isRented: false,
         isUnlisted: false,
         postedBy: adminId || 'user-admin',
+        source: 'sheet',
         createdAt: new Date(),
         updatedAt: new Date()
       });
+    }
+
+    // Save synced properties to MongoDB database
+    if (clearExisting) {
+      // 1. Delete all existing properties from sheet source
+      await Property.deleteMany({ source: 'sheet' });
+      // 2. Insert new properties
+      if (newProperties.length > 0) {
+        await Property.insertMany(newProperties);
+      }
+    } else {
+      // Upsert properties individually to update existing and insert new ones
+      for (const prop of newProperties) {
+        await Property.findOneAndUpdate(
+          { _id: prop._id },
+          { $set: prop },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
+    // Re-initialize bloom filter to ensure accuracy after sync changes
+    try {
+      await initPropertyBloomFilter();
+    } catch (e) {
+      console.error('Failed to reinitialize bloom filter:', e.message);
     }
 
     cachedProperties = newProperties;

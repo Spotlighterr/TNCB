@@ -112,7 +112,7 @@ const PropertySchema = new mongoose.Schema({
       default: 0
     },
     matchedProperty: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'Property',
       default: null
     },
@@ -120,6 +120,11 @@ const PropertySchema = new mongoose.Schema({
       type: [String],
       default: []
     }
+  },
+  source: {
+    type: String,
+    enum: ['manual', 'sheet'],
+    default: 'manual'
   }
 }, {
   timestamps: true
