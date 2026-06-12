@@ -425,6 +425,19 @@ const mapHeaders = (headerRow) => {
   return mapping;
 };
 
+const AMENITY_COLUMN_MAP = {
+  AirConditioner: ['dieuhoa', 'dieu-hoa', 'điều hòa', 'dieu hoa'],
+  Balcony: ['bancong', 'ban cong', 'ban công'],
+  Fridge: ['tulanh', 'tu lanh', 'tủ lạnh'],
+  WashingMachine: ['maygiat', 'may giat', 'máy giặt'],
+  FingerprintLock: ['khoavantay', 'khoa van tay', 'khóa vân tay'],
+  FreeTime: ['giogiactudo', 'gio giac tu do', 'giờ giấc tự do', 'tự do', 'tudo'],
+  WiFi: ['wifi', 'wi-fi', 'wifi mien phi', 'wifi miễn phí'],
+  Parking: ['chodeve', 'cho de xe', 'chỗ để xe', 'nhadexe', 'nhà để xe'],
+  Kitchen: ['beprieng', 'bep rieng', 'bếp riêng', 'bep', 'bếp'],
+  Security: ['baove', 'bao ve', 'bảo vệ', 'baove247', 'bảo vệ 24/7']
+};
+
 const DISTRICT_COORDS = {
   // Hà Nội
   'cầu giấy': [21.0362, 105.7908],
@@ -683,6 +696,22 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
       let amenities = [];
       if (rawAmenities) {
         amenities = rawAmenities.split(/[\n,;]/).map(a => a.trim()).filter(Boolean);
+      }
+
+      // Check for individual amenity checkbox columns
+      for (const [apiKey, aliases] of Object.entries(AMENITY_COLUMN_MAP)) {
+        for (const alias of aliases) {
+          const normAlias = normalizeHeader(alias);
+          const colIdx = headers.findIndex(h => normalizeHeader(h) === normAlias);
+          if (colIdx !== -1 && row[colIdx] !== undefined) {
+            const val = row[colIdx].toLowerCase().trim();
+            if (['true', '1', 'yes', 'y', 'x', 'đúng', 'dung', 'checked'].includes(val)) {
+              if (!amenities.includes(apiKey)) {
+                amenities.push(apiKey);
+              }
+            }
+          }
+        }
       }
 
       const verified = rawVerified
