@@ -761,3 +761,278 @@ export const deleteHeroSlide = async (req, res) => {
     });
   }
 };
+
+// --- Google Sheets Import Logic ---
+
+const parseCSV = (text) => {
+  const lines = [];
+  let row = [""];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        row[row.length - 1] += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      row.push("");
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && next === '\n') {
+        i++;
+      }
+      lines.push(row.map(cell => cell.trim()));
+      row = [""];
+    } else {
+      row[row.length - 1] += c;
+    }
+  }
+  if (row.length > 1 || row[0] !== "") {
+    lines.push(row.map(cell => cell.trim()));
+  }
+  return lines;
+};
+
+const normalizeHeader = (str) => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+};
+
+const HEADER_MAPPING = {
+  title: ['title', 'tieude', 'tenphong', 'ten'],
+  type: ['type', 'loaiphong', 'loai'],
+  price: ['price', 'giathue', 'gia', 'tienphong'],
+  area: ['area', 'dientich', 'dien-tich', 'rong'],
+  city: ['city', 'thanhpho', 'tp'],
+  district: ['district', 'quanhuyen', 'quan', 'huyen'],
+  ward: ['ward', 'phuongxa', 'phuong', 'xa'],
+  address: ['address', 'diachichitiet', 'diachi', 'dia-chi'],
+  latitude: ['latitude', 'vido', 'lat'],
+  longitude: ['longitude', 'kinhdo', 'lng', 'lon'],
+  coords: ['coords', 'toado'],
+  images: ['images', 'hinhanh', 'linkanh', 'anh'],
+  verified: ['verified', 'dareview', 'xacthuc'],
+  amenities: ['amenities', 'tienich', 'tien-nghi', 'tiennghi'],
+  electricity: ['electricity', 'dongiadien', 'tiendien', 'dien'],
+  water: ['water', 'dongianuoc', 'nuoc', 'tiennuoc'],
+  service: ['service', 'phidichvu', 'dichvu', 'tiendichvu'],
+  description: ['description', 'mota', 'noidung', 'mo-ta']
+};
+
+const mapHeaders = (headerRow) => {
+  const mapping = {};
+  headerRow.forEach((col, index) => {
+    const norm = normalizeHeader(col);
+    for (const [key, aliases] of Object.entries(HEADER_MAPPING)) {
+      if (aliases.includes(norm)) {
+        mapping[key] = index;
+        break;
+      }
+    }
+  });
+  return mapping;
+};
+
+export const importPropertiesFromSheets = async (req, res) => {
+  try {
+    const { sheetUrl, clearExisting } = req.body;
+
+    if (!sheetUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đường dẫn Google Sheet.'
+      });
+    }
+
+    const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) {
+      return res.status(400).json({
+        success: false,
+        message: 'Đường dẫn Google Sheet không hợp lệ.'
+      });
+    }
+    const sheetId = match[1];
+
+    const gidMatch = sheetUrl.match(/[#&]gid=([0-9]+)/);
+    const gid = gidMatch ? gidMatch[1] : '0';
+
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+
+    const fetchResponse = await fetch(csvUrl);
+    if (!fetchResponse.ok) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể tải dữ liệu từ Google Sheet. Vui lòng đảm bảo bảng tính ở chế độ chia sẻ công khai (Bất kỳ ai có liên kết đều có thể xem).'
+      });
+    }
+
+    const text = await fetchResponse.text();
+    const rows = parseCSV(text);
+
+    if (rows.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bảng tính không có dữ liệu hoặc hàng tiêu đề trống.'
+      });
+    }
+
+    const headers = rows[0];
+    const headerMap = mapHeaders(headers);
+
+    const required = ['title', 'type', 'price', 'area', 'city', 'district', 'ward', 'address'];
+    const missing = required.filter(field => headerMap[field] === undefined);
+    
+    const hasCoords = headerMap['coords'] !== undefined || (headerMap['latitude'] !== undefined && headerMap['longitude'] !== undefined);
+    if (missing.length > 0 || !hasCoords) {
+      let msg = 'Bảng tính thiếu các cột tiêu đề bắt buộc: ';
+      if (missing.length > 0) msg += missing.join(', ');
+      if (!hasCoords) msg += (missing.length > 0 ? ', ' : '') + 'coords (hoặc latitude & longitude)';
+      return res.status(400).json({
+        success: false,
+        message: msg
+      });
+    }
+
+    if (clearExisting === true) {
+      await Property.deleteMany({});
+    }
+
+    const imported = [];
+    const errors = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length === 1 && row[0] === '') continue;
+      if (row.every(cell => cell === '')) continue;
+
+      try {
+        const getVal = (field) => {
+          const idx = headerMap[field];
+          return idx !== undefined ? row[idx] : '';
+        };
+
+        const title = getVal('title');
+        const type = getVal('type');
+        const rawPrice = getVal('price');
+        const rawArea = getVal('area');
+        const city = getVal('city');
+        const district = getVal('district');
+        const ward = getVal('ward');
+        const address = getVal('address');
+        const rawElectricity = getVal('electricity');
+        const rawWater = getVal('water');
+        const rawService = getVal('service');
+        const rawImages = getVal('images');
+        const rawVerified = getVal('verified');
+        const rawAmenities = getVal('amenities');
+        const description = getVal('description');
+
+        if (!title || !type || !rawPrice || !rawArea || !city || !district || !ward || !address) {
+          errors.push({ row: i + 1, message: 'Thiếu thông tin bắt buộc.' });
+          continue;
+        }
+
+        const parseNum = (val) => {
+          if (!val) return 0;
+          const clean = val.replace(/[^\d.]/g, '');
+          return Number(clean) || 0;
+        };
+
+        const price = parseNum(rawPrice);
+        const area = parseNum(rawArea);
+        const electricity = rawElectricity ? parseNum(rawElectricity) : 3500;
+        const water = rawWater ? parseNum(rawWater) : 100000;
+        const service = rawService ? parseNum(rawService) : 150000;
+
+        let coords = [21.0223, 105.8019];
+        if (headerMap['coords'] !== undefined) {
+          const rawCoords = getVal('coords');
+          if (rawCoords) {
+            const split = rawCoords.split(',').map(n => Number(n.trim()));
+            if (split.length === 2 && !isNaN(split[0]) && !isNaN(split[1])) {
+              coords = split;
+            }
+          }
+        } else {
+          const lat = Number(getVal('latitude'));
+          const lng = Number(getVal('longitude'));
+          if (!isNaN(lat) && !isNaN(lng)) {
+            coords = [lat, lng];
+          }
+        }
+
+        let images = [];
+        if (rawImages) {
+          images = rawImages.split(/[\n,;]/).map(url => url.trim()).filter(Boolean);
+        }
+        if (images.length === 0) {
+          images = ['/student_room_hero.png'];
+        }
+
+        let amenities = [];
+        if (rawAmenities) {
+          amenities = rawAmenities.split(/[\n,;]/).map(a => a.trim()).filter(Boolean);
+        }
+
+        const verified = rawVerified
+          ? ['true', '1', 'yes', 'y', 'x', 'dã review', 'da review', 'xác thực'].includes(rawVerified.toLowerCase().trim())
+          : false;
+
+        const propertyDoc = new Property({
+          title,
+          type,
+          price,
+          area,
+          city,
+          district,
+          ward,
+          address,
+          coords,
+          images,
+          amenities,
+          electricity,
+          water,
+          service,
+          description,
+          verified,
+          status: 'active',
+          postedBy: req.user._id
+        });
+
+        await propertyDoc.save();
+        imported.push(propertyDoc._id);
+
+      } catch (err) {
+        errors.push({ row: i + 1, message: err.message });
+      }
+    }
+
+    imported.forEach(id => {
+      propertyBloomFilter.add(id.toString());
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Nhập dữ liệu thành công. Đã thêm ${imported.length} phòng trọ. Có ${errors.length} hàng bị lỗi.`,
+      importedCount: imported.length,
+      failedCount: errors.length,
+      errors
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi hệ thống khi import dữ liệu: ' + err.message
+    });
+  }
+};

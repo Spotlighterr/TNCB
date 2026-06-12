@@ -15,7 +15,8 @@ import {
   getHeroSlides,
   createHeroSlide,
   updateHeroSlide,
-  deleteHeroSlide
+  deleteHeroSlide,
+  importPropertiesFromSheets
 } from './propertyController.js';
 import { auth, checkRole } from '../../middleware/auth.js';
 import { checkPropertyBloomFilter } from './propertyBloomFilter.js';
@@ -43,6 +44,7 @@ router.get('/admin/review-queue', auth, checkRole(['admin']), getAdminReviewQueu
 router.patch('/:id/toggle-verify', auth, checkRole(['admin']), checkPropertyBloomFilter, toggleVerifyStatus);
 router.patch('/:id/approve', auth, checkRole(['admin']), checkPropertyBloomFilter, approveProperty);
 router.patch('/:id/reject', auth, checkRole(['admin']), checkPropertyBloomFilter, rejectProperty);
+router.post('/import-sheets', auth, checkRole(['admin']), importPropertiesFromSheets);
 
 // Hero Slides management
 router.post('/hero-slides', auth, checkRole(['admin']), upload.array('image', 1), createHeroSlide);

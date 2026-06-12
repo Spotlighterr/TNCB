@@ -1010,6 +1010,28 @@ export function AppProvider({ children }) {
     }
   }, []);
 
+  const importPropertiesFromSheets = useCallback(async (sheetUrl, clearExisting) => {
+    const token = localStorage.getItem('TNCB_TOKEN');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/properties/import-sheets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ sheetUrl, clearExisting })
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchProperties();
+      }
+      return data;
+    } catch (err) {
+      console.error(err);
+      return { success: false, message: 'Lỗi kết nối máy chủ.' };
+    }
+  }, [fetchProperties]);
+
   // --- View History ---
   const addViewToHistory = useCallback((propertyId) => {
     setViewHistory((prev) => {
@@ -1176,6 +1198,7 @@ export function AppProvider({ children }) {
     togglePropertyStatus,
     toggleUnlistProperty,
     toggleVerifyProperty,
+    importPropertiesFromSheets,
     // Hero Slides
     heroSlides,
     fetchHeroSlides,

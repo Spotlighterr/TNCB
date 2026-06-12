@@ -60,6 +60,7 @@ export default function Header() {
   const [isClosing, setIsClosing] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const visibleLinks = currentUser ? NAV_LINKS : NAV_LINKS.filter(l => l.to !== '/dashboard');
 
   // Login form states
   const [email, setEmail] = useState('');
@@ -127,10 +128,13 @@ export default function Header() {
               client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1029384756-abcdefg.apps.googleusercontent.com',
               callback: handleGoogleLoginResponse,
             });
-            window.google.accounts.id.renderButton(
-              document.getElementById('google-signin-btn'),
-              { theme: 'outline', size: 'large', width: '100%' }
-            );
+            const googleBtn = document.getElementById('google-signin-btn');
+            if (googleBtn) {
+              window.google.accounts.id.renderButton(
+                googleBtn,
+                { theme: 'outline', size: 'large', width: '100%' }
+              );
+            }
           }
         } catch (err) {
           console.error('Lỗi khởi tạo Google SSO:', err);
@@ -499,7 +503,7 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="header-nav hide-mobile" id="desktop-nav">
-          {NAV_LINKS.map((link) => (
+          {visibleLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
@@ -603,7 +607,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="mobile-menu animate-fade-in" id="mobile-menu">
           <nav className="mobile-nav">
-            {NAV_LINKS.map((link) => (
+            {visibleLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -673,27 +677,10 @@ export default function Header() {
 
             {/* ---- LOGIN / REGISTER Tabs (shown only for login & register modes) ---- */}
             {(authMode === 'login' || authMode === 'register') && (
-              <div className="auth-tabs">
-                <button
-                  className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
-                  onClick={() => {
-                    setAuthMode('login');
-                    setAuthError('');
-                    setAuthSuccess('');
-                  }}
-                >
-                  Đăng nhập
-                </button>
-                <button
-                  className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
-                  onClick={() => {
-                    setAuthMode('register');
-                    setAuthError('');
-                    setAuthSuccess('');
-                  }}
-                >
-                  Đăng ký
-                </button>
+              <div className="auth-tabs" style={{ justifyContent: 'center', borderBottom: 'none', marginBottom: 'var(--space-4)' }}>
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-text-main)', margin: 0 }}>
+                  Đăng nhập hệ thống Admin
+                </h3>
               </div>
             )}
 
@@ -776,15 +763,7 @@ export default function Header() {
                   Xác nhận đăng nhập
                 </button>
 
-                <div className="auth-divider" style={{ margin: 'var(--space-4) 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)' }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
-                  <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Hoặc đăng nhập bằng</span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }}></div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div id="google-signin-btn" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}></div>
-                </div>
+                {/* Google Sign-in removed for admin-only flow */}
               </form>
             )}
 

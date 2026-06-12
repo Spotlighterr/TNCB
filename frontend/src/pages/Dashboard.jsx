@@ -36,6 +36,7 @@ import {
   EyeSlash,
   UploadSimple,
   WarningCircle,
+  CloudArrowDown,
 } from '@phosphor-icons/react';
 
 const ICON_COMPONENTS = {
@@ -60,6 +61,7 @@ const ADMIN_TABS = [
   { id: 'overview', label: 'Tổng quan & Quản lý', icon: ChartBar },
   { id: 'pending-reviews', label: 'Kiểm duyệt tin', icon: ShieldCheck },
   { id: 'banners', label: 'Quản lý Bản tin', icon: Buildings },
+  { id: 'import', label: 'Nhập dữ liệu', icon: CloudArrowDown },
 ];
 
 const TENANT_TABS = [
@@ -96,6 +98,7 @@ export default function Dashboard() {
     addHeroSlide,
     updateHeroSlide,
     deleteHeroSlide,
+    importPropertiesFromSheets,
   } = useApp();
 
   const isAdmin = currentUser && (currentUser.email === 'admin@tncb.vn' || currentUser.id === 'user-admin');
@@ -135,6 +138,12 @@ export default function Dashboard() {
     order: 1
   });
 
+  // Google Sheets import states
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [clearExisting, setClearExisting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
@@ -150,6 +159,9 @@ export default function Dashboard() {
     setIsCreatingTicket(false);
     setIsAddingSlide(false);
     setEditingSlide(null);
+    setSheetUrl('');
+    setClearExisting(false);
+    setImportResult(null);
   };
 
   // --- Form States ---
@@ -702,6 +714,31 @@ export default function Dashboard() {
       }
     } catch (err) {
       showToast('Lỗi kết nối máy chủ.', 'error');
+    }
+  };
+
+  const handleImportSubmit = async (e) => {
+    e.preventDefault();
+    if (!sheetUrl) {
+      showToast('Vui lòng nhập đường dẫn Google Sheet.', 'error');
+      return;
+    }
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const res = await importPropertiesFromSheets(sheetUrl, clearExisting);
+      if (res.success) {
+        showToast(res.message || 'Nhập dữ liệu thành công!');
+        setImportResult(res);
+        setSheetUrl('');
+      } else {
+        showToast(res.message || 'Nhập dữ liệu thất bại.', 'error');
+        setImportResult(res);
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối máy chủ.', 'error');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -1682,6 +1719,211 @@ export default function Dashboard() {
                     <button className="btn btn-primary" onClick={handleAddSlideClick}>
                       Thêm slide đầu tiên ngay
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===================== GOOGLE SHEETS IMPORT ===================== */}
+        {isAdmin && activeTab === 'import' && (
+          <div className="animate-fade-in">
+            <div className="dashboard-page-header">
+              <h2 className="dashboard-page-title">Nhập dữ liệu từ Google Sheet</h2>
+            </div>
+            
+            <div className="form-container">
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)', lineHeight: '1.6' }}>
+                Tính năng này cho phép bạn nhập hàng loạt bài đăng phòng trọ từ một bảng tính Google Sheet công khai (Bất kỳ ai có liên kết đều có thể xem). 
+                Dữ liệu sẽ được tự động chuẩn hóa, kiểm tra hợp lệ và đẩy trực tiếp lên hệ thống web.
+              </p>
+
+              <form onSubmit={handleImportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div className="form-group full-width">
+                  <label className="form-label">Đường dẫn liên kết Google Sheet (URL) *</label>
+                  <input
+                    type="url"
+                    className="input"
+                    required
+                    placeholder="Ví dụ: https://docs.google.com/spreadsheets/d/.../edit?usp=sharing"
+                    value={sheetUrl}
+                    onChange={(e) => setSheetUrl(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <input
+                    type="checkbox"
+                    id="clearExisting"
+                    checked={clearExisting}
+                    onChange={(e) => setClearExisting(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="clearExisting" style={{ fontSize: 'var(--text-sm)', cursor: 'pointer', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-main)' }}>
+                    Xóa toàn bộ dữ liệu hiện có trên hệ thống trước khi nhập
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+                  <button type="submit" className="btn btn-primary" disabled={isImporting} style={{ minWidth: '160px', justifyContent: 'center' }}>
+                    {isImporting ? (
+                      <>
+                        <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', marginRight: 'var(--space-2)' }}></div>
+                        Đang nhập...
+                      </>
+                    ) : (
+                      'Bắt đầu nhập dữ liệu'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Instruction / Help Box */}
+            <div className="card" style={{ padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', marginBottom: 'var(--space-6)' }}>
+              <h4 style={{ fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-3)', color: 'var(--color-text-main)' }}>
+                Hướng dẫn chuẩn bị bảng tính Google Sheet:
+              </h4>
+              <ol style={{ paddingLeft: 'var(--space-4)', margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
+                <li>
+                  Chia sẻ Google Sheet ở chế độ công khai: Bấm nút <strong>Chia sẻ (Share)</strong> ở góc trên bên phải → Trong phần Quyền truy cập chung chọn <strong>"Bất kỳ ai có liên kết đều có thể xem" (Anyone with the link can view)</strong>.
+                </li>
+                <li>
+                  Các tiêu đề cột được hỗ trợ (Hệ thống tự nhận diện không phân biệt viết hoa/thường, có dấu/không dấu):
+                  <div style={{ overflowX: 'auto', marginTop: 'var(--space-2)' }}>
+                    <table className="rooms-table" style={{ fontSize: '12px' }}>
+                      <thead>
+                        <tr>
+                          <th>Thông tin thuộc tính</th>
+                          <th>Tên tiêu đề được hỗ trợ</th>
+                          <th>Ghi chú / Bắt buộc</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><strong>Tiêu đề bài đăng</strong></td>
+                          <td><code>Tiêu đề</code>, <code>title</code>, <code>tenphong</code>, <code>ten</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Loại phòng</strong></td>
+                          <td><code>Loại phòng</code>, <code>type</code>, <code>loai</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span> (Chung cư mini, Căn hộ, Phòng trọ...)</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Giá thuê (VND)</strong></td>
+                          <td><code>Giá thuê</code>, <code>price</code>, <code>gia</code>, <code>tienphong</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Diện tích (m²)</strong></td>
+                          <td><code>Diện tích</code>, <code>area</code>, <code>rong</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Thành phố / Tỉnh</strong></td>
+                          <td><code>Thành phố</code>, <code>city</code>, <code>tp</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Quận / Huyện</strong></td>
+                          <td><code>Quận huyện</code>, <code>district</code>, <code>quan</code>, <code>huyen</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Phường / Xã</strong></td>
+                          <td><code>Phường xã</code>, <code>ward</code>, <code>phuong</code>, <code>xa</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Địa chỉ chi tiết</strong></td>
+                          <td><code>Địa chỉ chi tiết</code>, <code>address</code>, <code>diachi</code></td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Tọa độ (Vĩ độ,Kinh độ)</strong></td>
+                          <td><code>Tọa độ</code>, <code>coords</code>, <code>toado</code> (Hoặc 2 cột <code>latitude</code>, <code>longitude</code>)</td>
+                          <td><span style={{ color: 'var(--color-error)' }}>Bắt buộc</span> (Ví dụ: <code>21.0285,105.7823</code>)</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Hình ảnh (URLs)</strong></td>
+                          <td><code>Hình ảnh</code>, <code>images</code>, <code>linkanh</code>, <code>anh</code></td>
+                          <td>Phân cách bằng dấu phẩy hoặc xuống dòng</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Đã Review</strong></td>
+                          <td><code>Đã Review</code>, <code>verified</code>, <code>dareview</code></td>
+                          <td>Nhập <code>yes</code>, <code>true</code>, <code>1</code> hoặc <code>x</code> nếu muốn gắn nhãn Review</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Tiện ích</strong></td>
+                          <td><code>Tiện ích</code>, <code>amenities</code>, <code>tiennghi</code></td>
+                          <td>Phân cách bằng dấu phẩy hoặc xuống dòng (dieuhoa, nonglanh...)</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Điện / Nước / Dịch vụ</strong></td>
+                          <td><code>Điện</code>, <code>Nước</code>, <code>Dịch vụ</code>, <code>tiendien</code>, <code>tiennuoc</code></td>
+                          <td>Đơn giá tương ứng. Nếu trống sẽ dùng giá mặc định</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Mô tả</strong></td>
+                          <td><code>Mô tả</code>, <code>description</code>, <code>noidung</code>, <code>mota</code></td>
+                          <td>Mô tả chi tiết phòng trọ</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            {/* Import Result / Summary Panel */}
+            {importResult && (
+              <div className="card" style={{ padding: 'var(--space-6)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-main)', background: 'var(--bg-secondary)', marginBottom: 'var(--space-6)', animation: 'fadeIn 0.3s ease both' }}>
+                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <CheckCircle size={24} color="var(--color-success)" weight="fill" />
+                  Kết quả nhập dữ liệu
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Trạng thái</span>
+                    <span style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>Thành công</span>
+                  </div>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Thêm thành công</span>
+                    <span className="text-mono" style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: 'var(--color-success)' }}>{importResult.importedCount}</span>
+                  </div>
+                  <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 'var(--space-1)' }}>Bị lỗi (Bỏ qua)</span>
+                    <span className="text-mono" style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--weight-bold)', color: importResult.failedCount > 0 ? '#ef4444' : 'var(--color-text-muted)' }}>{importResult.failedCount}</span>
+                  </div>
+                </div>
+
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <div>
+                    <h4 style={{ fontWeight: 'var(--weight-semibold)', color: '#ef4444', marginBottom: 'var(--space-2)' }}>
+                      Chi tiết các dòng bị lỗi dữ liệu:
+                    </h4>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-subtle)', border: '1px solid var(--color-border)' }}>
+                      <table className="rooms-table" style={{ fontSize: '13px' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ width: '80px' }}>Dòng số</th>
+                            <th>Mô tả chi tiết lỗi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importResult.errors.map((err, idx) => (
+                            <tr key={idx}>
+                              <td className="text-mono" style={{ fontWeight: 'var(--weight-semibold)' }}>{err.row}</td>
+                              <td style={{ color: 'var(--color-text-muted)' }}>{err.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

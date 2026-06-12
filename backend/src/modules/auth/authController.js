@@ -84,151 +84,17 @@ const generateToken = (userId) => {
 };
 
 export const registerStep1 = async (req, res) => {
-  try {
-    const { email, phone, name } = req.body;
-
-    if (!email || !phone || !name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp đầy đủ thông tin: email, số điện thoại và họ tên.'
-      });
-    }
-
-    // Check if email or phone already exists
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email này đã được sử dụng trên hệ thống.'
-      });
-    }
-
-    const existingPhone = await User.findOne({ phone });
-    if (existingPhone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Số điện thoại này đã được đăng ký.'
-      });
-    }
-
-    // Generate random 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + OTP_EXPIRY_MS;
-
-    // Cache the OTP keyed by email
-    otpCache.set(email, { otp, expiresAt });
-
-    // Send Real or Simulated Email
-    await sendOTPEmail(email, otp, 'Xác nhận Đăng ký Tài khoản - FindX');
-
-    // Return the OTP in the response for simulation/demo
-    return res.status(200).json({
-      success: true,
-      message: 'Mã OTP đã được gửi đến email của bạn.',
-      email,
-      otp // Return OTP directly so client can auto-read/display it in sandbox
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi hệ thống: ' + err.message
-    });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Chức năng đăng ký tài khoản mới hiện đang tạm khóa.'
+  });
 };
 
 export const registerStep2 = async (req, res) => {
-  try {
-    const { name, email, phone, password, role, otp } = req.body;
-
-    if (!email || !phone || !name || !password || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ các trường thông tin.'
-      });
-    }
-
-    // Verify OTP from cache using email
-    const cached = otpCache.get(email);
-    if (!cached) {
-      return res.status(400).json({
-        success: false,
-        message: 'Không tìm thấy yêu cầu OTP cho email này.'
-      });
-    }
-
-    if (Date.now() > cached.expiresAt) {
-      otpCache.delete(email);
-      return res.status(400).json({
-        success: false,
-        message: 'Mã OTP đã hết hạn. Vui lòng gửi lại.'
-      });
-    }
-
-    if (cached.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mã OTP không chính xác.'
-      });
-    }
-
-    // OTP Verified, remove from cache
-    otpCache.delete(email);
-
-    // Double check email/phone duplication to prevent race conditions
-    const duplicateEmail = await User.findOne({ email });
-    if (duplicateEmail) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email này đã được sử dụng.'
-      });
-    }
-
-    const duplicatePhone = await User.findOne({ phone });
-    if (duplicatePhone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Số điện thoại này đã được đăng ký.'
-      });
-    }
-
-    // Create User
-    const newUser = new User({
-      name,
-      email,
-      phone,
-      password,
-      role: role || 'tenant'
-    });
-
-    await newUser.save();
-
-    const token = generateToken(newUser._id);
-
-    // Exclude password from response
-    const userResponse = {
-      id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      role: newUser.role,
-      avatar: newUser.avatar,
-      zalo: newUser.zalo,
-      mfaEnabled: newUser.mfaEnabled,
-      otpEnabled: newUser.otpEnabled
-    };
-
-    return res.status(201).json({
-      success: true,
-      message: 'Đăng ký tài khoản thành công.',
-      token,
-      user: userResponse
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi đăng ký tài khoản: ' + err.message
-    });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Chức năng đăng ký tài khoản mới hiện đang tạm khóa.'
+  });
 };
 
 export const login = async (req, res) => {
@@ -255,6 +121,14 @@ export const login = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Email hoặc mật khẩu không chính xác.'
+      });
+    }
+
+    // Allow only admin login
+    if (user.role !== 'admin' && user.email !== 'admin@tncb.vn') {
+      return res.status(403).json({
+        success: false,
+        message: 'Đăng nhập thất bại. Hệ thống hiện tại chỉ cho phép tài khoản Admin đăng nhập.'
       });
     }
 
@@ -534,6 +408,14 @@ export const googleLogin = async (req, res) => {
     let user = await User.findOne({ email });
 
     if (user) {
+      // Check if user is admin
+      if (user.role !== 'admin' && user.email !== 'admin@tncb.vn') {
+        return res.status(403).json({
+          success: false,
+          message: 'Đăng nhập Google thất bại. Hệ thống hiện tại chỉ cho phép tài khoản Admin đăng nhập.'
+        });
+      }
+
       let updated = false;
       if (user.ssoProvider !== 'google') {
         user.ssoProvider = 'google';
@@ -599,31 +481,9 @@ export const googleLogin = async (req, res) => {
       });
 
     } else {
-      user = new User({
-        name,
-        email,
-        avatar: picture,
-        ssoProvider: 'google',
-        ssoId: googleId,
-      });
-
-      await user.save();
-
-      const tempToken = jwt.sign(
-        { tempUserId: user._id },
-        process.env.JWT_SECRET || 'tncb_secret_key_2026_secure',
-        { expiresIn: '15m' }
-      );
-
-      return res.status(200).json({
-        success: true,
-        needsCompletion: true,
-        tempToken,
-        user: {
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar
-        }
+      return res.status(403).json({
+        success: false,
+        message: 'Đăng nhập Google thất bại. Chức năng đăng ký tài khoản mới hiện đang tạm khóa.'
       });
     }
   } catch (err) {
