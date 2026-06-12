@@ -141,3 +141,48 @@ Xây dựng lớp bảo vệ kép cho cổng đăng tin FindX để tự động
 - [x] **Bước 4**: Viết middleware `imageModeration.js` chặn xử lý nén Sharp nếu ảnh bị đánh giá là nhạy cảm/NSFW.
 - [x] **Bước 5**: Cập nhật thông báo lỗi thân thiện trên Frontend Dashboard khi bài viết hoặc hình ảnh bị bộ lọc từ chối.
 
+---
+
+## 💬 8. Tích hợp tính năng Chat Messenger nổi (Facebook Messenger)
+
+Hỗ trợ khách thuê và chủ trọ liên hệ trực tiếp với bộ phận chăm sóc khách hàng qua bong bóng chat Facebook Messenger tích hợp sẵn trên website.
+
+- [ ] **Bước 1**: Nhúng thẻ Facebook SDK Script vào `<head>` của `frontend/index.html`.
+- [ ] **Bước 2**: Thiết lập thẻ div chứa bong bóng chat Messenger (`df-messenger` hoặc SDK Facebook Customer Chat).
+- [ ] **Bước 3**: Cho phép Admin cấu hình `Facebook Page ID` thông qua cấu hình hệ thống tại Backend và hiển thị.
+- [ ] **Bước 4**: Kiểm thử tính tương thích hiển thị bong bóng chat trên giao diện thiết bị di động (không bị che nút Bottom Nav).
+
+---
+
+## 📢 9. Khu vực quảng cáo Câu lạc bộ (TikTok, Facebook, v.v.) ở đầu trang
+
+Thiết kế khu vực quảng cáo hoặc bảng thông báo nổi bật nằm ở đầu trang (Top Header Banner) để quảng bá các câu lạc bộ truyền thông và sự kiện sinh viên FTU.
+
+- [ ] **Bước 1**: Tạo Component `<TopAnnouncementBanner />` hiển thị ở trên cùng của trang web (trên cả thanh Header).
+- [ ] **Bước 2**: Hỗ trợ hiển thị các nút liên kết mạng xã hội của CLB (Facebook Page, Kênh TikTok, v.v.).
+- [ ] **Bước 3**: Cho phép Admin tùy chỉnh nội dung thông báo và bật/tắt banner này trong Dashboard quản trị.
+- [ ] **Bước 4**: Thêm hiệu ứng chạy chữ hoặc chuyển động mượt mà thu hút sự chú ý.
+
+---
+
+## 📱 10. Bổ sung liên kết liên hệ TikTok & Mạng xã hội ở Chân trang (Footer)
+
+Bổ sung đầy đủ các kênh truyền thông chính thức của dự án ở cuối trang để người dùng dễ dàng theo dõi và tương tác.
+
+- [ ] **Bước 1**: Thêm icon TikTok (Phosphor Icons hoặc SVG tùy chỉnh) vào component `<Footer />` và `<FooterMobile />`.
+- [ ] **Bước 2**: Gắn liên kết kênh TikTok chính thức của dự án cùng các liên kết Zalo, Facebook.
+- [ ] **Bước 3**: Thiết kế hiệu ứng hover phóng to nhẹ theo tiêu chuẩn Taste Skill cho các icon mạng xã hội ở chân trang.
+
+---
+
+## 🎨 11. Xây dựng lại Bảng màu thương hiệu theo nhận diện FTUGate (Crimson Red & White)
+
+Chuyển đổi ngôn ngữ thiết kế từ tông màu ngọc lục bảo (Emerald) hiện tại sang tông màu đỏ đô/crimson đặc trưng của cổng thông tin đào tạo FTUGate của Đại học Ngoại thương.
+
+- [ ] **Bước 1**: Cập nhật lại các biến CSS Tokens trong `src/styles/variables.css`:
+  - Thay thế màu nhấn `--color-accent` sang màu Đỏ ngoại thương (Crimson Red `#b71c1c` hoặc `#a82828`).
+  - Cập nhật màu hover `--color-accent-hover` và màu nền mờ `--color-accent-subtle`.
+- [ ] **Bước 2**: Rà soát các component trên giao diện (Header, Button, Thẻ phòng trọ, Bento Stats) để đảm bảo không bị sót màu ngọc lục bảo cũ hoặc màu tím AI rập khuôn.
+- [ ] **Bước 3**: Tinh chỉnh độ tương phản màu chữ trên nền đỏ thương hiệu để đạt chuẩn dễ đọc WCAG AA.
+- [ ] **Bước 4**: Rebuild và kiểm thử toàn bộ giao diện xem tông màu đỏ mới có hài hòa và mang cảm giác chuyên nghiệp của hệ sinh thái FTU.
+
