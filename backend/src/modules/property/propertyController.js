@@ -425,6 +425,112 @@ const mapHeaders = (headerRow) => {
   return mapping;
 };
 
+const DISTRICT_COORDS = {
+  // Hà Nội
+  'cầu giấy': [21.0362, 105.7908],
+  'hai bà trưng': [21.0114, 105.8550],
+  'đống đa': [21.0118, 105.8239],
+  'thanh xuân': [20.9932, 105.8100],
+  'nam từ liêm': [21.0280, 105.7620],
+  'tây hồ': [21.0584, 105.8130],
+  'hoàn kiếm': [21.0285, 105.8542],
+  'ba đình': [21.0345, 105.8214],
+  'hoàng mai': [20.9702, 105.8488],
+  'long biên': [21.0382, 105.8858],
+  'hà đông': [20.9685, 105.7748],
+  'bắc từ liêm': [21.0658, 105.7600],
+  'gia lâm': [21.0074, 105.9400],
+  'thanh trì': [20.9500, 105.8500],
+  'hoài đức': [21.0167, 105.7000],
+  
+  // TP Hồ Chí Minh
+  'quận 1': [10.7872, 106.7008],
+  'quận 3': [10.7792, 106.6858],
+  'quận 5': [10.7554, 106.6620],
+  'quận 10': [10.7745, 106.6672],
+  'bình thạnh': [10.8016, 106.7118],
+  'phú nhuận': [10.7998, 106.6820],
+  'gò vấp': [10.8380, 106.6650],
+  'tân bình': [10.8014, 106.6520],
+  'tân phú': [10.7928, 106.6180],
+  'thủ đức': [10.8510, 106.7590],
+  'quận 7': [10.7324, 106.7268],
+  'bình tân': [10.7758, 106.5980],
+  'quận 4': [10.7629, 106.7064],
+  'quận 6': [10.7485, 106.6358],
+  'quận 8': [10.7240, 106.6284],
+  'quận 11': [10.7629, 106.6500],
+  'quận 12': [10.8671, 106.6413],
+  'phú mỹ hưng': [10.7289, 106.7082],
+  'bình chánh': [10.6874, 106.5942],
+  'nhà bè': [10.6669, 106.7278],
+  'hóc môn': [10.8837, 106.5888],
+  'củ chi': [11.0067, 106.4988]
+};
+
+const geocodeCache = new Map();
+
+export const geocodeAddress = async (address, ward, district, city) => {
+  const cleanAddress = address ? address.trim() : '';
+  const cleanWard = ward ? ward.trim() : '';
+  const cleanDistrict = district ? district.trim() : '';
+  const cleanCity = city ? city.trim() : '';
+
+  const queryAddress = `${cleanAddress}, ${cleanWard}, ${cleanDistrict}, ${cleanCity}, Việt Nam`;
+  
+  if (geocodeCache.has(queryAddress)) {
+    return geocodeCache.get(queryAddress);
+  }
+
+  // Try calling Nominatim OpenStreetMap (non-blocking with timeout, limit rate to prevent sync hang)
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryAddress)}&format=json&limit=1`, {
+      headers: { 'User-Agent': 'TNCB-Rent-Sync-Agent/1.0' },
+      signal: AbortSignal.timeout(1500) // 1.5 seconds timeout
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const coords = [Number(data[0].lat), Number(data[0].lon)];
+        geocodeCache.set(queryAddress, coords);
+        return coords;
+      }
+    }
+  } catch (err) {
+    // Fail silently, fallback below
+  }
+
+  // Fallback to local coordinates mapping by District
+  const normDistrict = cleanDistrict.toLowerCase().replace(/^(quận|huyện|thị xã|thành phố)\s+/g, '').trim();
+  const districtKey = cleanDistrict.toLowerCase().trim();
+  
+  let baseCoords = null;
+
+  if (DISTRICT_COORDS[districtKey]) {
+    baseCoords = DISTRICT_COORDS[districtKey];
+  } else if (DISTRICT_COORDS[normDistrict]) {
+    baseCoords = DISTRICT_COORDS[normDistrict];
+  } else {
+    // City fallback
+    const cityLower = cleanCity.toLowerCase();
+    if (cityLower.includes('hồ chí minh') || cityLower.includes('hcm') || cityLower.includes('sài gòn')) {
+      baseCoords = [10.8231, 106.6297]; // HCMC base
+    } else {
+      baseCoords = [21.0285, 105.7823]; // Hanoi base
+    }
+  }
+
+  // Add a slight random offset so they do not overlap
+  const randomizedCoords = [
+    baseCoords[0] + (Math.random() - 0.5) * 0.015,
+    baseCoords[1] + (Math.random() - 0.5) * 0.015
+  ];
+
+  geocodeCache.set(queryAddress, randomizedCoords);
+  return randomizedCoords;
+};
+
 export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
   try {
     console.log(`[Sync] Bắt đầu đồng bộ từ Google Sheet. Trigger: ${triggerType}`);
@@ -464,12 +570,9 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
 
     const required = ['title', 'type', 'price', 'area', 'city', 'district', 'ward', 'address'];
     const missing = required.filter(field => headerMap[field] === undefined);
-    const hasCoords = headerMap['coords'] !== undefined || (headerMap['latitude'] !== undefined && headerMap['longitude'] !== undefined);
 
-    if (missing.length > 0 || !hasCoords) {
-      let msg = 'Thiếu các cột bắt buộc: ';
-      if (missing.length > 0) msg += missing.join(', ');
-      if (!hasCoords) msg += (missing.length > 0 ? ', ' : '') + 'coords (hoặc latitude & longitude)';
+    if (missing.length > 0) {
+      let msg = 'Thiếu các cột bắt buộc: ' + missing.join(', ');
       return { success: false, message: msg };
     }
 
@@ -556,7 +659,7 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
             coords = split;
           }
         }
-      } else {
+      } else if (headerMap['latitude'] !== undefined && headerMap['longitude'] !== undefined) {
         const lat = Number(getVal('latitude'));
         const lng = Number(getVal('longitude'));
         if (!isNaN(lat) && !isNaN(lng)) {
@@ -565,8 +668,8 @@ export const syncPropertiesFromSheet = async (triggerType = 'auto') => {
       }
 
       if (!coords) {
-        errors.push({ row: i + 1, message: `Tọa độ không hợp lệ (Phải là định dạng "Vĩ độ,Kinh độ" chứa hai số thực).` });
-        continue;
+        coords = await geocodeAddress(address, ward, district, city);
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
       let images = [];
