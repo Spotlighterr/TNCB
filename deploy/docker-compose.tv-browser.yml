@@ -7,7 +7,7 @@ services:
     ports:
       - "3030:6901" # Host port 3030 mapped to KasmVNC container port 6901 HTTPS
     environment:
-      - VNC_PW=password # Access password
+      - VNCOPTIONS=-disableBasicAuth # Disables basic authentication (no password required)
       - LAUNCH_URL=https://google.com # Default page when opening
     shm_size: '2gb'
     restart: unless-stopped
