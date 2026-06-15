@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNCB Live Streamer 📺</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080b11;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-gradient: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+            --btn-green: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --btn-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --font-family: 'Outfit', -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 28px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 12px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+
+        .action-btn {
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            color: white;
+            font-family: var(--font-family);
+            font-weight: 600;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-start {
+            background: var(--btn-green);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-stop {
+            background: var(--btn-red);
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .nav-link {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .console-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 14px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            color: #10b981;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .console-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>TNCB Live Streamer 📺</h1>
+        <div class="subtitle">Bảng điều khiển phát trực tiếp lên TV</div>
+    </header>
+
+    <!-- Trạng thái -->
+    <div class="status-card">
+        <div class="status-info">
+            <div id="status-dot" class="status-dot"></div>
+            <span id="status-text" class="status-text">Đang đọc trạng thái...</span>
+        </div>
+    </div>
+
+    <!-- Nút Bật/Tắt -->
+    <button id="btn-stream" class="action-btn btn-start" onclick="toggleStream()">
+        <span id="btn-icon">🚀</span> <span id="btn-text">Bật Stream Lên TV</span>
+    </button>
+
+    <!-- Các liên kết điều khiển -->
+    <a href="https://192.168.1.218:6901" target="_blank" class="nav-link">
+        🌐 1. Mở Trình Duyệt Desktop (Điều khiển/Chọn phim)
+    </a>
+    
+    <a href="http://192.168.1.218:8090/player.html" target="_blank" class="nav-link" style="border-color: rgba(6, 182, 212, 0.3); color: #06b6d4;">
+        📺 2. Link mở trên trình duyệt của TV Samsung
+    </a>
+
+    <!-- Logs Console -->
+    <div style="margin-top: 20px;">
+        <div class="console-title">Nhật ký mã hóa (FFmpeg Log)</div>
+        <div id="console-logs" class="console-box">
+            Chưa có thông tin ghi nhận.
+        </div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+
+    async function checkStatus() {
+        try {
+            const response = await fetch('/api/stream/status');
+            const data = await response.json();
+            
+            isRunning = data.is_running;
+            
+            // Cập nhật giao diện
+            const dot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const btn = document.getElementById('btn-stream');
+            const btnIcon = document.getElementById('btn-icon');
+            const btnText = document.getElementById('btn-text');
+            const logs = document.getElementById('console-logs');
+
+            if (isRunning) {
+                dot.className = "status-dot active";
+                statusText.textContent = "Đang phát sóng (Streaming)...";
+                btn.className = "action-btn btn-stop";
+                btnIcon.textContent = "⏹️";
+                btnText.textContent = "Dừng Phát Stream";
+            } else {
+                dot.className = "status-dot";
+                statusText.textContent = "Đang tắt (Idle)";
+                btn.className = "action-btn btn-start";
+                btnIcon.textContent = "🚀";
+                btnText.textContent = "Bật Stream Lên TV";
+            }
+
+            if (data.log) {
+                logs.textContent = data.log;
+                logs.scrollTop = logs.scrollHeight;
+            } else {
+                logs.textContent = "Chờ khởi chạy stream...";
+            }
+        } catch (e) {
+            console.error("Lỗi kết nối API:", e);
+            document.getElementById('status-text').textContent = "Lỗi kết nối tới Server";
+        }
+    }
+
+    async function toggleStream() {
+        const btn = document.getElementById('btn-stream');
+        btn.disabled = true;
+        
+        const endpoint = isRunning ? '/api/stream/stop' : '/api/stream/start';
+        
+        try {
+            const response = await fetch(endpoint, { method: 'POST' });
+            const result = await response.json();
+            
+            alert(result.message);
+            await checkStatus();
+        } catch (e) {
+            alert("Lỗi thực hiện lệnh: " + e.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // Tự động kiểm tra trạng thái mỗi 2 giây
+    setInterval(checkStatus, 2000);
+    window.addEventListener('DOMContentLoaded', checkStatus);
+</script>
+</body>
+</html>

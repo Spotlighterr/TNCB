@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  browser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tv-browser
+    privileged: true
+    devices:
+      - /dev/dri:/dev/dri # Intel QuickSync / VAAPI acceleration
+    environment:
+      - VNC_PORT=6901
+      - START_URL=https://ninoyo.online
+      - VNCOPTIONS=-disableBasicAuth
+    ports:
+      - "6901:6901"
+      - "3080:3080" # Control Panel API
+    group_add:
+      - "991" # GID of render group on host for GPU access
+    volumes:
+      - ./stream:/stream
+      - ./app.py:/app/app.py
+      - ./templates:/app/templates
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: tv-web-streamer
+    ports:
+      - "8090:80" # Video server for TV
+    volumes:
+      - ./stream:/usr/share/nginx/html:ro
+    restart: unless-stopped
