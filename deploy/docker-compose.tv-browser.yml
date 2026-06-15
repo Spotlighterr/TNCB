@@ -2,23 +2,12 @@ version: '3.8'
 
 services:
   tv-browser:
-    image: lscr.io/linuxserver/chromium:latest
+    image: kasmweb/chromium:1.15.0
     container_name: tv-browser-kasm
-    security_opt:
-      - seccomp:unconfined
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Ho_Chi_Minh
-      - CHROME_CLI=https://google.com --no-sandbox --disable-dev-shm-usage
-    volumes:
-      - tv_browser_config:/config
     ports:
-      - "3030:3000" # Map host port 3030 to container port 3000
-      - "3031:3001" # Map host port 3031 to container port 3001
+      - "3030:6901" # Host port 3030 mapped to KasmVNC container port 6901 HTTPS
+    environment:
+      - VNC_PW=password # Access password
+      - LAUNCH_URL=https://google.com # Default page when opening
     shm_size: '2gb'
     restart: unless-stopped
-
-volumes:
-  tv_browser_config:
-    driver: local
