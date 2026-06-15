@@ -217,6 +217,11 @@ Thêm dòng sau vào cuối tệp để chạy backup tự động vào lúc **0
   ```bash
   docker compose -f deploy/docker-compose.yml down
   ```
+- **Tái khởi chạy toàn bộ cụm dịch vụ sau khi đã dừng:**
+  ```bash
+  docker compose -f deploy/docker-compose.yml up -d
+  ```
+  *(Thêm cờ `--build` nếu có thay đổi mã nguồn và muốn build lại bản mới: `docker compose -f deploy/docker-compose.yml up --build -d`)*
 - **Khôi phục dữ liệu từ file backup (Restore):**
   Giải nén file `.tar.gz` thu được thư mục dump (ví dụ: chứa folder `tncb/`), copy nó vào container và chạy `mongorestore`:
   ```bash

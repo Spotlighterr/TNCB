@@ -164,11 +164,24 @@ npm run dev
 
 Dùng khi cần chạy cụm dịch vụ đầy đủ (frontend + backend API + MongoDB + Redis + Cloudflare Tunnel). Xem hướng dẫn chi tiết trong [`deploy/README_DEPLOY.md`](deploy/README_DEPLOY.md).
 
+**Khởi chạy lần đầu hoặc khi có cập nhật:**
 ```bash
 docker compose -f deploy/docker-compose.yml up --build -d
 ```
 
-Truy cập: [http://localhost](http://localhost)
+**Tái khởi chạy nhanh sau khi đã dừng (không cần build lại):**
+Nếu hệ thống đã bị tắt bằng lệnh `docker compose down`, bạn có thể bật lại nhanh chóng bằng cách:
+1. Kết nối SSH vào server: `ssh spotlighter@192.168.1.218` (hoặc qua Tailscale).
+2. Truy cập thư mục deploy:
+   ```bash
+   cd /home/spotlighter/tncb
+   ```
+3. Chạy lệnh:
+   ```bash
+   docker compose -f deploy/docker-compose.yml up -d
+   ```
+
+Truy cập: [http://localhost](http://localhost) (hoặc qua domain Cloudflare Tunnel nếu được bật).
 
 ---
 
