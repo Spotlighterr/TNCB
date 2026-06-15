@@ -18,6 +18,23 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 >    ```
 > GitHub Actions sẽ tự động đọc phần nội dung tương ứng dưới tiêu đề `## [vX.Y.Z]` trong file này và tạo GitHub Release mới tương ứng.
 
+## [v2.6.0] - 2026-06-15
+### 🧹 Tối Ưu Hóa Server & Nghiên Cứu Giải Pháp Xem Phim Trên TV
+
+#### 📌 Thay đổi hạ tầng:
+* **Dừng và tắt vĩnh viễn các service không cần thiết:**
+  - Dừng Overleaf, FindX, Netdata, Uptime Kuma để giải phóng tài nguyên.
+  - Kết quả: CPU load giảm từ **~8.0 → 0.09**, RAM từ **2.6GB → 1.1GB**.
+* **Loại bỏ Netdata khỏi `deploy/docker-compose.yml`** (đã xóa hoàn toàn khỏi cấu hình).
+* **Cập nhật tài liệu tái deploy** FindX trong `README.md` và `deploy/README_DEPLOY.md`.
+
+#### 🔬 Nghiên cứu giải pháp TV (Samsung Smart TV Tizen 2.4):
+* Thử nghiệm và loại bỏ: VNC-over-WebRTC, DLNA bookmarklet, IPTV HLS Proxy (kasmweb + ffmpeg).
+* **Phát hiện**: ninoyo.online lưu file anime trên SharePoint (`pr0x9x-my.sharepoint.com`), cấp URL có `tempauth` token ngắn hạn qua API `/api/play-mp4`.
+* **Kế hoạch tiếp theo**: Xây dựng Ninoyo Auto-Downloader + MiniDLNA để tự động tải anime về server → phát qua AllShare lên TV.
+
+---
+
 ## [v2.5.0] - 2026-06-12
 ### 📊 Nhập Liệu Song Song (Nhập Tay & Google Sheets) & Lưu MongoDB Trực Tiếp
 
