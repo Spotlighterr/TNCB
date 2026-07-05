@@ -284,16 +284,12 @@ export default function Home() {
                 return (
                   <div key={slide.id || index} className="carousel-slide-active-content animate-fade-in-up">
                     <div className="tile-copy-wrapper" style={{ marginInline: 'auto' }}>
-                      <span className="tile-eyebrow text-eyebrow">{slide.tag}</span>
                       <div className="apple-logo-text">
                         <span className="logo-metallic">{main}</span>
                         <span className="logo-glowing">{accent}</span>
                       </div>
-                      <p className="tile-subhead" style={{ maxWidth: '680px', marginInline: 'auto' }}>
+                      <p className="tile-subhead" style={{ maxWidth: '680px', marginInline: 'auto', marginBottom: '20px' }}>
                         {slide.description}
-                      </p>
-                      <p className="tile-subhead-sm" style={{ color: '#86868b', fontSize: '14px', marginTop: '-10px', marginBottom: '20px' }}>
-                        {slide.badgeText}
                       </p>
                       <div className="tile-ctas" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <a 
@@ -524,14 +520,16 @@ export default function Home() {
 
         /* Apple Logo & Metallic/Glow Text Effect */
         .apple-logo-text {
-          font-size: clamp(2.4rem, 6vw, 4rem);
+          font-size: clamp(2.2rem, 5.5vw, 3.6rem);
           font-weight: 700;
           letter-spacing: -0.04em;
           line-height: 1.15;
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
+          flex-wrap: wrap;
           align-items: center;
           justify-content: center;
+          gap: 12px;
           margin-bottom: var(--space-3);
           text-align: center;
         }
@@ -547,7 +545,7 @@ export default function Home() {
           position: relative;
           color: #ffffff;
           margin-left: 0;
-          margin-top: 4px;
+          margin-top: 0;
           text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
                        0 0 20px rgba(255, 215, 0, 0.6),
                        0 0 35px rgba(255, 105, 180, 0.5);
@@ -576,11 +574,12 @@ export default function Home() {
 
         @media (max-width: 580px) {
           .apple-logo-text {
-            font-size: clamp(1.8rem, 8vw, 2.2rem);
+            font-size: clamp(1.6rem, 6vw, 2rem);
             line-height: 1.1;
+            gap: 6px;
           }
           .logo-glowing {
-            margin-top: 2px;
+            margin-top: 0;
           }
         }
 
