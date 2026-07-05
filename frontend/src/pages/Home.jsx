@@ -655,7 +655,7 @@ export default function Home() {
           min-height: 580px;
           max-height: 800px;
           overflow: hidden;
-          border-bottom: 8px solid var(--bg-primary);
+          border-bottom: none;
         }
 
         .hero-carousel-section .tile-wrapper {

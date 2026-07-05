@@ -93,7 +93,7 @@ export default function Footer() {
         .footer {
           background: var(--bg-secondary);
           border-top: 1px solid var(--color-divider);
-          margin-top: var(--space-20);
+          margin-top: 0;
           padding-bottom: 0;
         }
 
