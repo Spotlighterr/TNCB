@@ -520,7 +520,7 @@ export default function Home() {
 
         /* Apple Logo & Metallic/Glow Text Effect */
         .apple-logo-text {
-          font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+          font-size: clamp(2.6rem, 6.5vw, 4.2rem);
           font-weight: 700;
           letter-spacing: -0.04em;
           line-height: 1.15;
@@ -684,15 +684,26 @@ export default function Home() {
         .hero-carousel-section .tile-copy-wrapper {
           flex-shrink: 0;
           padding-top: 0;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .hero-carousel-section .tile-subhead {
+          font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+          max-width: 760px;
+          margin-bottom: var(--space-4);
+          line-height: 1.45;
         }
 
         .hero-carousel-section .tile-image-wrapper {
-          margin-top: 0;
-          height: clamp(160px, 32vh, 320px);
-          aspect-ratio: 1.6 / 1;
-          width: auto;
+          margin-top: var(--space-4);
+          width: 90%;
+          max-width: 1060px;
+          height: clamp(220px, 42vh, 400px);
           border-radius: var(--radius-lg);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
           overflow: hidden;
           background: #111111;
           display: flex;
@@ -716,9 +727,9 @@ export default function Home() {
             padding-top: var(--space-6);
           }
           .hero-carousel-section .tile-image-wrapper {
-            height: clamp(140px, 25vh, 200px);
-            aspect-ratio: 1.6 / 1;
-            width: auto;
+            width: 90%;
+            height: clamp(160px, 30vh, 240px);
+            aspect-ratio: unset;
             border-radius: var(--radius-lg);
             margin-bottom: var(--space-12);
           }
