@@ -46,10 +46,10 @@ Hệ thống sẽ được xây dựng trên nền tảng cực kỳ ổn địn
   --color-text-main: #0f172a;
   --color-text-muted: #475569;
   
-  /* Taste Skill: Khóa 1 màu nhấn đồng nhất (Emerald) */
-  --color-accent: #059669; /* Emerald 600 */
-  --color-accent-hover: #047857; /* Emerald 700 */
-  --color-accent-subtle: rgba(5, 150, 105, 0.08);
+  /* Taste Skill: Khóa 1 màu nhấn đồng nhất (FTUGate Crimson) */
+  --color-accent: #ad171c; /* Crimson Red */
+  --color-accent-hover: #801115; /* Crimson Dark */
+  --color-accent-subtle: rgba(173, 23, 28, 0.08);
   
   /* Glassmorphism token */
   --glass-bg: rgba(255, 255, 255, 0.65);
@@ -74,9 +74,9 @@ Hệ thống sẽ được xây dựng trên nền tảng cực kỳ ổn địn
     --color-text-main: #f8fafc;
     --color-text-muted: #94a3b8;
     
-    --color-accent: #10b981; /* Emerald 500 */
-    --color-accent-hover: #34d399;
-    --color-accent-subtle: rgba(16, 185, 129, 0.12);
+    --color-accent: #ff5a5f; /* Crimson Light */
+    --color-accent-hover: #ad171c;
+    --color-accent-subtle: rgba(255, 90, 95, 0.12);
     
     /* Glassmorphism token dark */
     --glass-bg: rgba(11, 15, 25, 0.75);
@@ -92,7 +92,7 @@ Hệ thống sẽ được xây dựng trên nền tảng cực kỳ ổn địn
 
 Dự án này tuân thủ các quy tắc cốt lõi của **Taste Skill** để loại bỏ mọi cảm giác "mì ăn liền" thường gặp ở các sản phẩm do AI tạo ra:
 
-1. **Khóa màu đồng nhất (Color Consistency Lock)**: Chọn duy nhất 1 tông màu nhấn chủ đạo (Emerald `#10B981` cho sự an toàn và tài chính sạch sẽ), tuyệt đối không pha tạp các màu tương phản lòe loẹt khác ở các phần dưới.
+1. **Khóa màu đồng nhất (Color Consistency Lock)**: Chọn duy nhất 1 tông màu nhấn chủ đạo (Đỏ FTU Crimson `#ad171c` đại diện cho màu sắc đặc trưng của Ngoại thương), tuyệt đối không pha tạp các màu tương phản lòe loẹt khác ở các phần dưới.
 2. **Khóa hình khối nhất quán (Shape Consistency Lock)**: Đồng bộ hóa toàn bộ bo góc (radius) trên trang: Nút và thẻ đều sử dụng `border-radius: 12px`, các nút hành động nhỏ hơn dùng `border-radius: 8px`.
 3. **Cấm tuyệt đối dấu gạch ngang Em-Dash (`—`)**: Loại bỏ hoàn toàn dấu gạch ngang này trong tiêu đề, trích dẫn hay phần ghi chú.
 4. **Giới hạn số lượng thẻ lông mày (Eyebrow Restraint)**: Tối đa 1 eyebrow (nhãn chữ in hoa nhỏ phía trên tiêu đề) trên mỗi 3 phần của trang để tránh sự lặp lại đơn điệu.
@@ -165,8 +165,8 @@ export const mockProperties = [
 
 ### 1. Trang Chủ (`src/pages/Home.jsx`)
 - **Hero Section**: Sử dụng bố cục **Asymmetric Split** (Tiêu đề chữ lớn xếp so le lệch trái, bên phải là ảnh phong cách tối giản lớn được bo góc bằng `var(--radius-main)`).
-- **Featured Grid**: Hiển thị 3-4 phòng nổi bật nhất bằng các thẻ `PropertyCard.jsx` có micro-interaction: Khi hover, ảnh thu phóng mượt (`transform: scale(1.05)`), nút nhấn thụt nhẹ (`active: scale(0.98)`).
-- **Bento Stats Grid**: Trực quan hóa dữ liệu thống kê số lượng phòng, tỷ lệ lấp đầy, số thành viên hỗ trợ. Bento Grid được thiết kế đa dạng màu nền (ít nhất 2 ô có màu nền ngọc lục bảo mờ).
+- **Featured Grid**: Hiển thị 2 phòng nổi bật nhất bằng các thẻ `PropertyCard.jsx` có micro-interaction: Khi hover, ảnh thu phóng mượt (`transform: scale(1.05)`), nút nhấn thụt nhẹ (`active: scale(0.98)`).
+- **Bento Stats Grid**: Trực quan hóa dữ liệu thống kê số lượng phòng, tỷ lệ lấp đầy, số thành viên hỗ trợ. Bento Grid được thiết kế đa dạng màu nền (ít nhất 2 ô có màu nền đỏ mờ hoặc có sắc thái riêng).
 
 ### 2. Trang Tìm Kiếm Phòng Trọ (`src/pages/Search.jsx`)
 - Bố cục danh bạ tối giản: Lưới hiển thị các thẻ phòng trọ (`PropertyCard.jsx`) rộng rãi, thoáng mát, dễ đọc.

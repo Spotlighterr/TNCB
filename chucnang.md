@@ -10,9 +10,9 @@ Tài liệu này chi tiết hóa các tính năng nghiệp vụ, luồng trải 
 Khách thuê (sinh viên, người đi làm trẻ tuổi) có các điểm tương tác chính sau:
 
 1. **Trang Chủ Tối Giản (Home Page)**
-   - **Hero Section**: Hiển thị thông điệp cốt lõi, thanh tìm kiếm nhanh tích hợp bộ lọc theo Quận/Huyện và Khoảng giá. Giao diện thoáng đãng, tinh tế.
-   - **Featured Rentals Grid**: Danh sách 4 phòng trọ nổi bật đã qua kiểm duyệt (Verified), có nhãn giá rõ ràng và hiệu ứng phóng to ảnh nhẹ khi hover.
-   - **Bento Stats Grid**: Thống kê số lượng phòng trống thực tế, số lượng trường học xung quanh được hỗ trợ, và phản hồi tích cực.
+   - **Hero Section**: Hiển thị thông điệp cốt lõi tinh tế kiểu Apple và làm sạch để lộ khoảng không thoáng đãng.
+   - **Featured Rentals Grid**: Danh sách 2 phòng trọ nổi bật đã qua kiểm duyệt (Verified), có nhãn giá rõ ràng và hiệu ứng phóng to ảnh nhẹ khi hover.
+   - **Bento Stats Grid**: Thống kê số lượng phòng trống thực tế, số lượng trường học xung quanh được hỗ trợ, phản hồi tích cực và **tích hợp cụm tìm kiếm nhanh** (Thành phố, Quận/Huyện, Giá tối đa).
 
 2. **Tìm Kiếm Phòng Trọ Trực Quan & Tối Giản (Clean Property Search)**
    - **Layout Thư Mục Bán Lẻ (Editorial Grid Layout)**: Thay thế giao diện chia đôi màn hình phức tạp bằng giao diện danh bạ phòng trọ tối giản, dạng lưới trực quan và thoáng đãng giúp người dùng tập trung hoàn toàn vào thông tin phòng. Loại bỏ tính năng đồng bộ Map-List để tránh gây rối mắt và lộn xộn cho người xem.

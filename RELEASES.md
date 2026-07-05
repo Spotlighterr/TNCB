@@ -18,6 +18,24 @@ Tài liệu này ghi nhận toàn bộ các phiên bản phát hành lớn của
 >    ```
 > GitHub Actions sẽ tự động đọc phần nội dung tương ứng dưới tiêu đề `## [vX.Y.Z]` trong file này và tạo GitHub Release mới tương ứng.
 
+## [v2.7.0] - 2026-07-05
+### 🎨 Tái Thiết Kế Trang Chủ Theo Phong Cách Apple & FTUGate & Tích Hợp Lọc Diện Tích ($m^2$)
+
+Phiên bản này nâng cấp giao diện trang chủ theo định hướng thiết kế tối giản, cao cấp của Apple kết hợp tông màu nhận diện FTUGate Crimson, đồng thời tích hợp thêm bộ lọc diện tích vào trang tìm kiếm.
+
+#### 📌 Tính năng mới & Cải tiến:
+* **Tái thiết kế trang chủ phong cách Apple**:
+  - Gộp các tab bản tin thành một **Hero Slider** động duy nhất tích hợp hiệu ứng chữ sặc sỡ kiểu Siri AI và nút điều hướng Chevrons & Dots ổn định kích thước, triệt tiêu hoàn toàn hiện tượng lệch/giật khung hình khi chuyển slide.
+  - Làm trắng nền Banner Hero trên cùng (`#ffffff`), loại bỏ bóng mờ phát sáng để tăng độ tương phản rõ nét cho tiêu đề gradient kim loại.
+  - Di chuyển cụm tìm kiếm xuống tích hợp trực tiếp vào thẻ Bento **"Hệ sinh thái số"**, tối giản hóa không gian phần đầu trang.
+* **Bộ lọc diện tích m² (Search Filter)**:
+  - Bổ sung bộ lọc khoảng diện tích Min - Max ($m^2$) tại trang tìm kiếm `/search`.
+  - Cập nhật hàm lọc client-side tương thích hoàn toàn với trường dữ liệu `area` trong Schema Mongoose ở Backend.
+* **Bảng màu nhận diện thương hiệu FTUGate**:
+  - Đồng bộ hóa toàn bộ biến màu nhấn `--color-accent` sang tông màu đỏ đô FTU Crimson (`#ad171c`) trên cả Light/Dark theme.
+
+---
+
 ## [v2.6.0] - 2026-06-15
 ### 🧹 Tối Ưu Hóa Server & Nghiên Cứu Giải Pháp Xem Phim Trên TV
 
