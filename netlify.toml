@@ -1,0 +1,14 @@
+# Netlify deploy config for FindX (monorepo: frontend lives in ./frontend)
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — also mirrored in frontend/public/_redirects
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

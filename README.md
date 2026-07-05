@@ -153,11 +153,23 @@ npm run dev
 
 ### Netlify (khuyến nghị cho frontend)
 
+Repo là monorepo (`frontend/` + `backend/`). File [`netlify.toml`](netlify.toml) ở thư mục gốc đã cấu hình sẵn — Netlify sẽ tự đọc, **không cần nhập tay** trong dashboard.
+
 1. Kết nối repo GitHub với [Netlify](https://www.netlify.com/).
-2. Cấu hình build:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `dist`
-3. Deploy - file `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
+2. Trong **Site configuration → Environment variables**, thêm (nếu chưa có):
+   - `VITE_API_URL` — URL backend production (ví dụ `https://api.findx.id.vn`)
+   - `VITE_GOOGLE_CLIENT_ID` — Google OAuth Client ID
+3. Deploy. File `public/_redirects` được copy vào `dist` để **tránh lỗi 404 khi reload** trên các route như `/search`, `/dashboard`.
+
+**Nếu cấu hình thủ công** (không dùng `netlify.toml`):
+
+| Mục | Giá trị |
+|-----|---------|
+| Base directory | `frontend` |
+| Build command | `npm run build` |
+| Publish directory | `dist` |
+| Node version | `20` |
+
 4. Hoặc sử dụng Render.com, build frontend.
 
 ### Docker + NGINX
