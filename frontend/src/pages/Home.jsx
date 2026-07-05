@@ -651,8 +651,8 @@ export default function Home() {
         .hero-carousel-section {
           position: relative;
           height: calc(100vh - var(--header-height));
-          min-height: 580px;
-          max-height: 800px;
+          min-height: 620px;
+          max-height: 920px;
           overflow: hidden;
           border-bottom: none;
         }
@@ -680,14 +680,14 @@ export default function Home() {
           flex-direction: row;
           align-items: center;
           justify-content: space-between;
-          gap: var(--space-8);
-          max-width: 1200px;
+          gap: var(--space-10);
+          max-width: 100%;
           margin: 0 auto;
         }
 
         .hero-carousel-section .tile-copy-wrapper {
           flex: 1;
-          max-width: 520px;
+          max-width: 580px;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
@@ -726,9 +726,10 @@ export default function Home() {
         }
 
         .hero-carousel-section .tile-image-wrapper {
-          flex: 1.2;
-          max-width: 640px;
-          height: clamp(300px, 50vh, 480px);
+          flex: 1.35;
+          max-width: none;
+          width: 100%;
+          height: clamp(360px, 58vh, 560px);
           border-radius: var(--radius-lg);
           box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
           overflow: hidden;
@@ -782,8 +783,8 @@ export default function Home() {
           }
 
           .hero-carousel-section .tile-image-wrapper {
-            width: 90%;
-            height: clamp(200px, 35vh, 320px);
+            width: 100%;
+            height: clamp(240px, 38vh, 380px);
             max-width: 100%;
             margin-bottom: var(--space-8);
           }
@@ -800,7 +801,7 @@ export default function Home() {
           }
           
           .hero-carousel-section .tile-image-wrapper {
-            height: clamp(160px, 30vh, 220px);
+            height: clamp(200px, 34vh, 280px);
           }
         }
 
