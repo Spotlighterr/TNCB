@@ -660,15 +660,15 @@ export default function Home() {
 
         .hero-carousel-section .tile-wrapper {
           height: 100%;
-          padding: var(--space-8) var(--content-padding) 0;
-          justify-content: space-between;
+          padding: var(--space-6) var(--content-padding) 0;
+          justify-content: center;
         }
 
         .hero-carousel-section .tile-content {
           height: 100%;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: center;
           gap: 0;
         }
 
@@ -678,27 +678,28 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
+          gap: var(--space-4);
         }
 
         .hero-carousel-section .tile-copy-wrapper {
           flex-shrink: 0;
-          padding-top: var(--space-2);
+          padding-top: 0;
         }
 
         .hero-carousel-section .tile-image-wrapper {
-          margin-top: var(--space-4);
-          flex: 1 1 auto;
-          min-height: 0;
-          width: 100%;
-          max-width: 900px;
-          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-          box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+          margin-top: 0;
+          height: clamp(160px, 32vh, 320px);
+          aspect-ratio: 1.6 / 1;
+          width: auto;
+          border-radius: var(--radius-lg);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
           overflow: hidden;
           background: #111111;
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
         }
 
         .hero-carousel-section .tile-image {
@@ -716,8 +717,9 @@ export default function Home() {
             padding-top: var(--space-6);
           }
           .hero-carousel-section .tile-image-wrapper {
-            height: 200px;
-            flex: 0 0 auto;
+            height: clamp(140px, 25vh, 200px);
+            aspect-ratio: 1.6 / 1;
+            width: auto;
             border-radius: var(--radius-lg);
             margin-bottom: var(--space-12);
           }
