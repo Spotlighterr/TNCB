@@ -5,8 +5,8 @@
 
 :root {
   /* Typography */
-  --font-display: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
-  --font-mono: 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Be Vietnam Pro", sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Plus Jakarta Sans", "Be Vietnam Pro", sans-serif;
 
   /* Font Sizes */
   --text-xs: 0.75rem;
@@ -34,12 +34,12 @@
   --color-text-muted: #475569;
   --color-text-subtle: #94a3b8;
 
-  /* Accent: Cyan/Sky Blue (FindX Brand Color Lock) */
-  --color-accent: #0ea5e9;
-  --color-accent-hover: #0284c7;
-  --color-accent-light: #38bdf8;
-  --color-accent-subtle: rgba(14, 165, 233, 0.08);
-  --color-accent-muted: rgba(14, 165, 233, 0.15);
+  /* Accent: FTUGate Crimson Red (Institutional Color) */
+  --color-accent: #ad171c;
+  --color-accent-hover: #801115;
+  --color-accent-light: #d83a3f;
+  --color-accent-subtle: rgba(173, 23, 28, 0.08);
+  --color-accent-muted: rgba(173, 23, 28, 0.15);
 
   /* Semantic Colors */
   --color-success: #059669;
@@ -68,7 +68,7 @@
   --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.10);
   --shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.12);
   --shadow-card-hover: 0 12px 40px rgba(15, 23, 42, 0.08);
-  --shadow-glow-accent: 0 0 30px rgba(14, 165, 233, 0.15), 0 0 60px rgba(14, 165, 233, 0.05);
+  --shadow-glow-accent: 0 0 30px rgba(173, 23, 28, 0.15), 0 0 60px rgba(173, 23, 28, 0.05);
 
   /* Shape Lock: Consistent Radius */
   --radius-xs: 4px;
@@ -142,11 +142,11 @@
   --color-text-muted: #94a3b8;
   --color-text-subtle: #64748b;
 
-  --color-accent: #38bdf8;
-  --color-accent-hover: #0ea5e9;
-  --color-accent-light: #7dd3fc;
-  --color-accent-subtle: rgba(56, 189, 248, 0.12);
-  --color-accent-muted: rgba(56, 189, 248, 0.20);
+  --color-accent: #ff5a5f;
+  --color-accent-hover: #ad171c;
+  --color-accent-light: #ff8e91;
+  --color-accent-subtle: rgba(255, 90, 95, 0.12);
+  --color-accent-muted: rgba(255, 90, 95, 0.20);
 
   --color-surface: #141b2d;
   --color-surface-raised: #1e293b;
@@ -165,5 +165,5 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4);
   --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.3);
-  --shadow-glow-accent: 0 0 30px rgba(56, 189, 248, 0.2), 0 0 60px rgba(56, 189, 248, 0.08);
+  --shadow-glow-accent: 0 0 30px rgba(255, 90, 95, 0.2), 0 0 60px rgba(255, 90, 95, 0.08);
 }

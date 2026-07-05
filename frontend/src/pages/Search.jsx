@@ -29,6 +29,8 @@ export default function Search() {
   const [roomType, setRoomType] = useState('');
   const [searchText, setSearchText] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const [areaMin, setAreaMin] = useState('');
+  const [areaMax, setAreaMax] = useState('');
   const [showFilters, setShowFilters] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +40,7 @@ export default function Search() {
       setIsLoading(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, [city, district, ward, roomType, searchText]);
+  }, [city, district, ward, roomType, searchText, areaMin, areaMax]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
@@ -53,6 +55,10 @@ export default function Search() {
       // Price filter check
       if (maxPrice && p.price > Number(maxPrice)) return false;
 
+      // Area filter check
+      if (areaMin && p.area < Number(areaMin)) return false;
+      if (areaMax && p.area > Number(areaMax)) return false;
+
       if (searchText) {
         const text = searchText.toLowerCase();
         const searchable = `${p.title} ${p.address} ${p.district} ${p.city} ${p.ward || ''}`.toLowerCase();
@@ -61,7 +67,7 @@ export default function Search() {
 
       return true;
     });
-  }, [properties, city, district, ward, maxPrice, roomType, searchText]);
+  }, [properties, city, district, ward, maxPrice, roomType, searchText, areaMin, areaMax]);
 
   const sortedProperties = useMemo(() => {
     const list = [...filteredProperties];
@@ -107,10 +113,12 @@ export default function Search() {
     setRoomType('');
     setSearchText('');
     setSortBy('');
+    setAreaMin('');
+    setAreaMax('');
     setSearchParams({});
   };
 
-  const hasActiveFilters = city || district || ward || maxPrice !== '' || roomType || searchText || sortBy;
+  const hasActiveFilters = city || district || ward || maxPrice !== '' || roomType || searchText || sortBy || areaMin || areaMax;
 
   return (
     <div className="search-page" id="search-page">
@@ -230,6 +238,39 @@ export default function Search() {
                     ≤ {formatPrice(Number(maxPrice))}
                   </span>
                 )}
+              </div>
+
+              {/* Lọc diện tích (m²) */}
+              <div className="area-input-wrap" style={{ flex: '1.2', minWidth: '180px' }}>
+                <span className="form-label" style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-subtle)', marginBottom: '4px' }}>Diện tích (m²)</span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    className="input"
+                    placeholder="Min"
+                    value={areaMin}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAreaMin(val ? Math.max(0, parseInt(val)) : '');
+                    }}
+                    id="filter-area-min"
+                    style={{ minWidth: '60px', height: '38px', padding: '8px' }}
+                  />
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>-</span>
+                  <input
+                    type="number"
+                    className="input"
+                    placeholder="Max"
+                    value={areaMax}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAreaMax(val ? Math.max(0, parseInt(val)) : '');
+                    }}
+                    id="filter-area-max"
+                    style={{ minWidth: '60px', height: '38px', padding: '8px' }}
+                  />
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: '500' }}>m²</span>
+                </div>
               </div>
 
               {hasActiveFilters && (

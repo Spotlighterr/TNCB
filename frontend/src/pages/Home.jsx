@@ -10,6 +10,8 @@ import {
   Star,
   ArrowRight,
   SealCheck,
+  CaretLeft,
+  CaretRight,
 } from '@phosphor-icons/react';
 import { CITIES, DISTRICTS } from '../data/mockProperties';
 
@@ -74,6 +76,31 @@ export default function Home() {
   const availableCount = properties.filter((p) => !p.isRented && !p.isUnlisted && p.status !== 'pending').length;
   const districtCount = [...new Set(properties.map((p) => p.district))].length;
 
+  const splitTitle = (title) => {
+    if (!title) return { main: '', accent: '' };
+    if (title.endsWith('FindX')) {
+      return { main: title.substring(0, title.length - 5).trim(), accent: 'FindX' };
+    }
+    if (title.endsWith('Tân sinh viên')) {
+      return { main: title.substring(0, title.length - 13).trim(), accent: 'Tân sinh viên' };
+    }
+    const words = title.split(' ');
+    if (words.length <= 2) {
+      return { main: words[0] || '', accent: words[1] || '' };
+    }
+    const main = words.slice(0, words.length - 2).join(' ');
+    const accent = words.slice(words.length - 2).join(' ');
+    return { main, accent };
+  };
+
+  const nextSlide = () => {
+    setActiveSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -84,528 +111,646 @@ export default function Home() {
 
   return (
     <div className="home-page" id="home-page">
-      {/* ==================== HERO SECTION ==================== */}
-      <section className="hero" id="hero-section">
-        <div className="hero-inner container">
-          <div className="hero-content animate-fade-in-up">
-            <p className="text-eyebrow">FTU Housing Bank</p>
-            <h1 className="hero-title">
-              Tìm phòng trọ{' '}
-              <span className="hero-title-accent">dễ dàng</span>
-              <br />
-              cho sinh viên
-            </h1>
-            <p className="hero-subtitle">
-              Phòng thật, giá thật, vị trí thật tại Hà Nội & TP.HCM
-            </p>
-
-            {/* Search Bar */}
-            <form className="hero-search glass" onSubmit={handleSearch} id="hero-search">
-              <div className="hero-search-fields">
-                <div className="hero-search-field">
-                  <MapPin size={18} color="var(--color-accent)" />
-                  <select
-                    className="hero-search-select"
-                    value={searchCity}
-                    onChange={(e) => {
-                      setSearchCity(e.target.value);
-                      setSearchDistrict('');
-                    }}
-                  >
-                    <option value="">Thành phố</option>
-                    {CITIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="hero-search-divider" />
-                <div className="hero-search-field">
-                  <Buildings size={18} color="var(--color-text-subtle)" />
-                  <select
-                    className="hero-search-select"
-                    value={searchDistrict}
-                    onChange={(e) => setSearchDistrict(e.target.value)}
-                  >
-                    <option value="">Quận / Huyện</option>
-                    {searchCity && DISTRICTS[searchCity]?.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="btn btn-primary btn-lg hero-search-btn" id="hero-search-btn">
-                  <MagnifyingGlass size={20} weight="bold" />
-                  <span className="hide-mobile">Tìm phòng</span>
-                </button>
+      {/* ==================== APPLE-STYLE HERO STACK ==================== */}
+      
+      {/* Hero 1: Search Banner (Featured Hero) */}
+      <section className="section-hero theme-light" id="hero-search-banner">
+        <div className="tile-wrapper">
+          <div className="tile-content animate-fade-in-up">
+            <div className="tile-copy-wrapper">
+              <span className="tile-eyebrow text-eyebrow">FTU Housing Bank</span>
+              <div className="apple-logo-text" style={{ fontSize: 'clamp(2.5rem, 6.5vw, 4.5rem)' }}>
+                <span className="logo-metallic">Tìm phòng trọ</span>
+                <span className="logo-glowing">dễ dàng</span>
               </div>
-            </form>
+              <p className="tile-subhead">
+                Phòng thật, giá thật, vị trí thật tại Hà Nội & TP.HCM
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== APPLE-STYLE PROMO GRID ==================== */}
+      <section className="section-promo" id="promos-section">
+        <div className="promo-container">
+          
+          {/* Promo Card 1: Bento Stats (iOS Widget Style) */}
+          <div className="promo-tile theme-light-gray" id="promo-stats">
+            <div className="promo-tile-content">
+              <div className="promo-tile-copy">
+                <h3 className="promo-headline">Hệ sinh thái số</h3>
+                <p className="promo-subhead">Kết nối sinh viên với hàng ngàn phòng trọ chất lượng.</p>
+              </div>
+
+              {/* Search Bar - Nested inside Bento Stats card */}
+              <form className="hero-search glass animate-scale-in" onSubmit={handleSearch} id="hero-search" style={{ width: '100%', maxWidth: '100%', margin: '0', background: '#ffffff', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
+                <div className="hero-search-fields">
+                  <div className="hero-search-field">
+                    <MapPin size={18} color="var(--color-accent)" />
+                    <select
+                      className="hero-search-select"
+                      value={searchCity}
+                      onChange={(e) => {
+                        setSearchCity(e.target.value);
+                        setSearchDistrict('');
+                      }}
+                    >
+                      <option value="">Thành phố</option>
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="hero-search-divider" />
+                  <div className="hero-search-field">
+                    <Buildings size={18} color="var(--color-text-subtle)" />
+                    <select
+                      className="hero-search-select"
+                      value={searchDistrict}
+                      onChange={(e) => setSearchDistrict(e.target.value)}
+                    >
+                      <option value="">Quận / Huyện</option>
+                      {searchCity && DISTRICTS[searchCity]?.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button type="submit" className="btn btn-primary btn-lg hero-search-btn" id="hero-search-btn">
+                    <MagnifyingGlass size={20} weight="bold" />
+                    <span className="hide-mobile">Tìm phòng</span>
+                  </button>
+                </div>
+              </form>
+              
+              <div className="bento-grid">
+                <div className="bento-card bento-accent animate-fade-in-up stagger-1">
+                  <div className="bento-icon-wrap">
+                    <Buildings size={28} weight="duotone" />
+                  </div>
+                  <div className="bento-stat text-mono">{availableCount}+</div>
+                  <div className="bento-label">Phòng đang trống</div>
+                </div>
+
+                <div className="bento-card animate-fade-in-up stagger-2">
+                  <div className="bento-icon-wrap">
+                    <MapPin size={28} weight="duotone" color="var(--color-accent)" />
+                  </div>
+                  <div className="bento-stat text-mono">{districtCount}</div>
+                  <div className="bento-label">Quận hỗ trợ</div>
+                </div>
+
+                <div className="bento-card bento-accent animate-fade-in-up stagger-3">
+                  <div className="bento-icon-wrap">
+                    <GraduationCap size={28} weight="duotone" />
+                  </div>
+                  <div className="bento-stat text-mono">10+</div>
+                  <div className="bento-label">Trường lân cận</div>
+                </div>
+
+                <div className="bento-card animate-fade-in-up stagger-4">
+                  <div className="bento-icon-wrap">
+                    <Star size={28} weight="fill" color="var(--color-warning)" />
+                  </div>
+                  <div className="bento-stat text-mono">4.8/5</div>
+                  <div className="bento-label">Đánh giá</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Hero Visual - Dynamic Bulletin Board Carousel */}
-          <div className="hero-visual animate-fade-in-up stagger-2">
-            <div className="hero-carousel-wrapper">
-              {slides.map((slide, index) => (
-                <div
-                  key={slide.id}
-                  className={`hero-carousel-slide ${index === activeSlide ? 'active' : ''}`}
-                >
-                  <img src={slide.image} alt={slide.title} className="hero-image" />
-                  
-                  {/* Floating Badge */}
-                  <div className="overlay-badge verified-badge glass">
-                    <SealCheck size={20} weight="fill" color="var(--color-accent)" />
-                    <span>{slide.badgeText}</span>
-                  </div>
-                  
-                  {/* Content Overlays */}
-                  <div className="carousel-slide-content glass">
-                    <span className="slide-tag">{slide.tag}</span>
-                    <h4 className="slide-title">{slide.title}</h4>
-                    <p className="slide-desc">{slide.description}</p>
-                    <a
-                      href={slide.link}
-                      target={slide.link.startsWith('http') ? '_blank' : '_self'}
-                      rel="noopener noreferrer"
-                      className="slide-link-btn"
-                    >
-                      <span>Xem chi tiết</span>
-                      <ArrowRight size={12} weight="bold" />
-                    </a>
-                  </div>
+          {/* Promo Card 2: Featured Listings Grid */}
+          <div className="promo-tile theme-white" id="promo-listings">
+            <div className="promo-tile-content">
+              <div className="promo-tile-copy-header">
+                <div>
+                  <h3 className="promo-headline">Phòng trọ nổi bật</h3>
+                  <p className="promo-subhead">Đã được đội ngũ FindX Review xác thực.</p>
                 </div>
-              ))}
+                <button
+                  className="btn-link tile-cta-link"
+                  onClick={() => navigate('/search')}
+                  id="view-all-btn"
+                >
+                  Xem tất cả <ArrowRight size={14} />
+                </button>
+              </div>
+
+              <div className="featured-grid">
+                {isLoading ? (
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="skeleton-card card animate-fade-in" style={{ minHeight: '260px' }}>
+                      <div className="skeleton-image skeleton" style={{ height: '140px' }} />
+                      <div className="skeleton-content">
+                        <div className="skeleton-line skeleton-title skeleton" style={{ width: '80%' }} />
+                        <div className="skeleton-line skeleton-text-short skeleton" style={{ width: '40%' }} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  featuredProperties.slice(0, 2).map((prop, idx) => (
+                    <PropertyCard key={prop.id} property={prop} index={idx} />
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ==================== APPLE-STYLE HERO SLIDER ==================== */}
+      <section className="section-hero theme-dark hero-carousel-section" id="hero-carousel">
+        <div className="tile-wrapper">
+          {slides.length > 1 && (
+            <>
+              {/* Left Arrow */}
+              <button type="button" className="carousel-arrow arrow-left" onClick={prevSlide} aria-label="Previous Slide">
+                <CaretLeft size={28} weight="bold" />
+              </button>
               
-              {/* Carousel Dot Indicators */}
-              <div className="carousel-indicators">
+              {/* Right Arrow */}
+              <button type="button" className="carousel-arrow arrow-right" onClick={nextSlide} aria-label="Next Slide">
+                <CaretRight size={28} weight="bold" />
+              </button>
+            </>
+          )}
+
+          {slides.length > 0 && (
+            <div className="tile-content animate-fade-in-up">
+              {slides.map((slide, index) => {
+                if (index !== activeSlide) return null;
+                const { main, accent } = splitTitle(slide.title);
+                return (
+                  <div key={slide.id || index} className="carousel-slide-active-content animate-fade-in-up" style={{ width: '100%' }}>
+                    <div className="tile-copy-wrapper" style={{ marginInline: 'auto' }}>
+                      <span className="tile-eyebrow text-eyebrow">{slide.tag}</span>
+                      <div className="apple-logo-text">
+                        <span className="logo-metallic">{main}</span>
+                        <span className="logo-glowing">{accent}</span>
+                      </div>
+                      <p className="tile-subhead" style={{ maxWidth: '680px', marginInline: 'auto' }}>
+                        {slide.description}
+                      </p>
+                      <p className="tile-subhead-sm" style={{ color: '#86868b', fontSize: '14px', marginTop: '-10px', marginBottom: '20px' }}>
+                        {slide.badgeText}
+                      </p>
+                      <div className="tile-ctas" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <a 
+                          href={slide.link} 
+                          target={slide.link.startsWith('http') ? '_blank' : '_self'} 
+                          rel="noopener noreferrer" 
+                          className="btn-pill-primary"
+                        >
+                          Tìm hiểu thêm
+                        </a>
+                        {slide.tag.includes('Cộng đồng') && (
+                          <a href="https://www.facebook.com/FTU.HousingBank" target="_blank" rel="noopener noreferrer" className="btn-pill-secondary">
+                            Tham gia cộng đồng
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="tile-image-wrapper" style={{ marginTop: '40px' }}>
+                      <img src={slide.image} alt={slide.title} className="tile-image" />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Dot Indicators */}
+              <div className="carousel-dots-wrapper">
                 {slides.map((_, index) => (
                   <button
                     key={index}
-                    className={`carousel-dot ${index === activeSlide ? 'active' : ''}`}
+                    type="button"
+                    className={`carousel-dot-indicator ${index === activeSlide ? 'active' : ''}`}
                     onClick={() => setActiveSlide(index)}
                     aria-label={`Go to slide ${index + 1}`}
                   />
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== FEATURED SECTION ==================== */}
-      <section className="section" id="featured-section">
-        <div className="container">
-          <div className="section-header">
-            <div>
-              <h2 className="text-headline">Phòng trọ nổi bật</h2>
-              <p className="text-caption" style={{ marginTop: 'var(--space-2)' }}>
-                Đã Review bởi đội ngũ FindX
-              </p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => navigate('/search')}
-              id="view-all-btn"
-            >
-              Xem tất cả
-              <ArrowRight size={16} />
-            </button>
-          </div>
-
-          <div className="featured-grid">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="skeleton-card card animate-fade-in" style={{ minHeight: '340px' }}>
-                  <div className="skeleton-image skeleton" style={{ height: '180px' }} />
-                  <div className="skeleton-content">
-                    <div className="skeleton-line skeleton-title skeleton" style={{ width: '80%' }} />
-                    <div className="skeleton-line skeleton-text-short skeleton" style={{ width: '40%' }} />
-                    <div className="skeleton-line skeleton-text-medium skeleton" style={{ width: '60%', margin: '8px 0' }} />
-                    <div className="skeleton-footer skeleton" style={{ height: '36px', marginTop: 'auto' }} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              featuredProperties.map((prop, idx) => (
-                <PropertyCard key={prop.id} property={prop} index={idx} />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== BENTO STATS SECTION ==================== */}
-      <section className="section-sm" id="stats-section">
-        <div className="container">
-          <div className="bento-grid">
-            {/* Stat 1 - Accent bg */}
-            <div className="bento-card bento-accent animate-fade-in-up stagger-1">
-              <div className="bento-icon-wrap">
-                <Buildings size={32} weight="duotone" />
-              </div>
-              <div className="bento-stat text-mono">{availableCount}+</div>
-              <div className="bento-label">Phòng đang trống</div>
-            </div>
-
-            {/* Stat 2 */}
-            <div className="bento-card animate-fade-in-up stagger-2">
-              <div className="bento-icon-wrap">
-                <MapPin size={32} weight="duotone" color="var(--color-accent)" />
-              </div>
-              <div className="bento-stat text-mono">{districtCount}</div>
-              <div className="bento-label">Quận hỗ trợ</div>
-            </div>
-
-            {/* Stat 3 - Accent bg */}
-            <div className="bento-card bento-accent animate-fade-in-up stagger-3">
-              <div className="bento-icon-wrap">
-                <GraduationCap size={32} weight="duotone" />
-              </div>
-              <div className="bento-stat text-mono">10+</div>
-              <div className="bento-label">Trường ĐH lân cận</div>
-            </div>
-
-            {/* Stat 4 */}
-            <div className="bento-card animate-fade-in-up stagger-4">
-              <div className="bento-icon-wrap">
-                <Star size={32} weight="fill" color="var(--color-warning)" />
-              </div>
-              <div className="bento-stat text-mono">4.8/5</div>
-              <div className="bento-label">Đánh giá tích cực</div>
-            </div>
-
-            {/* Stat 5 */}
-            <div className="bento-card animate-fade-in-up stagger-5">
-              <div className="bento-icon-wrap">
-                <SealCheck size={32} weight="duotone" color="var(--color-accent)" />
-              </div>
-              <div className="bento-stat text-mono">100%</div>
-              <div className="bento-label">Đã Review thực tế</div>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
       <style>{`
         /* ============================================
-           HERO SECTION - Cinematic Entry
+           APPLE-STYLE HERO STACK & TILE STYLING
            ============================================ */
-        .hero {
-          min-height: calc(100dvh - var(--header-height));
+        .section-hero {
+          position: relative;
+          width: 100%;
+          min-height: 680px;
+          height: auto;
           display: flex;
           align-items: center;
-          background: var(--bg-primary);
-          position: relative;
+          justify-content: center;
           overflow: hidden;
+          border-bottom: 8px solid var(--bg-primary);
         }
 
-        /* Ambient gradient orb — top right */
-        .hero::before {
-          content: '';
-          position: absolute;
-          top: -30%;
-          right: -15%;
-          width: 700px;
-          height: 700px;
-          background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
-          border-radius: 50%;
-          pointer-events: none;
-          animation: heroOrb1 8s var(--ease-in-out-sine) infinite;
+        @media (min-width: 992px) {
+          .section-hero {
+            min-height: 80vh;
+          }
         }
 
-        /* Second orb — bottom left */
-        .hero::after {
-          content: '';
-          position: absolute;
-          bottom: -20%;
-          left: -10%;
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(14, 165, 233, 0.07) 0%, transparent 70%);
-          border-radius: 50%;
-          pointer-events: none;
-          animation: heroOrb2 10s var(--ease-in-out-sine) infinite 2s;
-        }
-
-        @keyframes heroOrb1 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
-          33% { transform: translate(-30px, 20px) scale(1.05); opacity: 1; }
-          66% { transform: translate(20px, -15px) scale(0.95); opacity: 0.8; }
-        }
-
-        @keyframes heroOrb2 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-          50% { transform: translate(25px, -20px) scale(1.1); opacity: 0.8; }
-        }
-
-        .hero-inner {
+        .tile-wrapper {
           position: relative;
-          z-index: 1;
+          width: 100%;
+          max-width: 1400px;
+          height: 100%;
+          margin: 0 auto;
           padding: var(--space-16) var(--content-padding);
           display: flex;
           flex-direction: column;
-          gap: var(--space-10);
-        }
-
-        @media (min-width: 992px) {
-          .hero-inner {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-16);
-            padding: var(--space-20) var(--content-padding);
-          }
-        }
-
-        .hero-content {
-          max-width: 640px;
-          width: 100%;
-        }
-
-        @media (min-width: 992px) {
-          .hero-content {
-            flex: 1.2;
-          }
-        }
-
-        /* Hero Visual - Bulletin Board Carousel */
-        .hero-visual {
-          position: relative;
-          width: 100%;
-          max-width: 480px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
           align-items: center;
-          padding: var(--space-6) 0;
-        }
-
-        @media (min-width: 992px) {
-          .hero-visual {
-            flex: 0.8;
-            max-width: none;
-            margin: 0;
-          }
-        }
-
-        .hero-carousel-wrapper {
-          position: relative;
-          width: 100%;
-          aspect-ratio: 4/3.2;
-          border-radius: var(--radius-lg);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
-          overflow: visible;
-        }
-
-        .hero-carousel-slide {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          opacity: 0;
-          visibility: hidden;
-          transition: opacity var(--duration-slow) var(--ease-smooth),
-                      visibility var(--duration-slow) var(--ease-smooth);
+          justify-content: center;
+          text-align: center;
           z-index: 1;
         }
 
-        .hero-carousel-slide.active {
-          opacity: 1;
-          visibility: visible;
+        /* Full click overlay */
+        .tile-link {
+          position: absolute;
+          inset: 0;
+          z-index: 5;
+          cursor: pointer;
+        }
+
+        .tile-content {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-8);
           z-index: 2;
         }
 
-        .hero-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: var(--radius-lg);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Floating Badge */
-        .verified-badge {
-          position: absolute;
-          top: 8%;
-          left: -4%;
-          display: inline-flex;
-          align-items: center;
-          gap: var(--space-2);
-          padding: var(--space-2.5) var(--space-4);
-          border-radius: var(--radius-main);
-          font-size: var(--text-xs);
-          font-weight: var(--weight-semibold);
-          color: var(--color-text-primary);
-          box-shadow: 0 10px 30px rgba(14, 165, 233, 0.15);
-          backdrop-filter: blur(12px) saturate(160%);
-          -webkit-backdrop-filter: blur(12px) saturate(160%);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          animation: floatBadge 6s ease-in-out infinite;
-          z-index: 3;
-        }
-
-        /* Carousel Content Card Overlay */
-        .carousel-slide-content {
-          position: absolute;
-          bottom: var(--space-4);
-          left: var(--space-4);
-          right: var(--space-4);
-          padding: var(--space-4) var(--space-5);
-          border-radius: var(--radius-main);
-          color: var(--color-text-primary);
-          backdrop-filter: blur(16px) saturate(180%);
-          -webkit-backdrop-filter: blur(16px) saturate(180%);
-          background: rgba(255, 255, 255, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-          z-index: 3;
+        .tile-copy-wrapper {
+          max-width: 800px;
           display: flex;
           flex-direction: column;
-          gap: var(--space-1);
+          align-items: center;
         }
 
-        .dark-mode .carousel-slide-content {
-          background: rgba(15, 23, 42, 0.75);
-          border-color: rgba(255, 255, 255, 0.05);
+        .tile-eyebrow {
+          margin-bottom: var(--space-3);
         }
 
-        .dark-mode .verified-badge {
-          background: rgba(30, 41, 59, 0.85);
-          border-color: rgba(255, 255, 255, 0.05);
-          color: #f1f5f9;
-        }
-
-        .slide-tag {
-          font-size: 10px;
-          text-transform: uppercase;
+        .tile-headline {
+          font-size: clamp(2rem, 5.5vw, 3.8rem);
           font-weight: var(--weight-bold);
-          color: var(--color-accent);
-          letter-spacing: 0.08em;
+          line-height: 1.1;
+          letter-spacing: -0.025em;
+          color: var(--color-text-main);
+          margin-bottom: var(--space-4);
         }
 
-        .slide-title {
-          font-size: var(--text-base);
-          font-weight: var(--weight-bold);
-          letter-spacing: -0.01em;
-          margin: 0;
-          color: var(--color-text-primary);
-        }
-
-        .slide-desc {
-          font-size: var(--text-xs);
+        .tile-subhead {
+          font-size: clamp(1.1rem, 2vw, 1.45rem);
+          font-weight: var(--weight-regular);
           color: var(--color-text-muted);
           line-height: 1.4;
-          margin: 0 var(--space-2) var(--space-2) 0;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
+          margin-bottom: var(--space-5);
+          max-width: 600px;
         }
 
-        .slide-link-btn {
-          align-self: flex-start;
-          display: inline-flex;
-          align-items: center;
-          gap: var(--space-1.5);
-          font-size: var(--text-xs);
+        .tile-ctas {
+          display: flex;
+          gap: var(--space-6);
+          justify-content: center;
+          z-index: 6; /* Clickable above tile-link */
+          position: relative;
+        }
+
+        .tile-cta-link {
+          font-size: var(--text-base);
           font-weight: var(--weight-semibold);
           color: var(--color-accent);
+          display: inline-flex;
+          align-items: center;
+          gap: var(--space-1);
           transition: transform var(--duration-fast) var(--ease-tactile), color var(--duration-fast) var(--ease-smooth);
+          cursor: pointer;
+          border: none;
+          background: none;
+          padding: 0;
         }
 
-        .slide-link-btn:hover {
+        .tile-cta-link:hover {
           color: var(--color-accent-light);
+          transform: translateX(3px);
+          text-decoration: underline;
+        }
+
+        .tile-cta-link svg {
+          transition: transform var(--duration-fast) var(--ease-tactile);
+        }
+
+        .tile-cta-link:hover svg {
           transform: translateX(2px);
         }
 
-        /* Carousel Indicators */
-        .carousel-indicators {
+        /* Image Display */
+        .tile-image-wrapper {
+          width: 100%;
+          max-width: 800px;
+          height: clamp(240px, 45vw, 400px); /* Fixed height container */
+          margin: var(--space-4) auto 0;
           display: flex;
           justify-content: center;
-          gap: var(--space-2);
-          margin-top: var(--space-4);
-          z-index: 3;
+          align-items: center;
+          overflow: hidden;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-xl);
+          background: #111111;
         }
 
-        .carousel-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: var(--color-text-subtle);
-          opacity: 0.4;
+        .tile-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform var(--duration-slow) var(--ease-tactile);
+        }
+
+        .section-hero:hover .tile-image {
+          transform: scale(1.015);
+        }
+
+        /* Theme Variants */
+        .theme-light {
+          background: #ffffff; /* Solid white background */
+        }
+
+        .theme-dark {
+          background: #000000;
+          color: #ffffff;
+          border-bottom-color: #111;
+        }
+
+        .theme-dark .tile-headline {
+          color: #ffffff;
+        }
+
+        .theme-dark .tile-subhead {
+          color: #86868b;
+          min-height: 56px; /* Holds 2 lines of text stable */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: var(--space-5);
+        }
+
+        .theme-dark .tile-image {
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-dark::before {
+          content: '';
+          position: absolute;
+          top: -20%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 600px;
+          height: 400px;
+          background: radial-gradient(50% 50% at 50% 50%, rgba(173, 23, 28, 0.15) 0%, transparent 100%);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        /* Apple Logo & Metallic/Glow Text Effect */
+        .apple-logo-text {
+          font-size: clamp(3rem, 8vw, 5.5rem);
+          font-weight: 700;
+          letter-spacing: -0.04em;
+          line-height: 1.25;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: var(--space-4);
+        }
+
+        .logo-metallic {
+          background: linear-gradient(180deg, #ffffff 30%, #86868b 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          padding-block: 0.1em;
+        }
+
+        .logo-glowing {
+          position: relative;
+          color: #ffffff;
+          margin-left: 12px;
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
+                       0 0 20px rgba(255, 215, 0, 0.6),
+                       0 0 35px rgba(255, 105, 180, 0.5);
+          background: linear-gradient(135deg, #ffffff 40%, #ffdf79 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          padding-block: 0.1em;
+        }
+
+        .theme-light .apple-logo-text .logo-metallic {
+          background: linear-gradient(180deg, #1d1d1f 30%, #434345 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .theme-light .apple-logo-text .logo-glowing {
+          background: linear-gradient(135deg, #ad171c 0%, #ff5a5f 50%, #ff7b00 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: none;
+        }
+
+        .theme-light .apple-logo-text .logo-glowing::after {
+          display: none;
+        }
+
+        @media (max-width: 580px) {
+          .apple-logo-text {
+            flex-wrap: wrap;
+            line-height: 1.1;
+          }
+          .logo-glowing {
+            margin-left: 0;
+            margin-top: 4px;
+          }
+        }
+
+        .logo-glowing::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 140px;
+          height: 140px;
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 215, 0, 0.4) 30%, rgba(0, 113, 227, 0.35) 60%, transparent 100%);
+          filter: blur(20px);
+          z-index: -1;
+          pointer-events: none;
+          animation: pulseGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+          0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.75; }
+          100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+        }
+
+        /* Pill Buttons matching the Siri AI prompt image */
+        .btn-pill-primary {
+          background: #0071e3;
+          color: #ffffff !important;
           border: none;
+          padding: 12px 26px;
+          border-radius: 980px;
+          font-size: 17px;
+          font-weight: var(--weight-regular);
+          transition: all var(--duration-fast) var(--ease-tactile);
           cursor: pointer;
-          padding: 0;
-          transition: width var(--duration-normal) var(--ease-tactile),
-                      opacity var(--duration-normal) var(--ease-smooth),
-                      background-color var(--duration-normal) var(--ease-smooth);
+          text-decoration: none !important;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .carousel-dot.active {
-          width: 24px;
-          border-radius: 4px;
-          background: var(--color-accent);
+        .btn-pill-primary:hover {
+          background: #147ff3;
+          transform: scale(1.02);
+        }
+
+        .btn-pill-secondary {
+          background: transparent;
+          color: #2997ff !important;
+          border: 1px solid #0071e3;
+          padding: 12px 26px;
+          border-radius: 980px;
+          font-size: 17px;
+          font-weight: var(--weight-regular);
+          transition: all var(--duration-fast) var(--ease-tactile);
+          cursor: pointer;
+          text-decoration: none !important;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .btn-pill-secondary:hover {
+          background: rgba(41, 151, 255, 0.08);
+          border-color: #2997ff;
+          transform: scale(1.02);
+        }
+
+        /* Hero Carousel Slider specific styles */
+        .hero-carousel-section {
+          position: relative;
+        }
+
+        .carousel-arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.8);
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+          z-index: 10;
+          opacity: 0.5;
+        }
+
+        .carousel-arrow:hover {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
           opacity: 1;
         }
 
-        @keyframes floatBadge {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
+        .arrow-left {
+          left: var(--space-4);
         }
 
-        /* Eyebrow — slide in from left */
-        .hero-content .text-eyebrow {
-          animation: slideInRight var(--duration-reveal) var(--ease-out-expo) 0.1s both;
+        .arrow-right {
+          right: var(--space-4);
         }
 
-        .hero-title {
-          font-size: clamp(2.5rem, 6vw, 4rem);
-          font-weight: var(--weight-extrabold);
-          letter-spacing: -0.03em;
-          line-height: 1.08;
-          margin: var(--space-4) 0 var(--space-5);
-          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.2s both;
+        @media (max-width: 768px) {
+          .carousel-arrow {
+            width: 40px;
+            height: 40px;
+            top: auto;
+            bottom: var(--space-4);
+            transform: none;
+          }
+          .arrow-left {
+            left: 20%;
+          }
+          .arrow-right {
+            right: 20%;
+          }
         }
 
-        .hero-title-accent {
-          color: var(--color-accent);
-          position: relative;
-          background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light), var(--color-accent));
-          background-size: 200% auto;
-          background-clip: text;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: accentShimmer 4s var(--ease-smooth) infinite;
+        /* Dot Indicators */
+        .carousel-dots-wrapper {
+          display: flex;
+          gap: var(--space-3);
+          justify-content: center;
+          margin-top: var(--space-8);
+          z-index: 10;
         }
 
-        @keyframes accentShimmer {
-          0%, 100% { background-position: 0% center; }
-          50% { background-position: 100% center; }
+        .carousel-dot-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          transition: background var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-tactile);
         }
 
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
+        .carousel-dot-indicator:hover {
+          background: rgba(255, 255, 255, 0.4);
         }
 
-        @keyframes revealUp {
-          from { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(4px); }
-          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        .carousel-dot-indicator.active {
+          background: #ffffff;
+          transform: scale(1.2);
         }
 
-        .hero-subtitle {
-          font-size: var(--text-lg);
-          color: var(--color-text-muted);
-          margin-bottom: var(--space-8);
-          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.35s both;
+        /* Hero 1 search bar overrides */
+        #hero-search-banner {
+          min-height: 280px;
+          border-bottom: none;
+        }
+        @media (min-width: 992px) {
+          #hero-search-banner {
+            min-height: 35vh;
+          }
+        }
+        #hero-search-banner .tile-content {
+          gap: var(--space-6);
         }
 
-        /* Search Bar — slide up with glow */
         .hero-search {
           padding: var(--space-2);
           border-radius: var(--radius-main);
-          max-width: 560px;
-          animation: revealUp var(--duration-hero) var(--ease-out-expo) 0.5s both;
+          width: 100%;
+          max-width: 580px;
+          z-index: 6; /* Clickable */
+          position: relative;
+          margin-top: var(--space-2);
           transition: box-shadow var(--duration-normal) var(--ease-smooth),
                       border-color var(--duration-normal) var(--ease-smooth),
                       transform var(--duration-normal) var(--ease-tactile);
@@ -670,15 +815,34 @@ export default function Home() {
           border-radius: var(--radius-subtle) !important;
         }
 
-        @media (max-width: 440px) {
+        .hero-title-accent {
+          color: var(--color-accent);
+          position: relative;
+          background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light), var(--color-accent));
+          background-size: 200% auto;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: accentShimmer 4s var(--ease-smooth) infinite;
+        }
+
+        @keyframes accentShimmer {
+          0%, 100% { background-position: 0% center; }
+          50% { background-position: 100% center; }
+        }
+
+        @media (max-width: 580px) {
           .hero-search-fields {
-            flex-wrap: wrap;
+            flex-direction: column;
+            width: 100%;
+            gap: var(--space-2);
           }
           .hero-search-divider {
             display: none;
           }
           .hero-search-field {
-            flex-basis: 100%;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.03);
           }
           .hero-search-btn {
             width: 100%;
@@ -686,138 +850,139 @@ export default function Home() {
         }
 
         /* ============================================
-           FEATURED SECTION
+           APPLE PROMO GRID (2 columns)
            ============================================ */
-        .section-header {
+        .section-promo {
+          width: 100%;
+          padding: var(--space-8) var(--content-padding);
+          background: var(--bg-primary);
+        }
+
+        .promo-container {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--space-6);
+        }
+
+        @media (min-width: 992px) {
+          .promo-container {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        .promo-tile {
+          border-radius: var(--radius-lg);
+          padding: var(--space-10) var(--space-8);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid var(--color-border);
+          min-height: 480px;
+          position: relative;
+        }
+
+        .theme-light-gray {
+          background: #f5f5f7;
+        }
+
+        .promo-tile-content {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          gap: var(--space-8);
+        }
+
+        .promo-tile-copy {
+          max-width: 480px;
+        }
+
+        .promo-tile-copy-header {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          margin-bottom: var(--space-8);
-          gap: var(--space-4);
+          width: 100%;
+          border-bottom: 1px solid var(--color-border);
+          padding-bottom: var(--space-3);
         }
 
-        @media (max-width: 440px) {
-          .section-header {
-            flex-direction: column;
-            align-items: flex-start;
-          }
+        .promo-headline {
+          font-size: var(--text-2xl);
+          font-weight: var(--weight-bold);
+          color: var(--color-text-main);
+          letter-spacing: -0.015em;
+          margin-bottom: var(--space-1);
         }
 
-        .featured-grid {
+        .promo-subhead {
+          font-size: var(--text-sm);
+          color: var(--color-text-muted);
+        }
+
+        /* Bento Grid overrides in Promo */
+        .promo-tile .bento-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: var(--space-5);
+          margin-top: auto;
         }
 
-        @media (max-width: 1024px) {
-          .featured-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        @media (max-width: 440px) {
-          .featured-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        /* ============================================
-           BENTO STATS - Interactive cards
-           ============================================ */
-        .bento-grid {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: var(--space-4);
-        }
-
-        @media (max-width: 1024px) {
-          .bento-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
-        @media (max-width: 440px) {
-          .bento-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        .bento-card {
-          padding: var(--space-6);
-          border-radius: var(--radius-main);
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
+        .promo-tile .bento-card {
+          padding: var(--space-6) var(--space-5);
+          background: #ffffff;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-sm);
+          min-height: 145px;
           display: flex;
           flex-direction: column;
-          gap: var(--space-2);
-          transition: all var(--duration-spring) var(--ease-tactile);
-          cursor: default;
-          position: relative;
-          overflow: hidden;
+          justify-content: space-between;
+          transition: transform var(--duration-fast) var(--ease-tactile), box-shadow var(--duration-fast) var(--ease-smooth);
         }
 
-        .bento-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at 30% 30%, var(--color-accent-subtle), transparent 70%);
-          opacity: 0;
-          transition: opacity var(--duration-normal) var(--ease-smooth);
-          pointer-events: none;
+        .promo-tile .bento-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
         }
 
-        .bento-card:hover {
-          transform: translateY(-6px) scale(1.02);
-          box-shadow: var(--shadow-lg);
-          border-color: var(--color-accent-muted);
-        }
-
-        .bento-card:hover::before {
-          opacity: 1;
-        }
-
-        .bento-card.bento-accent {
+        .promo-tile .bento-card.bento-accent {
           background: var(--color-accent);
-          border-color: transparent;
           color: #ffffff;
         }
 
-        .bento-card.bento-accent::before {
-          background: radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.15), transparent 70%);
-        }
-
-        .bento-card.bento-accent:hover {
-          box-shadow: 0 12px 40px rgba(14, 165, 233, 0.3);
-        }
-
-        .bento-card.bento-accent .bento-label {
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .bento-icon-wrap {
+        .promo-tile .bento-icon-wrap {
           margin-bottom: var(--space-2);
-          transition: transform var(--duration-spring) var(--ease-bounce);
+          display: inline-flex;
         }
 
-        .bento-card:hover .bento-icon-wrap {
-          transform: scale(1.15) rotate(-5deg);
+        .promo-tile .bento-stat {
+          font-size: 2.2rem;
+          font-weight: 700;
+          line-height: 1.1;
+          margin-bottom: var(--space-1);
         }
 
-        .bento-stat {
-          font-size: var(--text-2xl);
-          font-weight: var(--weight-bold);
-          transition: transform var(--duration-spring) var(--ease-bounce);
+        .promo-tile .bento-label {
+          font-size: 1.05rem;
+          font-weight: 500;
+          opacity: 0.9;
         }
 
-        .bento-card:hover .bento-stat {
-          transform: scale(1.05);
+        /* Featured Grid overrides in Promo */
+        .promo-tile .featured-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--space-4);
+          margin-top: var(--space-2);
         }
 
-        .bento-label {
-          font-size: var(--text-sm);
-          color: var(--color-text-muted);
+        @media (min-width: 580px) {
+          .promo-tile .featured-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
       `}</style>
     </div>
   );
 }
+

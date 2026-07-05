@@ -6,6 +6,92 @@ const AppContext = createContext(null);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
 
+const mockUsers = [
+  {
+    id: 'user-admin',
+    name: 'Quản trị viên',
+    email: 'admin@tncb.vn',
+    phone: '0999999999',
+    role: 'admin',
+    mfaEnabled: false,
+    otpEnabled: false,
+    avatar: 'https://picsum.photos/seed/admin/100/100'
+  },
+  {
+    id: 'user-landlord',
+    name: 'Nguyễn Văn Đạt',
+    email: 'landlord@tncb.vn',
+    phone: '0869333366',
+    role: 'landlord',
+    mfaEnabled: false,
+    otpEnabled: false,
+    avatar: 'https://picsum.photos/seed/owner-dat/100/100'
+  },
+  {
+    id: 'user-testlandlord',
+    name: 'Chủ Trọ Thử Nghiệm',
+    email: 'testlandlord@tncb.vn',
+    phone: '0909123456',
+    role: 'landlord',
+    mfaEnabled: false,
+    otpEnabled: false,
+    avatar: 'https://picsum.photos/seed/landlord/100/100'
+  },
+  {
+    id: 'user-tenant',
+    name: 'Nguyễn Minh Anh',
+    email: 'tenant@tncb.vn',
+    phone: '0912345678',
+    role: 'tenant',
+    mfaEnabled: false,
+    otpEnabled: false,
+    avatar: 'https://picsum.photos/seed/tenant/100/100'
+  },
+  {
+    id: 'user-testtenant',
+    name: 'Khách Thuê Thử Nghiệm',
+    email: 'testtenant@tncb.vn',
+    phone: '0987654321',
+    role: 'tenant',
+    mfaEnabled: false,
+    otpEnabled: false,
+    avatar: 'https://picsum.photos/seed/testtenant/100/100'
+  }
+];
+
+const defaultMockHeroSlides = [
+  {
+    id: 'slide-1',
+    image: '/club_team_photo.png',
+    tag: 'Cộng đồng FindX',
+    title: 'Đội ngũ Core Team FindX',
+    description: 'Nơi kết nối và mang đến những giải pháp phòng trọ tối ưu cho sinh viên FTU.',
+    badgeText: 'CLB Hỗ trợ sinh viên',
+    link: 'https://www.facebook.com/FTU.HousingBank',
+    order: 1
+  },
+  {
+    id: 'slide-2',
+    image: '/university_activities.png',
+    tag: 'Hoạt động nổi bật',
+    title: 'Hành trình cùng Tân sinh viên',
+    description: 'Chương trình đồng hành hỗ trợ tìm kiếm nhà trọ an toàn, giá tốt đầu khóa học.',
+    badgeText: 'Sự kiện 2026',
+    link: 'https://www.facebook.com/FTU.HousingBank',
+    order: 2
+  },
+  {
+    id: 'slide-3',
+    image: '/student_room_hero.png',
+    tag: 'Phòng trọ kiểu mẫu',
+    title: 'Không gian sống thông minh',
+    description: 'Gợi ý các căn hộ studio đẹp mắt, gần trường đại học tại Hà Nội & TP.HCM.',
+    badgeText: 'Xác thực 100%',
+    link: '/search',
+    order: 3
+  }
+];
+
 function loadFromStorage(key, fallback) {
   try {
     const saved = localStorage.getItem(key);
@@ -35,6 +121,7 @@ export function AppProvider({ children }) {
   );
   const [tickets, setTickets] = useState([]);
   const [heroSlides, setHeroSlides] = useState([]);
+  const [isMockMode, setIsMockMode] = useState(false);
 
   // Auth Modal State (Global)
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -121,10 +208,10 @@ export function AppProvider({ children }) {
         avatar: p.postedBy.avatar,
         zalo: p.postedBy.zalo || p.postedBy.phone
       } : {
-        name: 'Chủ nhà',
-        phone: '',
-        avatar: '',
-        zalo: ''
+        name: p.owner?.name || 'Chủ nhà',
+        phone: p.owner?.phone || '',
+        avatar: p.owner?.avatar || '',
+        zalo: p.owner?.zalo || p.owner?.phone || ''
       }
     };
   }, []);
@@ -142,6 +229,16 @@ export function AppProvider({ children }) {
 
   // API Fetch actions
   const fetchProperties = useCallback(async () => {
+    if (isMockMode) {
+      const localProps = loadFromStorage('TNCB_PROPERTIES', null);
+      if (localProps && localProps.length > 0) {
+        setProperties(localProps);
+      } else {
+        setProperties(mockProperties);
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(mockProperties));
+      }
+      return;
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/properties');
       const data = await res.json();
@@ -196,10 +293,17 @@ export function AppProvider({ children }) {
       }
     } catch (err) {
       console.error('Lỗi tải danh sách phòng trọ:', err);
+      const localProps = loadFromStorage('TNCB_PROPERTIES', mockProperties);
+      setProperties(localProps);
     }
-  }, [transformProperty]);
+  }, [isMockMode, transformProperty]);
 
   const fetchTickets = useCallback(async () => {
+    if (isMockMode) {
+      const localTickets = loadFromStorage('TNCB_TICKETS', mockTickets);
+      setTickets(localTickets);
+      return;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) {
       setTickets([]);
@@ -221,10 +325,16 @@ export function AppProvider({ children }) {
       }
     } catch (err) {
       console.error('Lỗi tải danh sách yêu cầu hỗ trợ:', err);
+      setTickets(loadFromStorage('TNCB_TICKETS', mockTickets));
     }
-  }, []);
+  }, [isMockMode]);
 
   const fetchHeroSlides = useCallback(async () => {
+    if (isMockMode) {
+      const localSlides = loadFromStorage('TNCB_HERO_SLIDES', defaultMockHeroSlides);
+      setHeroSlides(localSlides);
+      return;
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/properties/hero-slides');
       const data = await res.json();
@@ -233,48 +343,122 @@ export function AppProvider({ children }) {
       }
     } catch (err) {
       console.error('Lỗi tải danh sách hero slides:', err);
+      setHeroSlides(loadFromStorage('TNCB_HERO_SLIDES', defaultMockHeroSlides));
     }
-  }, [transformHeroSlide]);
+  }, [isMockMode, transformHeroSlide]);
 
-  // Restore session on mount
+  // Health check connection and restore session on mount
   useEffect(() => {
-    const restoreSession = async () => {
+    const checkConnection = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const res = await fetch(API_BASE_URL + '/api/health', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        if (data.status === 'ok') {
+          console.log('✅ Connected to backend API server.');
+          setIsMockMode(false);
+          return false;
+        }
+      } catch (err) {
+        // Failed connection
+      }
+      console.warn('⚠️ Không thể kết nối tới Backend. Tự động chuyển sang Chế độ Giả lập (Offline Mock Mode).');
+      setIsMockMode(true);
+      return true;
+    };
+
+    const restoreSession = async (isMock) => {
       const token = localStorage.getItem('TNCB_TOKEN');
       if (token) {
-        try {
-          const res = await fetch(API_BASE_URL + '/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (data.success) {
-            const user = { ...data.user, id: data.user.id || data.user._id };
-            setCurrentUser(user);
-            setUserRole(user.role);
-          } else {
-            localStorage.removeItem('TNCB_TOKEN');
-            localStorage.removeItem('TNCB_CURRENT_USER');
-            setCurrentUser(null);
-            setUserRole('tenant');
+        if (isMock) {
+          const savedUser = loadFromStorage('TNCB_CURRENT_USER', null);
+          if (savedUser) {
+            setCurrentUser(savedUser);
+            setUserRole(savedUser.role);
           }
-        } catch (err) {
-          console.error('Khôi phục phiên đăng nhập thất bại:', err);
+        } else {
+          try {
+            const res = await fetch(API_BASE_URL + '/api/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+              const user = { ...data.user, id: data.user.id || data.user._id };
+              setCurrentUser(user);
+              setUserRole(user.role);
+            } else {
+              localStorage.removeItem('TNCB_TOKEN');
+              localStorage.removeItem('TNCB_CURRENT_USER');
+              setCurrentUser(null);
+              setUserRole('tenant');
+            }
+          } catch (err) {
+            console.error('Khôi phục phiên đăng nhập thất bại:', err);
+            const savedUser = loadFromStorage('TNCB_CURRENT_USER', null);
+            if (savedUser) {
+              setCurrentUser(savedUser);
+              setUserRole(savedUser.role);
+            }
+          }
         }
       }
     };
-    restoreSession();
+
+    const initApp = async () => {
+      const isMock = await checkConnection();
+      await restoreSession(isMock);
+    };
+
+    initApp();
   }, []);
 
-  // Load properties/tickets when auth state changes
+  // Load properties/tickets when auth state or mock mode changes
   useEffect(() => {
     fetchProperties();
     fetchTickets();
     fetchHeroSlides();
-  }, [currentUser, fetchProperties, fetchTickets, fetchHeroSlides]);
+  }, [currentUser, isMockMode, fetchProperties, fetchTickets, fetchHeroSlides]);
 
   // ============================
   // Auth Actions (REST APIs)
   // ============================
   const login = useCallback(async (email, password) => {
+    if (isMockMode) {
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const user = localUsers.find(u => u.email === email);
+      if (!user) {
+        return { success: false, message: 'Tài khoản không tồn tại trong chế độ giả lập.' };
+      }
+      
+      const expectedPassword = email === 'admin@tncb.vn' ? 'admin' : '123';
+      if (password !== expectedPassword && password !== '123') {
+        return { success: false, message: 'Mật khẩu không chính xác.' };
+      }
+
+      if (user.mfaEnabled) {
+        return { success: true, requiresMfa: true, tempMfaToken: `temp-mfa-${Date.now()}` };
+      }
+      if (user.otpEnabled) {
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        setCurrentOTP(otpCode);
+        setOtpExpiry(Date.now() + 5 * 60 * 1000);
+        setPendingRegistration({ email, _loginOtpMode: true, expectedOtp: otpCode, user });
+        return { 
+          success: true, 
+          requiresOtp: true, 
+          tempOtpToken: `temp-otp-${Date.now()}`,
+          otp: otpCode,
+          message: `Mã OTP đã được gửi đến email ${email} (mô phỏng: ${otpCode}).`
+        };
+      }
+
+      localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+      setCurrentUser(user);
+      return { success: true, user };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/login', {
         method: 'POST',
@@ -296,9 +480,16 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Không thể kết nối tới máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const loginWithGoogle = useCallback(async (idToken) => {
+    if (isMockMode) {
+      const tenantUser = mockUsers.find(u => u.email === 'tenant@tncb.vn');
+      localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(tenantUser));
+      setCurrentUser(tenantUser);
+      return { success: true, user: tenantUser };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/google', {
         method: 'POST',
@@ -323,9 +514,25 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Không thể kết nối tới máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const completeGoogleProfile = useCallback(async (phone, role, tempToken) => {
+    if (isMockMode) {
+      const newUser = {
+        id: `mock-google-${Date.now()}`,
+        name: 'Người dùng Google',
+        email: 'googleuser@tncb.vn',
+        phone,
+        role,
+        mfaEnabled: false,
+        otpEnabled: false,
+        avatar: ''
+      };
+      localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(newUser));
+      setCurrentUser(newUser);
+      return { success: true, user: newUser };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/google/complete', {
         method: 'POST',
@@ -344,7 +551,7 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Không thể kết nối tới máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const registerStep1 = useCallback(async (name, email, phone, password, role) => {
     const phoneRegex = /^(0[3|5|7|8|9])\d{8}$/;
@@ -354,6 +561,26 @@ export function AppProvider({ children }) {
 
     if (password.length < 5) {
       return { success: false, message: 'Mật khẩu phải có ít nhất 5 ký tự.' };
+    }
+
+    if (isMockMode) {
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      if (localUsers.some(u => u.email === email)) {
+        return { success: false, message: 'Email đã được sử dụng.' };
+      }
+      if (localUsers.some(u => u.phone === phone)) {
+        return { success: false, message: 'Số điện thoại đã được sử dụng.' };
+      }
+
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      setPendingRegistration({ name, email, phone, password, role, expectedOtp: otpCode });
+      setCurrentOTP(otpCode);
+      setOtpExpiry(Date.now() + 5 * 60 * 1000);
+      return {
+        success: true,
+        otp: otpCode,
+        message: `Mã OTP đã được gửi đến email ${email} (mô phỏng: ${otpCode}).`
+      };
     }
 
     try {
@@ -377,11 +604,36 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const verifyRegistrationOTP = useCallback(async (inputOTP) => {
     if (!pendingRegistration) {
       return { success: false, message: 'Phiên đăng ký đã hết hạn.' };
+    }
+    if (isMockMode) {
+      if (inputOTP === pendingRegistration.expectedOtp || inputOTP === '123456') {
+        const newUser = {
+          id: `mock-user-${Date.now()}`,
+          name: pendingRegistration.name,
+          email: pendingRegistration.email,
+          phone: pendingRegistration.phone,
+          role: pendingRegistration.role,
+          mfaEnabled: false,
+          otpEnabled: false,
+          avatar: ''
+        };
+        const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+        localUsers.push(newUser);
+        localStorage.setItem('TNCB_MOCK_USERS', JSON.stringify(localUsers));
+        
+        localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+        localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(newUser));
+        setCurrentUser(newUser);
+        setPendingRegistration(null);
+        setCurrentOTP(null);
+        return { success: true, user: newUser };
+      }
+      return { success: false, message: 'Mã OTP không chính xác.' };
     }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/register-step2', {
@@ -406,7 +658,7 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, [pendingRegistration]);
+  }, [isMockMode, pendingRegistration]);
 
   const resendOTP = useCallback(async () => {
     if (!pendingRegistration) {
@@ -422,6 +674,22 @@ export function AppProvider({ children }) {
   }, [pendingRegistration, registerStep1]);
 
   const forgotPasswordStep1 = useCallback(async (email) => {
+    if (isMockMode) {
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const user = localUsers.find(u => u.email === email);
+      if (!user) {
+        return { success: false, message: 'Email chưa được đăng ký trong hệ thống giả lập.' };
+      }
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      setPendingRegistration({ email, _resetMode: true, expectedOtp: otpCode });
+      setCurrentOTP(otpCode);
+      setOtpExpiry(Date.now() + 5 * 60 * 1000);
+      return {
+        success: true,
+        otp: otpCode,
+        message: `Mã OTP khôi phục đã được gửi đến email ${email} (mô phỏng: ${otpCode}).`
+      };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/forgot-password-step1', {
         method: 'POST',
@@ -443,11 +711,19 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const resetPassword = useCallback(async (inputOTP, newPassword) => {
     if (!pendingRegistration || !pendingRegistration._resetMode) {
       return { success: false, message: 'Phiên khôi phục mật khẩu hết hạn.' };
+    }
+    if (isMockMode) {
+      if (inputOTP === pendingRegistration.expectedOtp || inputOTP === '123456') {
+        setPendingRegistration(null);
+        setCurrentOTP(null);
+        return { success: true, message: 'Đặt lại mật khẩu thành công! Hãy đăng nhập lại.' };
+      }
+      return { success: false, message: 'Mã OTP không chính xác.' };
     }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/forgot-password-step2', {
@@ -469,13 +745,20 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, [pendingRegistration]);
+  }, [isMockMode, pendingRegistration]);
 
   const register = useCallback(() => {
     return { success: false, message: 'Tính năng này không khả dụng.' };
   }, []);
 
   const setupMFA = useCallback(async () => {
+    if (isMockMode) {
+      return { 
+        success: true, 
+        secret: 'MOCK_MFA_SECRET_KEY_123', 
+        qrCodeUrl: 'https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/FindX:mockuser%3Fsecret=MOCK_MFA_SECRET_KEY_123%26issuer=FindX' 
+      };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
@@ -493,9 +776,24 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const verifyMFA = useCallback(async (code) => {
+    if (isMockMode) {
+      if (!currentUser) return { success: false, message: 'Chưa đăng nhập.' };
+      const updatedUser = { ...currentUser, mfaEnabled: true };
+      
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const idx = localUsers.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        localUsers[idx] = updatedUser;
+        localStorage.setItem('TNCB_MOCK_USERS', JSON.stringify(localUsers));
+      }
+
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
@@ -518,9 +816,24 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode, currentUser]);
 
   const disableMFA = useCallback(async (code) => {
+    if (isMockMode) {
+      if (!currentUser) return { success: false, message: 'Chưa đăng nhập.' };
+      const updatedUser = { ...currentUser, mfaEnabled: false };
+      
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const idx = localUsers.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        localUsers[idx] = updatedUser;
+        localStorage.setItem('TNCB_MOCK_USERS', JSON.stringify(localUsers));
+      }
+
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
@@ -543,9 +856,16 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode, currentUser]);
 
   const verifyLoginMFA = useCallback(async (tempMfaToken, code) => {
+    if (isMockMode) {
+      const savedUser = loadFromStorage('TNCB_CURRENT_USER', null) || mockUsers[1];
+      localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(savedUser));
+      setCurrentUser(savedUser);
+      return { success: true, user: savedUser };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/mfa/login-verify', {
         method: 'POST',
@@ -566,9 +886,24 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const verifyLoginOTP = useCallback(async (tempOtpToken, code) => {
+    if (isMockMode) {
+      if (pendingRegistration && pendingRegistration._loginOtpMode) {
+        if (code === pendingRegistration.expectedOtp || code === '123456') {
+          const user = pendingRegistration.user;
+          localStorage.setItem('TNCB_TOKEN', `mock-token-${Date.now()}`);
+          localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(user));
+          setCurrentUser(user);
+          setPendingRegistration(null);
+          setCurrentOTP(null);
+          return { success: true, user };
+        }
+        return { success: false, message: 'Mã OTP không chính xác.' };
+      }
+      return { success: false, message: 'Phiên đăng nhập hết hạn.' };
+    }
     try {
       const res = await fetch(API_BASE_URL + '/api/auth/otp/login-verify', {
         method: 'POST',
@@ -589,9 +924,24 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode, pendingRegistration]);
 
   const toggleOTP = useCallback(async (enabled) => {
+    if (isMockMode) {
+      if (!currentUser) return { success: false, message: 'Chưa đăng nhập.' };
+      const updatedUser = { ...currentUser, otpEnabled: enabled };
+      
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const idx = localUsers.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        localUsers[idx] = updatedUser;
+        localStorage.setItem('TNCB_MOCK_USERS', JSON.stringify(localUsers));
+      }
+
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
@@ -614,7 +964,7 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode, currentUser]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('TNCB_TOKEN');
@@ -624,6 +974,21 @@ export function AppProvider({ children }) {
   }, []);
 
   const updateProfile = useCallback(async (updates) => {
+    if (isMockMode) {
+      if (!currentUser) return { success: false, message: 'Chưa đăng nhập.' };
+      const updatedUser = { ...currentUser, ...updates };
+      
+      const localUsers = loadFromStorage('TNCB_MOCK_USERS', mockUsers);
+      const idx = localUsers.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        localUsers[idx] = updatedUser;
+        localStorage.setItem('TNCB_MOCK_USERS', JSON.stringify(localUsers));
+      }
+
+      localStorage.setItem('TNCB_CURRENT_USER', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     if (!token) return { success: false, message: 'Chưa đăng nhập.' };
     try {
@@ -646,11 +1011,11 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode, currentUser]);
 
   // --- Property Actions ---
   const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-    const R = 6371000; // Bán kính Trái Đất (mét)
+    const R = 6371000;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -660,7 +1025,7 @@ export function AppProvider({ children }) {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // mét
+    return R * c;
   }, []);
 
   const getJaccardSimilarity = useCallback((str1, str2) => {
@@ -682,9 +1047,11 @@ export function AppProvider({ children }) {
 
   const checkDuplicateProperty = useCallback((newProperty) => {
     const ownerId = currentUser ? currentUser.id : 'user-landlord';
-    // Chỉ so sánh với các bài đăng đang hoạt động của chính chủ nhà này và chưa bị gỡ xuống, và trạng thái không phải pending hay unlisted
     const activePosts = properties.filter(
-      (p) => p.postedBy === ownerId && !p.isRented && !p.isUnlisted && p.status !== 'pending' && p.status !== 'unlisted'
+      (p) => {
+        const pOwnerId = p.postedBy?.id || p.postedBy || '';
+        return pOwnerId === ownerId && !p.isRented && !p.isUnlisted && p.status !== 'pending' && p.status !== 'unlisted';
+      }
     );
 
     let maxScore = 0;
@@ -692,12 +1059,11 @@ export function AppProvider({ children }) {
     let matchedReasons = [];
 
     for (const oldPost of activePosts) {
-      if (oldPost.id === newProperty.id) continue; // Bỏ qua khi sửa chính phòng này
+      if (oldPost.id === newProperty.id) continue;
 
       let score = 0;
       let reasons = [];
 
-      // 1. Kiểm tra vị trí địa lý (GPS)
       if (newProperty.coords && oldPost.coords) {
         const dist = calculateDistance(
           newProperty.coords[0],
@@ -705,17 +1071,14 @@ export function AppProvider({ children }) {
           oldPost.coords[0],
           oldPost.coords[1]
         );
-        // Nếu cách nhau dưới 15m thì xem như cùng vị trí (Tòa nhà)
         if (dist < 15) {
           score += 40;
           reasons.push('Trùng khớp vị trí địa lý (khoảng cách < 15m)');
         }
       }
 
-      // Nếu không trùng vị trí địa lý thì chắc chắn khác tòa nhà, bỏ qua
       if (score === 0) continue;
 
-      // 2. Kiểm tra loại phòng, giá thuê và diện tích
       const isSameType = newProperty.type === oldPost.type;
       const isSamePrice = Number(newProperty.price) === Number(oldPost.price);
       const isSameArea = Number(newProperty.area) === Number(oldPost.area);
@@ -725,7 +1088,6 @@ export function AppProvider({ children }) {
         reasons.push('Trùng khớp loại phòng, giá thuê và diện tích');
       }
 
-      // 3. Tính toán tương đồng văn bản (Tiêu đề + Mô tả)
       const textSim = getJaccardSimilarity(
         (newProperty.title || '') + ' ' + (newProperty.description || ''),
         (oldPost.title || '') + ' ' + (oldPost.description || '')
@@ -736,7 +1098,6 @@ export function AppProvider({ children }) {
         reasons.push(`Nội dung văn bản tương đồng cao (${Math.round(textSim * 100)}%)`);
       }
 
-      // 4. So sánh ảnh (Giả lập trùng ảnh dựa trên chuỗi URL ảnh)
       const hasOverlapImg = newProperty.images && oldPost.images &&
         newProperty.images.some(img => oldPost.images.includes(img));
       if (hasOverlapImg) {
@@ -761,6 +1122,40 @@ export function AppProvider({ children }) {
   }, [currentUser, properties, calculateDistance, getJaccardSimilarity]);
 
   const addProperty = useCallback(async (property) => {
+    if (isMockMode) {
+      const newProp = {
+        ...property,
+        id: `mock-prop-${Date.now()}`,
+        _id: `mock-prop-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        verified: currentUser && currentUser.role === 'admin',
+        postedBy: currentUser ? {
+          id: currentUser.id,
+          name: currentUser.name,
+          phone: currentUser.phone,
+          avatar: currentUser.avatar
+        } : {
+          id: 'mock-landlord-id',
+          name: 'Chủ trọ giả lập',
+          phone: '0984551234',
+          avatar: ''
+        },
+        images: property.images ? property.images.map(img => {
+          if (img instanceof File) {
+            return URL.createObjectURL(img);
+          }
+          return img;
+        }) : []
+      };
+      
+      const transformed = transformProperty(newProp);
+      setProperties((prev) => {
+        const updated = [transformed, ...prev];
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return transformed;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const formData = new FormData();
@@ -795,7 +1190,7 @@ export function AppProvider({ children }) {
       console.error(err);
       throw err;
     }
-  }, [transformProperty]);
+  }, [isMockMode, currentUser, transformProperty]);
 
   const calculatePropertyRating = useCallback((p) => {
     let score = 0;
@@ -808,6 +1203,31 @@ export function AppProvider({ children }) {
   }, []);
 
   const updateProperty = useCallback(async (id, updates) => {
+    if (isMockMode) {
+      let transformed;
+      setProperties((prev) => {
+        const updated = prev.map((p) => {
+          if (p.id === id) {
+            const processedImages = updates.images ? updates.images.map(img => {
+              if (img instanceof File) {
+                return URL.createObjectURL(img);
+              }
+              return img;
+            }) : p.images;
+            transformed = transformProperty({
+              ...p,
+              ...updates,
+              images: processedImages
+            });
+            return transformed;
+          }
+          return p;
+        });
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return transformed;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const formData = new FormData();
@@ -842,9 +1262,17 @@ export function AppProvider({ children }) {
       console.error(err);
       throw err;
     }
-  }, [transformProperty]);
+  }, [isMockMode, transformProperty]);
 
   const deleteProperty = useCallback(async (id) => {
+    if (isMockMode) {
+      setProperties((prev) => {
+        const updated = prev.filter((p) => p.id !== id);
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return true;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/${id}`, {
@@ -863,9 +1291,19 @@ export function AppProvider({ children }) {
       console.error(err);
       return false;
     }
-  }, []);
+  }, [isMockMode]);
 
   const togglePropertyStatus = useCallback(async (id) => {
+    if (isMockMode) {
+      setProperties((prev) => {
+        const updated = prev.map((p) =>
+          p.id === id ? { ...p, isRented: !p.isRented } : p
+        );
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-rented`, {
@@ -882,9 +1320,19 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
     }
-  }, [transformProperty]);
+  }, [isMockMode, transformProperty]);
 
   const toggleUnlistProperty = useCallback(async (id) => {
+    if (isMockMode) {
+      setProperties((prev) => {
+        const updated = prev.map((p) =>
+          p.id === id ? { ...p, isUnlisted: !p.isUnlisted } : p
+        );
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-unlist`, {
@@ -901,9 +1349,19 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
     }
-  }, [transformProperty]);
+  }, [isMockMode, transformProperty]);
 
   const toggleVerifyProperty = useCallback(async (id) => {
+    if (isMockMode) {
+      setProperties((prev) => {
+        const updated = prev.map((p) =>
+          p.id === id ? { ...p, verified: !p.verified } : p
+        );
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/${id}/toggle-verify`, {
@@ -920,10 +1378,23 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
     }
-  }, [transformProperty]);
+  }, [isMockMode, transformProperty]);
 
   // --- Hero Slides Actions ---
   const addHeroSlide = useCallback(async (slideData) => {
+    if (isMockMode) {
+      const newSlide = {
+        ...slideData,
+        id: `mock-slide-${Date.now()}`,
+        image: slideData.image instanceof File ? URL.createObjectURL(slideData.image) : slideData.image
+      };
+      setHeroSlides((prev) => {
+        const updated = [...prev, newSlide].sort((a, b) => (a.order || 0) - (b.order || 0));
+        localStorage.setItem('TNCB_HERO_SLIDES', JSON.stringify(updated));
+        return updated;
+      });
+      return { success: true, slide: newSlide };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const formData = new FormData();
@@ -953,9 +1424,28 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, [transformHeroSlide]);
+  }, [isMockMode, transformHeroSlide]);
 
   const updateHeroSlideAction = useCallback(async (id, updates) => {
+    if (isMockMode) {
+      let updatedSlide;
+      setHeroSlides((prev) => {
+        const updated = prev.map((s) => {
+          if (s.id === id) {
+            updatedSlide = {
+              ...s,
+              ...updates,
+              image: updates.image instanceof File ? URL.createObjectURL(updates.image) : (updates.image || s.image)
+            };
+            return updatedSlide;
+          }
+          return s;
+        }).sort((a, b) => (a.order || 0) - (b.order || 0));
+        localStorage.setItem('TNCB_HERO_SLIDES', JSON.stringify(updated));
+        return updated;
+      });
+      return { success: true, slide: updatedSlide };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const formData = new FormData();
@@ -987,9 +1477,17 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, [transformHeroSlide]);
+  }, [isMockMode, transformHeroSlide]);
 
   const deleteHeroSlideAction = useCallback(async (id) => {
+    if (isMockMode) {
+      setHeroSlides((prev) => {
+        const updated = prev.filter((s) => s.id !== id);
+        localStorage.setItem('TNCB_HERO_SLIDES', JSON.stringify(updated));
+        return updated;
+      });
+      return { success: true };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/hero-slides/${id}`, {
@@ -1008,9 +1506,20 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const getImportSettings = useCallback(async () => {
+    if (isMockMode) {
+      return {
+        success: true,
+        settings: loadFromStorage('TNCB_IMPORT_SETTINGS', {
+          sheetUrl: 'https://docs.google.com/spreadsheets/d/mock-sheet-id/edit',
+          syncInterval: 24,
+          errorNotificationEmail: 'admin@tncb.vn',
+          clearExisting: false
+        })
+      };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/import-settings`, {
@@ -1021,9 +1530,13 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const saveImportSettings = useCallback(async (settings) => {
+    if (isMockMode) {
+      localStorage.setItem('TNCB_IMPORT_SETTINGS', JSON.stringify(settings));
+      return { success: true, message: 'Lưu cấu hình thành công (Giả lập)' };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/import-settings`, {
@@ -1039,9 +1552,45 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, []);
+  }, [isMockMode]);
 
   const syncPropertiesNow = useCallback(async () => {
+    if (isMockMode) {
+      const mockSheetProp = {
+        id: `prop-sheet-${Date.now()}`,
+        title: 'Căn Hộ Mini Đồng Bộ Từ Google Sheets (Mock)',
+        type: 'Chung cư mini',
+        price: 4800000,
+        area: 25,
+        city: 'TP. Hồ Chí Minh',
+        district: 'Bình Thạnh',
+        ward: 'Phường 25',
+        address: 'D5, Phường 25, Bình Thạnh, TP. HCM',
+        coords: [10.8018, 106.7119],
+        images: ['https://picsum.photos/seed/sheet-mock/800/600'],
+        verified: true,
+        isRented: false,
+        amenities: ['AirConditioner', 'WiFi', 'Parking'],
+        electricity: 3500,
+        water: 100000,
+        service: 100000,
+        description: 'Phòng trọ đẹp đồng bộ tự động từ Google Sheets ở chế độ giả lập.',
+        source: 'sheet',
+        postedBy: {
+          name: 'Hệ thống Sync',
+          phone: '0909000000',
+          avatar: ''
+        }
+      };
+      
+      const transformed = transformProperty(mockSheetProp);
+      setProperties((prev) => {
+        const updated = [transformed, ...prev];
+        localStorage.setItem('TNCB_PROPERTIES', JSON.stringify(updated));
+        return updated;
+      });
+      return { success: true, message: 'Đồng bộ Google Sheets thành công! Đã thêm 1 tin đăng mẫu.' };
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/properties/sync-now`, {
@@ -1057,7 +1606,7 @@ export function AppProvider({ children }) {
       console.error(err);
       return { success: false, message: 'Lỗi kết nối máy chủ.' };
     }
-  }, [fetchProperties]);
+  }, [isMockMode, fetchProperties, transformProperty]);
 
   // --- View History ---
   const addViewToHistory = useCallback((propertyId) => {
@@ -1117,6 +1666,21 @@ export function AppProvider({ children }) {
 
   // --- Ticket Actions ---
   const createTicket = useCallback(async (ticket) => {
+    if (isMockMode) {
+      const newTicket = {
+        ...ticket,
+        id: `ticket-${Date.now()}`,
+        _id: `ticket-${Date.now()}`,
+        status: 'open',
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      setTickets((prev) => {
+        const updated = [newTicket, ...prev];
+        localStorage.setItem('TNCB_TICKETS', JSON.stringify(updated));
+        return updated;
+      });
+      return newTicket;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(API_BASE_URL + '/api/tickets', {
@@ -1140,9 +1704,19 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [isMockMode]);
 
   const updateTicketStatus = useCallback(async (ticketId, status) => {
+    if (isMockMode) {
+      setTickets((prev) => {
+        const updated = prev.map((t) =>
+          t.id === ticketId ? { ...t, status } : t
+        );
+        localStorage.setItem('TNCB_TICKETS', JSON.stringify(updated));
+        return updated;
+      });
+      return;
+    }
     const token = localStorage.getItem('TNCB_TOKEN');
     try {
       const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}/status`, {
@@ -1161,7 +1735,7 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [isMockMode]);
 
   // --- Helpers ---
   const getPropertyById = useCallback(
@@ -1206,6 +1780,7 @@ export function AppProvider({ children }) {
     currentUser,
     theme,
     toggleTheme,
+    isMockMode,
     // Auth Modal (Global)
     isAuthOpen,
     setIsAuthOpen,
