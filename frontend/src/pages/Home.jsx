@@ -282,7 +282,7 @@ export default function Home() {
                 if (index !== activeSlide) return null;
                 const { main, accent } = splitTitle(slide.title);
                 return (
-                  <div key={slide.id || index} className="carousel-slide-active-content animate-fade-in-up" style={{ width: '100%' }}>
+                  <div key={slide.id || index} className="carousel-slide-active-content animate-fade-in-up">
                     <div className="tile-copy-wrapper" style={{ marginInline: 'auto' }}>
                       <span className="tile-eyebrow text-eyebrow">{slide.tag}</span>
                       <div className="apple-logo-text">
@@ -312,7 +312,7 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    <div className="tile-image-wrapper" style={{ marginTop: '40px' }}>
+                    <div className="tile-image-wrapper">
                       <img src={slide.image} alt={slide.title} className="tile-image" />
                     </div>
                   </div>
@@ -524,34 +524,37 @@ export default function Home() {
 
         /* Apple Logo & Metallic/Glow Text Effect */
         .apple-logo-text {
-          font-size: clamp(3rem, 8vw, 5.5rem);
+          font-size: clamp(2.4rem, 6vw, 4rem);
           font-weight: 700;
           letter-spacing: -0.04em;
-          line-height: 1.25;
+          line-height: 1.15;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          margin-bottom: var(--space-4);
+          margin-bottom: var(--space-3);
+          text-align: center;
         }
 
         .logo-metallic {
           background: linear-gradient(180deg, #ffffff 30%, #86868b 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          padding-block: 0.1em;
+          padding-block: 0.05em;
         }
 
         .logo-glowing {
           position: relative;
           color: #ffffff;
-          margin-left: 12px;
+          margin-left: 0;
+          margin-top: 4px;
           text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
                        0 0 20px rgba(255, 215, 0, 0.6),
                        0 0 35px rgba(255, 105, 180, 0.5);
           background: linear-gradient(135deg, #ffffff 40%, #ffdf79 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          padding-block: 0.1em;
+          padding-block: 0.05em;
         }
 
         .theme-light .apple-logo-text .logo-metallic {
@@ -573,12 +576,11 @@ export default function Home() {
 
         @media (max-width: 580px) {
           .apple-logo-text {
-            flex-wrap: wrap;
+            font-size: clamp(1.8rem, 8vw, 2.2rem);
             line-height: 1.1;
           }
           .logo-glowing {
-            margin-left: 0;
-            margin-top: 4px;
+            margin-top: 2px;
           }
         }
 
@@ -649,6 +651,76 @@ export default function Home() {
         /* Hero Carousel Slider specific styles */
         .hero-carousel-section {
           position: relative;
+          height: calc(100vh - var(--header-height));
+          min-height: 580px;
+          max-height: 800px;
+          overflow: hidden;
+          border-bottom: 8px solid var(--bg-primary);
+        }
+
+        .hero-carousel-section .tile-wrapper {
+          height: 100%;
+          padding: var(--space-8) var(--content-padding) 0;
+          justify-content: space-between;
+        }
+
+        .hero-carousel-section .tile-content {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 0;
+        }
+
+        .carousel-slide-active-content {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .hero-carousel-section .tile-copy-wrapper {
+          flex-shrink: 0;
+          padding-top: var(--space-2);
+        }
+
+        .hero-carousel-section .tile-image-wrapper {
+          margin-top: var(--space-4);
+          flex: 1 1 auto;
+          min-height: 0;
+          width: 100%;
+          max-width: 900px;
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+          box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+          overflow: hidden;
+          background: #111111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .hero-carousel-section .tile-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+          .hero-carousel-section {
+            height: calc(85vh - var(--header-height));
+            min-height: 520px;
+          }
+          .hero-carousel-section .tile-wrapper {
+            padding-top: var(--space-6);
+          }
+          .hero-carousel-section .tile-image-wrapper {
+            height: 200px;
+            flex: 0 0 auto;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-12);
+          }
         }
 
         .carousel-arrow {
@@ -702,11 +774,15 @@ export default function Home() {
 
         /* Dot Indicators */
         .carousel-dots-wrapper {
+          position: absolute;
+          bottom: var(--space-4);
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           gap: var(--space-3);
           justify-content: center;
-          margin-top: var(--space-8);
           z-index: 10;
+          margin-top: 0;
         }
 
         .carousel-dot-indicator {
