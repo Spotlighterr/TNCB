@@ -659,57 +659,85 @@ export default function Home() {
 
         .hero-carousel-section .tile-wrapper {
           height: 100%;
-          padding: var(--space-6) var(--content-padding) 0;
+          padding: 0 var(--content-padding);
+          display: flex;
+          align-items: center;
           justify-content: center;
         }
 
         .hero-carousel-section .tile-content {
+          width: 100%;
           height: 100%;
           display: flex;
-          flex-direction: column;
+          align-items: center;
           justify-content: center;
-          gap: 0;
         }
 
         .carousel-slide-active-content {
           width: 100%;
           height: 100%;
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
           align-items: center;
-          justify-content: center;
-          gap: var(--space-4);
+          justify-content: space-between;
+          gap: var(--space-8);
+          max-width: 1200px;
+          margin: 0 auto;
         }
 
         .hero-carousel-section .tile-copy-wrapper {
-          flex-shrink: 0;
-          padding-top: 0;
-          width: 100%;
+          flex: 1;
+          max-width: 520px;
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
+          text-align: left;
+          padding-top: 0;
+        }
+
+        .hero-carousel-section .apple-logo-text {
+          font-size: clamp(2.2rem, 3.8vw, 3.4rem);
+          font-weight: 700;
+          letter-spacing: -0.04em;
+          line-height: 1.15;
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
           align-items: center;
+          justify-content: flex-start;
+          gap: 12px;
+          margin-bottom: var(--space-4);
+          text-align: left;
         }
 
         .hero-carousel-section .tile-subhead {
-          font-size: clamp(1.2rem, 2.2vw, 1.55rem);
-          max-width: 760px;
-          margin-bottom: var(--space-4);
+          font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+          color: #86868b;
           line-height: 1.45;
+          margin-bottom: var(--space-6);
+          text-align: left;
+          max-width: 100%;
+        }
+
+        .hero-carousel-section .tile-ctas {
+          display: flex;
+          gap: var(--space-4);
+          justify-content: flex-start;
         }
 
         .hero-carousel-section .tile-image-wrapper {
-          margin-top: var(--space-4);
-          width: 90%;
-          max-width: 1060px;
-          height: clamp(220px, 42vh, 400px);
+          flex: 1.2;
+          max-width: 640px;
+          height: clamp(300px, 50vh, 480px);
           border-radius: var(--radius-lg);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
           overflow: hidden;
           background: #111111;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          margin-top: 0;
         }
 
         .hero-carousel-section .tile-image {
@@ -718,20 +746,61 @@ export default function Home() {
           object-fit: cover;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 991px) {
           .hero-carousel-section {
-            height: calc(85vh - var(--header-height));
-            min-height: 520px;
+            height: auto;
+            min-height: 620px;
+            padding-block: var(--space-12);
           }
-          .hero-carousel-section .tile-wrapper {
-            padding-top: var(--space-6);
+          
+          .carousel-slide-active-content {
+            flex-direction: column;
+            justify-content: center;
+            gap: var(--space-6);
           }
+
+          .hero-carousel-section .tile-copy-wrapper {
+            align-items: center;
+            text-align: center;
+            max-width: 100%;
+          }
+
+          .hero-carousel-section .apple-logo-text {
+            justify-content: center;
+            text-align: center;
+            font-size: clamp(2rem, 5vw, 2.6rem);
+            margin-bottom: var(--space-3);
+          }
+
+          .hero-carousel-section .tile-subhead {
+            text-align: center;
+            margin-bottom: var(--space-4);
+          }
+
+          .hero-carousel-section .tile-ctas {
+            justify-content: center;
+          }
+
           .hero-carousel-section .tile-image-wrapper {
             width: 90%;
-            height: clamp(160px, 30vh, 240px);
-            aspect-ratio: unset;
-            border-radius: var(--radius-lg);
-            margin-bottom: var(--space-12);
+            height: clamp(200px, 35vh, 320px);
+            max-width: 100%;
+            margin-bottom: var(--space-8);
+          }
+        }
+
+        @media (max-width: 580px) {
+          .hero-carousel-section {
+            min-height: 520px;
+          }
+          
+          .hero-carousel-section .apple-logo-text {
+            font-size: clamp(1.6rem, 6vw, 2rem);
+            gap: 6px;
+          }
+          
+          .hero-carousel-section .tile-image-wrapper {
+            height: clamp(160px, 30vh, 220px);
           }
         }
 
